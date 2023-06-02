@@ -6,10 +6,26 @@
   "private": true,
   "dependencies": {},
   "devDependencies": {
+    "@nx/eslint-plugin": "16.3.1",
     "@nx/js": "16.3.1",
+    "@nx/linter": "16.3.1",
+    "@nx/vite": "16.3.1",
     "@nx/workspace": "16.3.1",
+    "@types/node": "18.7.1",
+    "@typescript-eslint/eslint-plugin": "^5.58.0",
+    "@typescript-eslint/parser": "^5.58.0",
+    "@vitest/coverage-c8": "^0.31.0",
+    "@vitest/ui": "^0.31.0",
+    "eslint": "~8.15.0",
+    "eslint-config-prettier": "8.1.0",
+    "jsdom": "~20.0.3",
     "nx": "16.3.1",
     "prettier": "^2.6.2",
-    "typescript": "~5.0.2"
+    "typescript": "~5.0.2",
+    "vite": "^4.3.4",
+    "vite-plugin-dts": "~1.7.1",
+    "vite-plugin-eslint": "^1.8.1",
+    "vite-tsconfig-paths": "^4.0.2",
+    "vitest": "^0.31.0"
   }
 }
