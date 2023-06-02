@@ -1,56 +1,69 @@
-import { arrayOf, scope, type } from 'arktype'
-import { arkSplitter } from './arkUtil'
+import { arrayOf, scope, type } from 'arktype';
+import { arkSplitter } from './arkUtil';
 
 const _resolvedError = scope({
+  notAssignable: [
+    'number',
+    'number',
+    {
+      type: "'notAssignable'",
+      to: 'string',
+      from: 'string',
+      // path: type(['string', 'string'])
+    },
+  ],
   aliasSelfReferenceResult: [
     'number',
     'number',
     {
       type: "'aliasSelfReference'",
-      from: 'string'
+      from: 'string',
       // path: type(['string', 'string'])
-    }
+    },
   ],
   unknownError: [
     'number',
     'number',
     {
       type: "'unknownError'",
-      parts: 'string[]'
-    }
-  ]
+      parts: 'string[]',
+    },
+  ],
   // unparsable: {0
   //     type: 'string'
   // }
-})
-export const resolvedError = _resolvedError.compile()
-const unionedResolvedError = _resolvedError.type('aliasSelfReferenceResult|unknownError')
-export type ResolvedError = typeof unionedResolvedError.infer
+});
+export const resolvedError = _resolvedError.compile();
+const unionedResolvedError = _resolvedError.type(
+  'aliasSelfReferenceResult|unknownError|notAssignable'
+);
+export type ResolvedError = typeof unionedResolvedError.infer;
 
-export type AliasSelfReferenceResult = typeof resolvedError.aliasSelfReferenceResult.infer
+export type AliasSelfReferenceResult =
+  typeof resolvedError.aliasSelfReferenceResult.infer;
 
-export const splitResolvedErrors = arkSplitter(resolvedError)
-export type SplitResolvedErrors = ReturnType<typeof splitResolvedErrors>
+export const splitResolvedErrors = arkSplitter(resolvedError);
+export type SplitResolvedErrors = ReturnType<typeof splitResolvedErrors>;
 
 export const err = scope({
   err: {
     line: 'number',
     start: 'number',
     lines: 'string[]',
-    parsed: arrayOf([type('number'), type('number'), type('unknown')])
-  }
-}).compile()
+    parsed: arrayOf([type('number'), type('number'), type('unknown')]),
+  },
+}).compile();
 
-export const splitErr = arkSplitter(err)
-export type SplitErr = ReturnType<typeof splitErr>
+export const splitErr = arkSplitter(err);
+export type SplitErr = ReturnType<typeof splitErr>;
 
 export function deserialize(x: unknown[]) {
-  const errs = splitErr(x).err
+  const errs = splitErr(x).err;
   const ret = errs.map((e) => ({
     ...e,
-    parsed: splitResolvedErrors(e.parsed, 'first')
-  }))
-  return ret
+    parsed: splitResolvedErrors(e.parsed, 'first'),
+  }));
+  return ret;
 }
 
 const example = [
@@ -63,42 +76,48 @@ const example = [
         0,
         {
           type: 'aliasSelfReference',
-          from: 'RangeNode'
-        }
-      ]
+          from: 'RangeNode',
+        },
+      ],
     ],
-    children: []
+    children: [],
   },
   {
     line: 15,
     start: 446,
-    lines: ["'l' is referenced directly or indirectly in its own type annotation."],
+    lines: [
+      "'l' is referenced directly or indirectly in its own type annotation.",
+    ],
     parsed: [
       [
         0,
         {
           type: 'unknownError',
-          parts: ['', 'l', 'is referenced directly or indirectly in its own type annotation.']
-        }
-      ]
+          parts: [
+            '',
+            'l',
+            'is referenced directly or indirectly in its own type annotation.',
+          ],
+        },
+      ],
     ],
-    children: []
+    children: [],
   },
   {
     line: 21,
     start: 515,
     lines: [
-      "'RangeNode' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer."
+      "'RangeNode' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.",
     ],
     parsed: [
       [
         0,
         {
           type: 'selfReference',
-          from: 'RangeNode'
-        }
-      ]
+          from: 'RangeNode',
+        },
+      ],
     ],
-    children: []
-  }
-]
+    children: [],
+  },
+];

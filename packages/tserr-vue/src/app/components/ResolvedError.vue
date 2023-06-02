@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import type { ResolvedError } from '../resolvedError'
-import { appState } from '../appState'
+import CodeBlock from './CodeBlock.vue';
+import type { ResolvedError } from '../resolvedError';
+import { appState } from '../appState';
 
 const props = defineProps<{
-  parsed: ResolvedError
-}>()
+  parsed: ResolvedError;
+}>();
 </script>
 
 <template>
@@ -17,6 +18,10 @@ const props = defineProps<{
     <span v-if="props.parsed[2].type === 'aliasSelfReference'">
       {{ props.parsed[2].from }}
     </span>
+    <div v-if="props.parsed[2].type === 'notAssignable'">
+      <CodeBlock :code="props.parsed[2].to" />
+      <CodeBlock :code="props.parsed[2].from" />
+    </div>
     <span> {{ appState.supplements[props.parsed[0]] }} </span>
   </div>
 </template>
