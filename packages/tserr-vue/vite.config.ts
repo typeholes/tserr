@@ -1,5 +1,6 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vite';
+import vue from '@vitejs/plugin-vue';
 
 import viteTsConfigPaths from 'vite-tsconfig-paths';
 
@@ -20,7 +21,7 @@ export default defineConfig({
     viteTsConfigPaths({
       root: '../../',
     }),
-    vue()
+    vue(),
   ],
 
   // Uncomment this if you are using workers.
