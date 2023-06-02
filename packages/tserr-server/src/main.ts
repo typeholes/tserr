@@ -1,14 +1,39 @@
-import express from 'express';
+import { watch } from 'chokidar';
+import { setProject } from './handleDiagnostics.js';
+import { startServer } from './server.js';
 
-const host = process.env.HOST ?? 'localhost';
-const port = process.env.PORT ? Number(process.env.PORT) : 3000;
+const server = startServer(__dirname + '../../../../vue/tserr-client/dist/');
 
-const app = express();
+type EventType = 'add' | 'addDir' | 'change' | 'unlink' | 'unlinkDir';
 
-app.get('/', (req, res) => {
-  res.send({ message: 'Hello API' });
-});
+let waiting = true;
+let events: [EventType, string][] = [];
 
-app.listen(port, host, () => {
-  console.log(`[ ready ] http://${host}:${port}`);
-});
+const projectEventHandler = setProject(
+   '../../error_samples/tsconfig.json',
+   server
+);
+
+function handleEvent(event: EventType, path: string) {
+   events.push([event, path]);
+   waiting = true;
+}
+
+function processEvents() {
+   if (waiting) {
+      waiting = false;
+      return;
+   }
+
+   if (events.length > 0) {
+      console.log(events);
+      server.sendResetResolvedErrors();
+      projectEventHandler(events);
+      events = [];
+   }
+}
+
+const watcher = watch('../../error_samples/');
+watcher.on('all', handleEvent);
+
+setInterval(processEvents, 100);
