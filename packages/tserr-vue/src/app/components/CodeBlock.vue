@@ -6,11 +6,14 @@ import { inject } from 'vue';
 
 const props = defineProps<{
   code: string;
+  registerHtml: (x: string | undefined) => void;
 }>();
 
 const highlighter = inject<Highlighter>('highlighter');
 
 const highlighted = highlight(formatCode(props.code));
+
+props.registerHtml(highlighted);
 
 function highlight(code: string) {
   if (highlighter) {
