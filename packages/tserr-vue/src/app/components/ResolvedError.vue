@@ -28,8 +28,8 @@ function getOrder() {
     <div v-if="props.parsed[2].type === 'notAssignable'">
       <CodeGrid :blocks="Object.entries(props.parsed[2])" header-key="type"/>
 
-      <CodeBlock :code="props.parsed[2].to" />
-      <CodeBlock :code="props.parsed[2].from" />
+      <!-- <CodeBlock :code="props.parsed[2].to" />
+      <CodeBlock :code="props.parsed[2].from" /> -->
 
     </div>
     <pre> {{ appState.supplements[props.parsed[0]] }} </pre>
