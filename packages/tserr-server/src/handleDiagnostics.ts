@@ -154,7 +154,7 @@ function createSupplement(e: FlatErr['parsed'][number], fromNode: Node) {
     if (path) {
       const pathText = path
         .reverse()
-        .map(([x]) => nodeToLineText(x))
+        .map(([x, ]) => nodeToLineText(x))
         .join('\n');
       console.log('self ref: \n', pathText);
       server?.sendSupplement(id, pathText);
@@ -391,3 +391,4 @@ function checkIgnoreTSC(project: Project) {
     });
   });
 }
+
