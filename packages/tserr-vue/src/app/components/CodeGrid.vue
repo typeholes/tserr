@@ -26,9 +26,9 @@ function setCompare(x: string | undefined) {
 
 <template>
   <div class="codeGrid">
-    <template v-for="(entry, idx) of props.blocks" :key="entryObject">
+    <template v-for="(entry, ) of props.blocks" :key="entryObject">
       <div class="codeColumn" v-if="entry[0] !== props.headerKey">
-        <div>{{ idx }} {{ entry[0] }}</div>
+        <div> {{ entry[0] }}</div>
         <CodeBlock :code="entry[1]" :registerHtml="setCompare" />
       </div>
     </template>
