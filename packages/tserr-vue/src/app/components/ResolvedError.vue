@@ -11,6 +11,7 @@ const props = defineProps<{
 <template>
   <div class="row">
     <!-- <div>parsed: {{ props.parsed}}</div> -->
+      <div> {{ props.parsed[2].type }} </div>
     <span :style="{ minWidth: `${props.parsed[1] ?? 0}rem` }"></span>
     <span v-if="props.parsed[2].type === 'unknownError'">
       {{ props.parsed[2].parts }}
@@ -22,12 +23,13 @@ const props = defineProps<{
       <CodeBlock :code="props.parsed[2].to" />
       <CodeBlock :code="props.parsed[2].from" />
     </div>
-    <span> {{ appState.supplements[props.parsed[0]] }} </span>
+    <pre> {{ appState.supplements[props.parsed[0]] }} </pre>
   </div>
 </template>
 
 <style scoped>
 .row {
   display: flex;
+  gap: .24rem;
 }
 </style>

@@ -147,7 +147,20 @@ function resolveError(fromNode: Node, err: Err): FlatErr {
 }
 
 function createSupplement(e: FlatErr['parsed'][number], fromNode: Node) {
-  server?.sendSupplement(e[0], 'some supplemental info here');
+  const id = e[0];
+  const parsed = e[2];
+  if (parsed.type === 'aliasSelfReference' || parsed.type === 'selfReference') {
+    const path = findSelfReferences(fromNode);
+    if (path) {
+      const pathText = path
+        .reverse()
+        .map(([x]) => nodeToLineText(x))
+        .join('\n');
+      console.log('self ref: \n', pathText);
+      server?.sendSupplement(id, pathText);
+      // debugger;
+    }
+  }
   /*
    const parsed = traverseErr((e) => {
       return e.parsed.map((error, i) => {

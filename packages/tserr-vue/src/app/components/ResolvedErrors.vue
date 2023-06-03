@@ -27,8 +27,7 @@ function getErrors(fileName: string) {
             <span> Line: {{ err.line }} </span>
             <!-- <pre> {{ err.lines.join('\n') }}</pre> -->
             <div class="parsedList" v-for="key of Object.keys(err.parsed)" :key="key">
-              <!-- <span> type: {{ key }} </span>
-              <pre> debug: {{ JSON.stringify(err.parsed[key as never]) }} </pre> -->
+              <!-- <pre> debug: {{ JSON.stringify(err.parsed[key as never]) }} </pre> -->
               <template v-for="parsed of err.parsed[key as keyof typeof err.parsed]" :key="parsed">
                 <ResolvedError :parsed="parsed" />
               </template>
