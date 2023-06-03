@@ -17,7 +17,9 @@ Planned Features:
 
 npm install
 
-npx nx affected:build
+npx nx build tserr-vue
+
+npx nx build tserr-server
 
 node dist/packages/tserr-server/main.js <project path>
 
@@ -25,8 +27,9 @@ open http://localhost:3000/ in your browser
 
 ## Current State
 
+Does not work on Windows due to the use of symlinks  
 Only handles a few error types
-layout is abysmal
-formatting and syntax highlighting work
-paths for self references work
+layout is abysmal  
+formatting and syntax highlighting work  
+paths for self references work  
 error code casts work but aren't in the UI yet
