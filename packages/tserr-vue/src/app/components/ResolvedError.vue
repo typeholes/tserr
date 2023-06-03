@@ -7,10 +7,15 @@ import { appState } from '../appState';
 const props = defineProps<{
   parsed: ResolvedError;
 }>();
+
+
+function getOrder() {
+  return (props.parsed as any).getOrder();
+}
 </script>
 
 <template>
-  <div class="row">
+  <div class="row" :style="{order: getOrder()}">
     <!-- <div>parsed: {{ props.parsed}}</div> -->
       <div> {{ props.parsed[2].type }} </div>
     <span :style="{ minWidth: `${props.parsed[1] ?? 0}rem` }"></span>

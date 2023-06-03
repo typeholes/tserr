@@ -1,15 +1,19 @@
-import type { Space } from 'arktype'
+import type { Space } from 'arktype';
+
+type OrderedSplitEntry<S, K extends keyof Space<S>> = Space<S>[K]['infer'] & {
+  getOrder(): number;
+};
 
 type ArkSplitter<S> = (
   s: Space<S>
 ) => (
   x: unknown[],
   onDuplicate?: 'throw' | 'first' | 'all',
-  into?: { [K in keyof Space<S>]: Space<S>[K]['infer'][] } | undefined
-) => { [K in keyof Space<S>]: Space<S>[K]['infer'][] }
+  into?: { [K in keyof Space<S>]: OrderedSplitEntry<S, K>[] } | undefined
+) => { [K in keyof Space<S>]: OrderedSplitEntry<S, K>[] };
 // sample output {"a":[],"b":[{"type":"b"}],"c":[{"type":"c"},{"type":"c"}]}
 
-type ArkSplitResult<S> = ReturnType<ReturnType<ArkSplitter<S>>>
+type ArkSplitResult<S> = ReturnType<ReturnType<ArkSplitter<S>>>;
 
 export function arkSplitter<S>(space: Space<S>): ReturnType<ArkSplitter<S>> {
   return (
@@ -18,30 +22,38 @@ export function arkSplitter<S>(space: Space<S>): ReturnType<ArkSplitter<S>> {
     into?: ArkSplitResult<S> | undefined
   ) => {
     const ret: ArkSplitResult<S> =
-      into ?? (Object.fromEntries(Object.keys(space).map((x) => [x, []])) as never)
+      into ??
+      (Object.fromEntries(Object.keys(space).map((x) => [x, []])) as never);
+
+    let order = -1;
     for (const obj of xs) {
-      let matches = 0
+      order++;
+      let matches = 0;
       for (const k in space) {
-        const type = space[k]
+        const type = space[k];
         if (type.allows(obj)) {
           if (matches > 0) {
             if (onDuplicate === 'throw') {
-              throw new Error('duplicate type match')
+              throw new Error('duplicate type match');
             }
             if (onDuplicate === 'first') {
-              continue
+              continue;
             }
           }
-          ret[k].push(obj as never)
-          matches++
+
+          const orderUnclosed = order;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (obj as any).getOrder = () => orderUnclosed;
+          ret[k].push(obj as never);
+          matches++;
         }
       }
       if (matches === 0) {
         // handle unmatched here
       }
     }
-    return ret
-  }
+    return ret;
+  };
 }
 
 // const _types = scope({
