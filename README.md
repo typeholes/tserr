@@ -16,7 +16,9 @@ Planned Features:
 ## Usage
 
 npm install
+
 npx nx affected:build
+
 node dist/packages/tserr-server/main.js <project path>
 
 open http://localhost:3000/ in your browser
