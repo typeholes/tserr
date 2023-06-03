@@ -3,6 +3,7 @@ import { setProject } from './handleDiagnostics.js';
 import { startServer } from './server.js';
 
 const errorSamplePath = '/home/hw/projects/nx/typeholes/error_samples';
+const projectPath = process.argv[2] ?? errorSamplePath;
 
 const server = startServer(__dirname + '../../../../../tserr-vue/');
 console.log('dirname: ', __dirname);
@@ -13,7 +14,7 @@ let waiting = true;
 let events: [EventType, string][] = [];
 
 const projectEventHandler = setProject(
-  errorSamplePath + '/tsconfig.json',
+  projectPath + '/tsconfig.json',
   // '../../../../../../error_samples/tsconfig.json',
   server
 );
@@ -38,7 +39,7 @@ function processEvents() {
   }
 }
 
-const watcher = watch(errorSamplePath);
+const watcher = watch(projectPath);
 watcher.on('all', handleEvent);
 
 setInterval(processEvents, 100);
