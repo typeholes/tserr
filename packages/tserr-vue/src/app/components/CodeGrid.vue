@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { reactive } from 'vue';
 import CodeBlock from './CodeBlock.vue';
-import diff from 'html-diff-ts'
+import diff from 'html-diff-ts';
 
 const props = defineProps<{
   blocks: [label: string, code: string][];
@@ -16,8 +16,9 @@ const compares = reactive({
 
 function setCompare(x: string | undefined) {
   if (compares.left !== undefined) {
-    compares.right ??= x;
-    compares.diff = diff(compares.left, compares.right??'');
+    if (compares.right ??= x) {
+      compares.diff = diff(compares.left, compares.right ?? '');
+    }
     return;
   }
   compares.left ??= x;
@@ -26,14 +27,14 @@ function setCompare(x: string | undefined) {
 
 <template>
   <div class="codeGrid">
-    <template v-for="(entry, ) of props.blocks" :key="entryObject">
+    <template v-for="entry of props.blocks" :key="entryObject">
       <div class="codeColumn" v-if="entry[0] !== props.headerKey">
-        <div> {{ entry[0] }}</div>
+        <div>{{ entry[0] }}</div>
         <CodeBlock :code="entry[1]" :registerHtml="setCompare" />
       </div>
     </template>
     <div class="diff">
-    <div v-html="compares.diff">  </div>
+      <div v-html="compares.diff"></div>
     </div>
   </div>
 </template>
