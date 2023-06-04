@@ -21,7 +21,7 @@ npx nx build tserr-vue
 
 npx nx build tserr-server
 
-node dist/packages/tserr-server/main.js <project path>
+node dist/packages/tserr-server/main.js \<project path\>
 
 open http://localhost:3000/ in your browser
 
