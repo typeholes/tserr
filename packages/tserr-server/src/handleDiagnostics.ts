@@ -18,6 +18,7 @@ import { ClassDeclaration } from 'ts-morph';
 import { type ErrorServer } from './server.js';
 import { group } from './util.js';
 import { Err, FlatErr, flattenErr, traverseErr } from './Err.js';
+import { fileURLToPath } from 'url';
 
 type Declaration =
   | VariableDeclaration
@@ -38,7 +39,7 @@ let tsConfigFilePath: string | undefined = undefined;
 let server: ErrorServer | undefined = undefined;
 
 export function setProject(path: string, forServer: ErrorServer) {
-  console.log('path: ', path);
+  // console.log('path: ', path);
   server = forServer;
   if (project) {
     project === undefined;
@@ -57,14 +58,22 @@ function openProject() {
     },
     tsConfigFilePath,
   });
-  console.log({ tsConfigFilePath });
+  // console.log({ tsConfigFilePath });
+
+  // allCircularRefs(project);
+
+  checkEmptyObject(project);
+
+  process.exit();
 }
 
 function processFileEvents(events: [string, string][]) {
   if (!project) {
     openProject();
-    checkIgnoreTSC(project!);
+
+    // checkIgnoreTSC(project!);
   }
+
   const promises = events.map(
     (e) =>
       project?.getSourceFile(e[1])?.refreshFromFileSystem ??
@@ -85,7 +94,7 @@ function processFileEvents(events: [string, string][]) {
       for (const diagnostic of diagnostics[fileName]) {
         const resolved = handleError(diagnostic, fileName);
         if (resolved) {
-          console.log(resolved);
+          // console.log(resolved);
           payload.push(resolved);
         }
       }
@@ -154,9 +163,9 @@ function createSupplement(e: FlatErr['parsed'][number], fromNode: Node) {
     if (path) {
       const pathText = path
         .reverse()
-        .map(([x, ]) => nodeToLineText(x))
+        .map(([x]) => nodeToLineText(x))
         .join('\n');
-      console.log('self ref: \n', pathText);
+      // console.log('self ref: \n', pathText);
       server?.sendSupplement(id, pathText);
       // debugger;
     }
@@ -339,7 +348,7 @@ function findSelfReferences(fromNode: Node) {
     .findReferencesAsNodes()
     .map((r) => [r, getDeclarationAncestor(r)] as const);
 
-  console.log(refs.map((x) => nodeToLineText(x[0])));
+  // console.log(refs.map((x) => nodeToLineText(x[0])));
 
   for (const ref of refs) {
     const path = IndirectReferencePath(parent, [ref]);
@@ -353,6 +362,20 @@ function findSelfReferences(fromNode: Node) {
 function nodeToLineText(n: Node) {
   const line = n.getStartLineNumber();
   return `${line}: ${n.getSourceFile().getFullText().split('\n')[line - 1]}`;
+}
+
+function checkEmptyObject(project: Project) {
+  const kinds = [SyntaxKind.VariableDeclaration
+  , SyntaxKind.FunctionDeclaration
+  , SyntaxKind.TypeAliasDeclaration];
+  project.getSourceFiles().forEach((file) => {
+    const typeEmptyObject = file.getDescendants().filter((node) => {
+      if ( !kinds.includes(node.getKind())) { return false };
+      const type = Node.isFunctionDeclaration(node) ? node.getReturnType() : node.getType();
+      return type.isObject() && type.getApparentProperties().length === 0 && node.getKind() !== SyntaxKind.MappedType;
+    });
+    console.log(typeEmptyObject.map(nodeToLineText));
+  });
 }
 
 // potential workaround for not having code specific ts-expect-error
@@ -392,3 +415,24 @@ function checkIgnoreTSC(project: Project) {
   });
 }
 
+function allCircularRefs(project: Project) {
+  project.getSourceFiles().forEach((file) => {
+    file
+      .getDescendants()
+      .filter((node) => node.getKind() === SyntaxKind.ReturnStatement) //!declarationKinds.includes(node.getKind()))
+      .forEach((fromNode) => {
+        console.log({ filePath: file.getFilePath() });
+        const path = findSelfReferences(fromNode);
+        if (path) {
+          const pathText = path.reverse().map(([x]) => nodeToLineText(x));
+          // .join('\n');
+          console.log(
+            fromNode.getStartLineNumber(),
+            fromNode.getText(),
+            fromNode.getKindName(),
+            pathText
+          );
+        }
+      });
+  });
+}
