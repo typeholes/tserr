@@ -10,15 +10,15 @@ import {
   TypeNode,
   SyntaxKind,
 } from 'ts-morph';
-import { parseError, errorTypes, ParsedError } from './parseError.js';
+import { parseError } from './parseError.js';
 import { FunctionDeclaration } from 'ts-morph';
 import { TypeAliasDeclaration } from 'ts-morph';
 import { MethodDeclaration } from 'ts-morph';
 import { ClassDeclaration } from 'ts-morph';
 import { type ErrorServer } from './server.js';
 import { group } from './util.js';
-import { Err, FlatErr, flattenErr, traverseErr } from './Err.js';
-import { fileURLToPath } from 'url';
+import { Err, FlatErr, flattenErr } from './Err.js';
+import { kindHandlers, onNodeKind } from './kindHandler.js';
 
 type Declaration =
   | VariableDeclaration
@@ -58,25 +58,16 @@ function openProject() {
     },
     tsConfigFilePath,
   });
-  // console.log({ tsConfigFilePath });
-
-  // allCircularRefs(project);
-
-  checkEmptyObject(project);
-
-  process.exit();
 }
 
 function processFileEvents(events: [string, string][]) {
   if (!project) {
     openProject();
-
-    // checkIgnoreTSC(project!);
   }
 
   const promises = events.map(
     (e) =>
-      project?.getSourceFile(e[1])?.refreshFromFileSystem ??
+      project?.getSourceFile(e[1])?.refreshFromFileSystem() ??
       Promise.resolve(undefined)
   );
   Promise.all(promises).then(() => {
@@ -100,6 +91,10 @@ function processFileEvents(events: [string, string][]) {
       }
       server?.sendResolvedError(fileName, payload);
     }
+
+    project.getSourceFiles().forEach((file) => {
+      file.getDescendants().forEach((node) => onNodeKind(kindHandlers, node));
+    });
   });
 }
 
@@ -365,14 +360,24 @@ function nodeToLineText(n: Node) {
 }
 
 function checkEmptyObject(project: Project) {
-  const kinds = [SyntaxKind.VariableDeclaration
-  , SyntaxKind.FunctionDeclaration
-  , SyntaxKind.TypeAliasDeclaration];
+  const kinds = [
+    SyntaxKind.VariableDeclaration,
+    SyntaxKind.FunctionDeclaration,
+    SyntaxKind.TypeAliasDeclaration,
+  ];
   project.getSourceFiles().forEach((file) => {
     const typeEmptyObject = file.getDescendants().filter((node) => {
-      if ( !kinds.includes(node.getKind())) { return false };
-      const type = Node.isFunctionDeclaration(node) ? node.getReturnType() : node.getType();
-      return type.isObject() && type.getApparentProperties().length === 0 && node.getKind() !== SyntaxKind.MappedType;
+      if (!kinds.includes(node.getKind())) {
+        return false;
+      }
+      const type = Node.isFunctionDeclaration(node)
+        ? node.getReturnType()
+        : node.getType();
+      return (
+        type.isObject() &&
+        type.getApparentProperties().length === 0 &&
+        node.getKind() !== SyntaxKind.MappedType
+      );
     });
     console.log(typeEmptyObject.map(nodeToLineText));
   });
@@ -412,27 +417,5 @@ function checkIgnoreTSC(project: Project) {
         replacedWith.replaceWithText(holdText);
       }
     });
-  });
-}
-
-function allCircularRefs(project: Project) {
-  project.getSourceFiles().forEach((file) => {
-    file
-      .getDescendants()
-      .filter((node) => node.getKind() === SyntaxKind.ReturnStatement) //!declarationKinds.includes(node.getKind()))
-      .forEach((fromNode) => {
-        console.log({ filePath: file.getFilePath() });
-        const path = findSelfReferences(fromNode);
-        if (path) {
-          const pathText = path.reverse().map(([x]) => nodeToLineText(x));
-          // .join('\n');
-          console.log(
-            fromNode.getStartLineNumber(),
-            fromNode.getText(),
-            fromNode.getKindName(),
-            pathText
-          );
-        }
-      });
   });
 }
