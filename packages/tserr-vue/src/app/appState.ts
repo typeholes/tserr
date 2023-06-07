@@ -75,7 +75,8 @@ function handleResolvedError(filename: FileName, resolved: [unknown][]) {
 }
 
 function handleResetResolvedErrors() {
-  appState.resolvedErrors = new Map()
+  appState.resolvedErrors = new Map();
+  appState.supplements = [];
 }
 
 function handleSupplement(id: number, supplement: string) {
