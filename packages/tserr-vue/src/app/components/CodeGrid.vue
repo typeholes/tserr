@@ -30,7 +30,7 @@ function setCompare(x: string | undefined) {
     <template v-for="entry of props.blocks" :key="entryObject">
       <div class="codeColumn" v-if="entry[0] !== props.headerKey">
         <div>{{ entry[0] }}</div>
-        <CodeBlock :code="entry[1]" :registerHtml="setCompare" />
+        <CodeBlock :code="entry[1]" :registerHtml="['from','to'].includes(entry[0]) ? setCompare : ()=>{}" />
       </div>
     </template>
     <div class="diff">

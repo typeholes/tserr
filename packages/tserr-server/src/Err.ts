@@ -1,6 +1,7 @@
 import { ParsedError } from './parseError';
 
 export type Err = {
+  code: number;
    line: number;
    start: number;
    lines: string[];
@@ -9,17 +10,20 @@ export type Err = {
 }[];
 
 export type FlatErr = {
+  code: number;
    line: number;
    start: number;
    lines: string[];
+   codes: number[];
    parsed: [id: number, depth: number, parsed: ParsedError][];
 };
 
 let parsedId = 0;
 function _flattenErr(e: Err[0]): FlatErr {
    const parsed: [id: number, depth: number, parsed: ParsedError][] = [];
-
+   const codes : number[] =[];
    function go(e: Err[0], depth: number) {
+      codes.push(e.code);
       const add: [id: number, depth: number, parsed: ParsedError][] =
          e.parsed.map((p) => [parsedId++, depth, p]);
       parsed.push(...add);
@@ -28,7 +32,7 @@ function _flattenErr(e: Err[0]): FlatErr {
 
    go(e, 0);
 
-   const ret: FlatErr = { ...e, parsed: parsed };
+   const ret: FlatErr = { ...e, parsed: parsed, codes };
 
    return ret;
 }

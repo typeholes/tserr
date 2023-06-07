@@ -86,7 +86,7 @@ function processFileEvents(events: [string, string][]) {
         const resolved = handleError(diagnostic, fileName);
         if (resolved) {
           // console.log(resolved);
-          payload.push(resolved);
+          payload.push(...resolved);
         }
       }
       server?.sendResolvedError(fileName, payload);
@@ -98,23 +98,20 @@ function processFileEvents(events: [string, string][]) {
   });
 }
 
-function handleError(
-  diagnostic: Diagnostic,
-  fileName: string
-): FlatErr | undefined {
+function handleError(diagnostic: Diagnostic, fileName: string): FlatErr[] {
   const sourceFile = diagnostic.getSourceFile();
   if (sourceFile === undefined) {
-    return;
+    return [];
   }
 
   const pos = diagnostic.getStart();
   if (pos === undefined) {
-    return;
+    return [];
   }
 
   const fromNode = getDeepestNode(sourceFile, pos);
   if (fromNode === undefined) {
-    return;
+    return [];
   }
 
   const fromType = unaliasType(fromNode.getType());
@@ -144,10 +141,13 @@ function handleError(
   // }
 }
 
-function resolveError(fromNode: Node, err: Err): FlatErr {
-  const flat = flattenErr(err);
-  flat.parsed.forEach((p) => createSupplement(p, fromNode));
-  return flat;
+function resolveError(fromNode: Node, err: Err): FlatErr[] {
+  const flattened = flattenErr(err);
+  const refined = refineErrror(flattened);
+  refined.forEach((flat) =>
+    flat.parsed.forEach((p) => createSupplement(p, fromNode))
+  );
+  return refined;
 }
 
 function createSupplement(e: FlatErr['parsed'][number], fromNode: Node) {
@@ -262,6 +262,7 @@ function unaliasType(type: Type): Type | TypeNode {
 }
 
 function diagnosticToErr(diagnostic: Diagnostic): Err {
+  const code = diagnostic.getCode();
   const line = diagnostic.getLineNumber() ?? 0;
 
   const start = diagnostic.getStart() ?? 0;
@@ -270,7 +271,7 @@ function diagnosticToErr(diagnostic: Diagnostic): Err {
   if (typeof message === 'string') {
     const lines = message.split('\n');
     const parsed = lines.map(parseError);
-    return [{ line, start, lines, parsed, children: [] }];
+    return [{ code, line, start, lines, parsed, children: [] }];
   }
 
   return DiagnosticMessageChainToErr(message, line, start);
@@ -284,13 +285,14 @@ function DiagnosticMessageChainToErr(
   if (chain === undefined) {
     return [];
   }
+  const code = chain.getCode();
   const lines = chain.getMessageText().split('\n');
   const parsed = lines.map(parseError);
   const next = chain.getNext() ?? [];
   const children = next
     .map((c) => DiagnosticMessageChainToErr(c, line, start))
     .flat();
-  return [{ line, start, lines, parsed, children }];
+  return [{ code, line, start, lines, parsed, children }];
 }
 
 function getDeclarationAncestor(n: Node | undefined) {
@@ -418,4 +420,45 @@ function checkIgnoreTSC(project: Project) {
       }
     });
   });
+}
+
+function refineErrror(err: FlatErr): FlatErr[] {
+  const ret: FlatErr[] = [{...err, lines: [], parsed: [], codes:[]}];
+    let supplement: string | undefined = undefined;
+    while (err.parsed.length > 0) {
+      const code = err.codes.shift() ?? 0;
+      console.log('code: ', code);
+      const line = err.lines.shift() ?? '';
+      const parsed = err.parsed.shift()!;
+      if (
+        parsed[2].type === 'notAssignable' &&
+        err.parsed.length > 0 &&
+        err.parsed[0][2].type === 'excessProperty'
+      ) {
+        /* prune the not assignable error */
+      }
+      else if (code === 2769) {
+        /* prune no overloads match error */
+      } else if (code === 2772) {
+        supplement = JSON.stringify(parsed[2], null, 2);
+        ret.push({
+          ...err,
+          code: code,
+          lines: [],
+          parsed: [],
+          codes: [],
+        });
+      } else {
+        const top = ret[ret.length - 1];
+        top.codes.push(code);
+        top.lines.push(line);
+        top.parsed.push(parsed);
+        if (supplement !== undefined) {
+          server?.sendSupplement(parsed[0], supplement);
+          supplement = undefined;
+        }
+      }
+    }
+
+  return ret;
 }

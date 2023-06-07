@@ -21,6 +21,15 @@ const _resolvedError = scope({
       // path: type(['string', 'string'])
     },
   ],
+  excessProperty: [
+    'number',
+    'number',
+    {
+      type: "'excessProperty'",
+      key: "string",
+      to: "string",
+    },
+  ],
   unknownError: [
     'number',
     'number',

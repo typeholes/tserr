@@ -72,5 +72,5 @@ export const kindHandlers: KindHandlers = Object.fromEntries(
 kindHandlers.FunctionDeclaration.push(checkEmptyObjectTypes);
 kindHandlers.VariableDeclaration.push(checkEmptyObjectTypes);
 kindHandlers.TypeAliasDeclaration.push(checkEmptyObjectTypes);
-kindHandlers.AsExpression.push(checkTscIgnore);
+// kindHandlers.AsExpression.push(checkTscIgnore);
 

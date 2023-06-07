@@ -10,3 +10,16 @@ function over(o: { a?: 1; b?: 2 }) {
 }
 
 over({a:1, c: 2})
+
+
+type Deep = {
+  a: {
+      b: {
+        c: {
+          d: 1
+        }
+      }
+  }
+}
+
+const deep: Deep  = {a: {b: {c: {d: 1, e: 2} } } };

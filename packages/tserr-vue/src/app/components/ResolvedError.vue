@@ -1,5 +1,4 @@
 <script setup lang="ts">
-// import CodeBlock from './CodeBlock.vue';
 import CodeGrid from './CodeGrid.vue';
 import type { ResolvedError } from '../resolvedError';
 import { appState } from '../appState';
@@ -33,7 +32,7 @@ function unknownPartsToBlock(parts: string[]) {
     <span v-if="props.parsed[2].type === 'aliasSelfReference'">
       {{ props.parsed[2].from }}
     </span>
-    <div v-if="props.parsed[2].type === 'notAssignable'">
+    <div v-if="['notAssignable','excessProperty'].includes(props.parsed[2].type)">
       <CodeGrid :blocks="Object.entries(props.parsed[2])" header-key="type" />
     </div>
     <div v-if="props.parsed[2].type === 'unknownError'">

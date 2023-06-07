@@ -29,7 +29,19 @@ export const errorTypes = scope({
     type: "'aliasSelfReference'",
     from: 'string',
   },
-  parsedError: 'unknownError|notAssignable|selfReference|aliasSelfReference',
+  excessProperty: {
+    type: "'excessProperty'",
+    key: 'string',
+    to: 'string',
+  },
+  overloadPiece: {
+    type: "'overloadPiece'",
+    idx: 'number',
+    length: 'number',
+    signature: 'string',
+  },
+  parsedError:
+    'unknownError|notAssignable|selfReference|aliasSelfReference|excessProperty|overloadPiece',
 }).compile();
 
 export type ParsedError = typeof errorTypes.parsedError.infer;
@@ -67,6 +79,20 @@ export function parseError(err: string): ParsedError {
       type: 'aliasSelfReference',
       from: parts[1],
     };
+  } else if (parts.length === 3 && parts[0].startsWith('Overload ')) {
+    const overloadParts = parts[0].split(' ');
+    const idx = Number.parseInt(overloadParts[1]) ?? -1;
+    const length = Number.parseInt(overloadParts[3]) ?? -1;
+    return { type: 'overloadPiece', idx, length, signature: parts[1] };
+  } else if (
+    parts.length === 5 &&
+    parts[0] === 'Object literal may only specify known properties, and'
+  ) {
+    return {
+      type: "excessProperty",
+      key: parts[1],
+      to: parts[3],
+    }
   } else {
     return {
       type: 'unknownError',
