@@ -1,6 +1,6 @@
-import { reactive } from 'vue'
+import { reactive } from 'vue';
 // import {} from '@/socket'
-import { deserialize } from './resolvedError'
+import { deserialize } from './resolvedError';
 
 export const socketHandlers = {
   connect: () => (appState.connected = true),
@@ -9,22 +9,23 @@ export const socketHandlers = {
   diagnostics: handleDiagnostic,
   resolvedError: handleResolvedError,
   resetResolvedErrors: handleResetResolvedErrors,
-  supplement: handleSupplement
-}
+  supplement: handleSupplement,
+  fixes: handleFixes,
+};
 
-type FileName = string
+type FileName = string;
 
 export type Diagnostic = {
-  message: string
+  message: string;
   start: {
-    line: number
-    character: number
-  }
+    line: number;
+    character: number;
+  };
   end: {
-    line: number
-    character: number
-  }
-}
+    line: number;
+    character: number;
+  };
+};
 
 export const appState = reactive({
   connected: false,
@@ -39,48 +40,59 @@ export const appState = reactive({
   >(),
   diagnostics: new Map<FileName, Diagnostic[]>(),
   resolvedErrors: new Map<FileName, ReturnType<typeof deserialize>>(),
-  supplements: {} as Record<number, string>
-})
+  supplements: {} as Record<number, string>,
+  fixes: {} as Record<number, [fixId: number, fixDescription: string][]>,
+});
 
 function handleRequestError(requestId: number, ...args: any[]) {
-  const request = appState.requests.get(requestId)
+  const request = appState.requests.get(requestId);
   if (!request) {
-    unknownRequest(requestId)
-    return
+    unknownRequest(requestId);
+    return;
   }
-  request.reject(...args)
-  appState.requests.delete(requestId)
-  appState.error = `${appState.error} - request ${requestId} failed`
+  request.reject(...args);
+  appState.requests.delete(requestId);
+  appState.error = `${appState.error} - request ${requestId} failed`;
 }
 
 function handleRequestSuccess(requestId: number, ...args: any[]) {
-  const request = appState.requests.get(requestId)
+  const request = appState.requests.get(requestId);
   if (!request) {
-    unknownRequest(requestId)
-    return
+    unknownRequest(requestId);
+    return;
   }
-  request.resolve(...args)
-  appState.requests.delete(requestId)
+  request.resolve(...args);
+  appState.requests.delete(requestId);
 }
 
 export const unknownRequest = (requestId: any) =>
-  (appState.error = `request id not found ${requestId}`)
+  (appState.error = `request id not found ${requestId}`);
 
 function handleDiagnostic(fileName: FileName, diagnostics: Diagnostic[]) {
-  appState.diagnostics.set(fileName, diagnostics)
+  appState.diagnostics.set(fileName, diagnostics);
 }
 
 function handleResolvedError(filename: FileName, resolved: [unknown][]) {
-  appState.resolvedErrors.set(filename, deserialize(resolved))
+  appState.resolvedErrors.set(filename, deserialize(resolved));
 }
 
 function handleResetResolvedErrors() {
   appState.resolvedErrors = new Map();
   appState.supplements = [];
+  appState.fixes = {};
 }
 
 function handleSupplement(id: number, supplement: string) {
-  appState.supplements[id] = supplement
+  appState.supplements[id] = supplement;
+}
+
+function handleFixes(
+  fixes: Record<number, [fixId: number, fixDescription: string][]>
+) {
+  for (const parseId in fixes) {
+    appState.fixes[parseId] ??= [];
+    appState.fixes[parseId].push(...fixes[parseId]);
+  }
 }
 
 // const ignoredCommands = [

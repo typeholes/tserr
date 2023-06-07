@@ -85,8 +85,24 @@ export function startServer(basePath: string) {
     gotoDefinition = callback;
   }
 
+  let fixFunctions: Record<number, () => void> = {};
   function sendResetResolvedErrors() {
     io.emit('resetResolvedErrors');
+    fixFunctions = {};
+  }
+
+  function sendFixes(
+    fixesRec: Record<
+      number,
+      [fixId: number, fixDescription: string, fn: () => void][]
+    >
+  ) {
+    for (const fixes of Object.values(fixesRec)) {
+      for (const fix of fixes) {
+        fixFunctions[fix[0]] = fix[2];
+      }
+    }
+    io.emit('fixes', fixesRec);
   }
 
   // let idx = 0;
@@ -104,5 +120,6 @@ export function startServer(basePath: string) {
     sendResolvedError: sendResolvedErrors,
     sendResetResolvedErrors,
     sendSupplement,
+    sendFixes,
   };
 }

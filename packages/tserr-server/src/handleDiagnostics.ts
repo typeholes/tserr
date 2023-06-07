@@ -145,9 +145,37 @@ function resolveError(fromNode: Node, err: Err): FlatErr[] {
   const flattened = flattenErr(err);
   const refined = refineErrror(flattened);
   refined.forEach((flat) =>
-    flat.parsed.forEach((p) => createSupplement(p, fromNode))
+    flat.parsed.forEach((p) => {
+      createSupplement(p, fromNode);
+      createFixes(p, fromNode);
+    })
   );
   return refined;
+}
+
+let maxFixId = 0;
+function createFixes(e: FlatErr['parsed'][number], fromNode: Node) {
+  const fixes: [fixId: number, fixDescription: string, fixFn: () => void][] =
+    [];
+  const id = e[0];
+  const parsed = e[2];
+  if (parsed.type === 'excessProperty') {
+    fixes.push([
+      maxFixId++,
+      `remove property ${parsed.key}`,
+      () => {
+        console.log('test fix - remove property');
+      },
+    ]);
+    fixes.push([
+      maxFixId++,
+      'add cast',
+      () => {
+        console.log('test fix - add cast');
+      },
+    ]);
+  }
+  server?.sendFixes({ [id]: fixes });
 }
 
 function createSupplement(e: FlatErr['parsed'][number], fromNode: Node) {
@@ -423,42 +451,41 @@ function checkIgnoreTSC(project: Project) {
 }
 
 function refineErrror(err: FlatErr): FlatErr[] {
-  const ret: FlatErr[] = [{...err, lines: [], parsed: [], codes:[]}];
-    let supplement: string | undefined = undefined;
-    while (err.parsed.length > 0) {
-      const code = err.codes.shift() ?? 0;
-      console.log('code: ', code);
-      const line = err.lines.shift() ?? '';
-      const parsed = err.parsed.shift()!;
-      if (
-        parsed[2].type === 'notAssignable' &&
-        err.parsed.length > 0 &&
-        err.parsed[0][2].type === 'excessProperty'
-      ) {
-        /* prune the not assignable error */
-      }
-      else if (code === 2769) {
-        /* prune no overloads match error */
-      } else if (code === 2772) {
-        supplement = JSON.stringify(parsed[2], null, 2);
-        ret.push({
-          ...err,
-          code: code,
-          lines: [],
-          parsed: [],
-          codes: [],
-        });
-      } else {
-        const top = ret[ret.length - 1];
-        top.codes.push(code);
-        top.lines.push(line);
-        top.parsed.push(parsed);
-        if (supplement !== undefined) {
-          server?.sendSupplement(parsed[0], supplement);
-          supplement = undefined;
-        }
+  const ret: FlatErr[] = [{ ...err, lines: [], parsed: [], codes: [] }];
+  let supplement: string | undefined = undefined;
+  while (err.parsed.length > 0) {
+    const code = err.codes.shift() ?? 0;
+    console.log('code: ', code);
+    const line = err.lines.shift() ?? '';
+    const parsed = err.parsed.shift()!;
+    if (
+      parsed[2].type === 'notAssignable' &&
+      err.parsed.length > 0 &&
+      err.parsed[0][2].type === 'excessProperty'
+    ) {
+      /* prune the not assignable error */
+    } else if (code === 2769) {
+      /* prune no overloads match error */
+    } else if (code === 2772) {
+      supplement = JSON.stringify(parsed[2], null, 2);
+      ret.push({
+        ...err,
+        code: code,
+        lines: [],
+        parsed: [],
+        codes: [],
+      });
+    } else {
+      const top = ret[ret.length - 1];
+      top.codes.push(code);
+      top.lines.push(line);
+      top.parsed.push(parsed);
+      if (supplement !== undefined) {
+        server?.sendSupplement(parsed[0], supplement);
+        supplement = undefined;
       }
     }
+  }
 
   return ret;
 }

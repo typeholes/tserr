@@ -42,6 +42,13 @@ function unknownPartsToBlock(parts: string[]) {
       />
     </div>
     <pre> {{ appState.supplements[props.parsed[0]] }} </pre>
+    <div class="fixes">
+      <template v-for="fix of appState.fixes[props.parsed[0]]" :key="fix">
+          <button>
+          {{ fix[1] }}
+          </button>
+      </template>
+    </div>
   </div>
 </template>
 
@@ -49,5 +56,17 @@ function unknownPartsToBlock(parts: string[]) {
 .row {
   display: flex;
   gap: 0.24rem;
+}
+
+button {
+  background-color: rgb(5, 48, 24);
+  color: white;
+  box-shadow: .1rem .1rem .2rem rgb(9, 93, 47);;
+}
+
+.fixes {
+  display:flex;
+  flex-direction: column;
+  gap: .2rem
 }
 </style>
