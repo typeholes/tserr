@@ -1,29 +1,37 @@
-import { Socket, io } from 'socket.io-client'
-import { socketHandlers, appState } from './appState'
+import { Socket, io } from 'socket.io-client';
+import { socketHandlers, appState } from './appState';
 
-let socket: Socket
+let socket: Socket;
+
+export type Emitters = ReturnType<typeof startSocket>;
 
 export function startSocket() {
-  const URL = 'http://localhost:3000'
+  const URL = 'http://localhost:3000';
 
-  socket = io(URL, { autoConnect: false })
+  socket = io(URL, { autoConnect: false });
 
-  socket.onAny((event, ...args) => {  
+  socket.onAny((event, ...args) => {
     console.log(event, args);
-});
+  });
 
-  appState.socketStarted = true
+  appState.socketStarted = true;
 
   for (const event in socketHandlers) {
-    socket.on(event, socketHandlers[event as never])
+    socket.on(event, socketHandlers[event as never]);
   }
 
-  socket.connect()
+  socket.connect();
 
-  console.log('socket started')
+  console.log('socket started');
+
+  return {
+    applyFix: (fixId: number) => {
+      socket.emit('applyFix', fixId)
+    },
+  };
 }
 
-let requestId = 0
+let requestId = 0;
 
 export function emit(
   event: string,
@@ -32,13 +40,13 @@ export function emit(
   ...args: any[]
 ) {
   if (!socket) {
-    appState.error = 'Socket not started'
-    return
+    appState.error = 'Socket not started';
+    return;
   }
-  requestId++
-  socket.emit(event, requestId, ...args)
+  requestId++;
+  socket.emit(event, requestId, ...args);
   appState.requests.set(requestId, {
     resolve: (...args: any[]) => onSucces(requestId, args),
-    reject: (...args: any[]) => onError(requestId, args)
-  })
+    reject: (...args: any[]) => onError(requestId, args),
+  });
 }

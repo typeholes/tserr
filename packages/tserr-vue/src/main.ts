@@ -12,9 +12,12 @@ shiki
   .then((highlighter) => {
     const app = createApp(App)
 
-    app.use({ install: (app) => app.provide('highlighter', highlighter) })
+    const emitters = startSocket()
+    app.use({ install: (app) => {
+       app.provide('highlighter', highlighter)
+       app.provide('emitters', emitters);
+  }})
 
     app.mount('#app')
 
-    startSocket()
   })

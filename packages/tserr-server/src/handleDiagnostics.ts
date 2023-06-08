@@ -159,21 +159,40 @@ function createFixes(e: FlatErr['parsed'][number], fromNode: Node) {
     [];
   const id = e[0];
   const parsed = e[2];
+
+  const sourceFile = fromNode.getSourceFile();
+
   if (parsed.type === 'excessProperty') {
-    fixes.push([
-      maxFixId++,
-      `remove property ${parsed.key}`,
-      () => {
-        console.log('test fix - remove property');
-      },
-    ]);
-    fixes.push([
-      maxFixId++,
-      'add cast',
-      () => {
-        console.log('test fix - add cast');
-      },
-    ]);
+    if (fromNode.getText() === parsed.key) {
+      const parent = fromNode.getParentIfKind(SyntaxKind.PropertyAssignment);
+      if (parent) {
+        const fixNode=parent;
+        fixes.push([
+          maxFixId++,
+          `remove property ${parsed.key}`,
+          () => {
+            console.log('removing property assignment ${parsed.key}');
+            fixNode.remove();
+            sourceFile.saveSync();
+          },
+        ]);
+        const objectLiteral = parent.getParentIfKind(
+          SyntaxKind.ObjectLiteralExpression
+        );
+        if (objectLiteral) {
+          const fixNode = objectLiteral;
+          fixes.push([
+            maxFixId++,
+            'add cast',
+            () => {
+              fixNode.replaceWithText(objectLiteral.getFullText() + ' as ' + parsed.to)
+              sourceFile.save();
+            },
+
+          ]);
+        }
+      }
+    }
   }
   server?.sendFixes({ [id]: fixes });
 }

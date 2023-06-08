@@ -61,6 +61,8 @@ export function startServer(basePath: string) {
         gotoDefinition(filename, text, diagnostic);
       }
     );
+    socket.on('applyFix', (fixId: number) =>
+    fixFunctions[fixId]());
   });
 
   server.listen(3000, () => {

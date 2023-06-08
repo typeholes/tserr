@@ -2,6 +2,8 @@
 import CodeGrid from './CodeGrid.vue';
 import type { ResolvedError } from '../resolvedError';
 import { appState } from '../appState';
+import { inject } from 'vue';
+import { Emitters } from '../socket';
 
 const props = defineProps<{
   parsed: ResolvedError;
@@ -10,6 +12,8 @@ const props = defineProps<{
 function getOrder() {
   return (props.parsed as any).getOrder();
 }
+
+const emitters = inject<Emitters>('emitters');
 
 function unknownPartsToBlock(parts: string[]) {
   const evens = parts.filter((_, i) => i % 2 === 0);
@@ -44,7 +48,7 @@ function unknownPartsToBlock(parts: string[]) {
     <pre> {{ appState.supplements[props.parsed[0]] }} </pre>
     <div class="fixes">
       <template v-for="fix of appState.fixes[props.parsed[0]]" :key="fix">
-          <button>
+          <button @click="emitters?.applyFix(fix[0])">
           {{ fix[1] }}
           </button>
       </template>

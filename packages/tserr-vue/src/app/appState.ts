@@ -13,6 +13,7 @@ export const socketHandlers = {
   fixes: handleFixes,
 };
 
+
 type FileName = string;
 
 export type Diagnostic = {
