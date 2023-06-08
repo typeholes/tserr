@@ -16,7 +16,8 @@
     "baseUrl": ".",
     "paths": {
       "@typeholes/tserr-common": ["packages/tserr-common/src/index.ts"]
-    }
+    },
+    "noErrorTruncation": true
   },
   "exclude": ["node_modules", "tmp"]
 }

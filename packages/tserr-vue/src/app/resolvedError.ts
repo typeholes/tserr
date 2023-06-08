@@ -26,8 +26,8 @@ const _resolvedError = scope({
     'number',
     {
       type: "'excessProperty'",
-      key: "string",
-      to: "string",
+      key: 'string',
+      to: 'string',
     },
   ],
   unknownError: [

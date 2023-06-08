@@ -5,7 +5,7 @@ import diff from 'html-diff-ts';
 
 const props = defineProps<{
   blocks: [label: string, code: string][];
-  headerKey: string;
+  headerKey?: string;
 }>();
 
 const compares = reactive({

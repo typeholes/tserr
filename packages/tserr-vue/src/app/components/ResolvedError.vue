@@ -4,6 +4,7 @@ import type { ResolvedError } from '../resolvedError';
 import { appState } from '../appState';
 import { inject } from 'vue';
 import { Emitters } from '../socket';
+import DisplaySupplement from './DisplaySupplement.vue';
 
 const props = defineProps<{
   parsed: ResolvedError;
@@ -18,7 +19,7 @@ const emitters = inject<Emitters>('emitters');
 function unknownPartsToBlock(parts: string[]) {
   const evens = parts.filter((_, i) => i % 2 === 0);
   const blocks = evens.map((k, i) => {
-    const entry = [k, parts[(i*2) + 1]] as [string, string];
+    const entry = [k, parts[i * 2 + 1]] as [string, string];
     return entry;
   });
   return blocks;
@@ -36,7 +37,9 @@ function unknownPartsToBlock(parts: string[]) {
     <span v-if="props.parsed[2].type === 'aliasSelfReference'">
       {{ props.parsed[2].from }}
     </span>
-    <div v-if="['notAssignable','excessProperty'].includes(props.parsed[2].type)">
+    <div
+      v-if="['notAssignable', 'excessProperty'].includes(props.parsed[2].type)"
+    >
       <CodeGrid :blocks="Object.entries(props.parsed[2])" header-key="type" />
     </div>
     <div v-if="props.parsed[2].type === 'unknownError'">
@@ -45,12 +48,18 @@ function unknownPartsToBlock(parts: string[]) {
         header-key=""
       />
     </div>
-    <pre> {{ appState.supplements[props.parsed[0]] }} </pre>
+    <div
+      class="supplements"
+      v-for="text in appState.supplements[props.parsed[0]]"
+      :key="text"
+    >
+      <DisplaySupplement :text="text" />
+    </div>
     <div class="fixes">
       <template v-for="fix of appState.fixes[props.parsed[0]]" :key="fix">
-          <button @click="emitters?.applyFix(fix[0])">
+        <button @click="emitters?.applyFix(fix[0])">
           {{ fix[1] }}
-          </button>
+        </button>
       </template>
     </div>
   </div>
@@ -65,12 +74,17 @@ function unknownPartsToBlock(parts: string[]) {
 button {
   background-color: rgb(5, 48, 24);
   color: white;
-  box-shadow: .1rem .1rem .2rem rgb(9, 93, 47);;
+  box-shadow: 0.1rem 0.1rem 0.2rem rgb(9, 93, 47);
 }
 
-.fixes {
-  display:flex;
+.supplements {
+  display: flex;
   flex-direction: column;
-  gap: .2rem
+  gap: 0.2rem;
+}
+.fixes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
 }
 </style>

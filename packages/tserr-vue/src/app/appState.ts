@@ -41,7 +41,7 @@ export const appState = reactive({
   >(),
   diagnostics: new Map<FileName, Diagnostic[]>(),
   resolvedErrors: new Map<FileName, ReturnType<typeof deserialize>>(),
-  supplements: {} as Record<number, string>,
+  supplements: {} as Record<number, string[]>,
   fixes: {} as Record<number, [fixId: number, fixDescription: string][]>,
 });
 
@@ -84,7 +84,8 @@ function handleResetResolvedErrors() {
 }
 
 function handleSupplement(id: number, supplement: string) {
-  appState.supplements[id] = supplement;
+  appState.supplements[id] ??= [];
+  appState.supplements[id].push( supplement);
 }
 
 function handleFixes(

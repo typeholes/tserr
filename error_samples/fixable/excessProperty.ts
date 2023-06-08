@@ -1,7 +1,7 @@
 const t: { a: 1 } = { a: 1, b: 2 };
 
 // not an excess property check so the fix should not show
-// const n: number = 's';
+const n: number = 's';
 
 function over(o: { a: { oops: { c: 2 } } }): number;
 function over(o: { b: 2 }): number;

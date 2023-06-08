@@ -1,0 +1,3 @@
+all diagnostic messages can be found here 
+https://github.com/microsoft/TypeScript/blob/main/src/compiler/diagnosticMessages.json
+

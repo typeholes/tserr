@@ -143,7 +143,7 @@ function handleError(diagnostic: Diagnostic, fileName: string): FlatErr[] {
 
 function resolveError(fromNode: Node, err: Err): FlatErr[] {
   const flattened = flattenErr(err);
-  const refined = refineErrror(flattened);
+  const refined = refineErrror(flattened, fromNode);
   refined.forEach((flat) =>
     flat.parsed.forEach((p) => {
       createSupplement(p, fromNode);
@@ -166,7 +166,7 @@ function createFixes(e: FlatErr['parsed'][number], fromNode: Node) {
     if (fromNode.getText() === parsed.key) {
       const parent = fromNode.getParentIfKind(SyntaxKind.PropertyAssignment);
       if (parent) {
-        const fixNode=parent;
+        const fixNode = parent;
         fixes.push([
           maxFixId++,
           `remove property ${parsed.key}`,
@@ -185,10 +185,11 @@ function createFixes(e: FlatErr['parsed'][number], fromNode: Node) {
             maxFixId++,
             'add cast',
             () => {
-              fixNode.replaceWithText(objectLiteral.getFullText() + ' as ' + parsed.to)
+              fixNode.replaceWithText(
+                objectLiteral.getFullText() + ' as ' + parsed.to
+              );
               sourceFile.save();
             },
-
           ]);
         }
       }
@@ -469,7 +470,7 @@ function checkIgnoreTSC(project: Project) {
   });
 }
 
-function refineErrror(err: FlatErr): FlatErr[] {
+function refineErrror(err: FlatErr, fromNode: Node): FlatErr[] {
   const ret: FlatErr[] = [{ ...err, lines: [], parsed: [], codes: [] }];
   let supplement: string | undefined = undefined;
   while (err.parsed.length > 0) {
@@ -486,7 +487,11 @@ function refineErrror(err: FlatErr): FlatErr[] {
     } else if (code === 2769) {
       /* prune no overloads match error */
     } else if (code === 2772) {
-      supplement = JSON.stringify(parsed[2], null, 2);
+      const call = Node.is(SyntaxKind.CallExpression)(fromNode)
+        ? fromNode
+        : fromNode.getFirstAncestorByKind(SyntaxKind.CallExpression);
+      const functionName = call?.getChildAtIndex(0).getText() ?? 'unknownFunction';
+      supplement = JSON.stringify({ ...parsed[2], functionName }, null, 2);
       ret.push({
         ...err,
         code: code,
