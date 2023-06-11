@@ -1,6 +1,7 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vite';
+import { PluginOption, defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
+import { visualizer } from 'rollup-plugin-visualizer';
 
 import viteTsConfigPaths from 'vite-tsconfig-paths';
 
@@ -22,12 +23,13 @@ export default defineConfig({
       root: '../../',
     }),
     vue(),
+    visualizer() ,
   ],
 
   resolve: {
     alias: {
       vue: 'vue/dist/vue.esm-bundler.js',
-    }
+    },
   },
 
   // Uncomment this if you are using workers.
