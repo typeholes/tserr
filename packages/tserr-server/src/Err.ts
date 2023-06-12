@@ -10,7 +10,7 @@ export type Err = {
 }[];
 
 export type FlatErr = {
-  code: number;
+  code: string;
    line: number;
    start: number;
    lines: string[];
@@ -32,7 +32,7 @@ function _flattenErr(e: Err[0]): FlatErr {
 
    go(e, 0);
 
-   const ret: FlatErr = { ...e, parsed: parsed, codes };
+   const ret: FlatErr = { ...e, code: e.code.toString(), parsed: parsed, codes };
 
    return ret;
 }

@@ -11,8 +11,7 @@ import {
   SyntaxKind,
 } from 'ts-morph';
 import { parseError } from './parseError.js';
-import { FunctionDeclaration } from 'ts-morph';
-import { TypeAliasDeclaration } from 'ts-morph';
+import { FunctionDeclaration, TypeAliasDeclaration } from 'ts-morph';
 import { MethodDeclaration } from 'ts-morph';
 import { ClassDeclaration } from 'ts-morph';
 import { type ErrorServer } from './server.js';
@@ -490,11 +489,12 @@ function refineErrror(err: FlatErr, fromNode: Node): FlatErr[] {
       const call = Node.is(SyntaxKind.CallExpression)(fromNode)
         ? fromNode
         : fromNode.getFirstAncestorByKind(SyntaxKind.CallExpression);
-      const functionName = call?.getChildAtIndex(0).getText() ?? 'unknownFunction';
+      const functionName =
+        call?.getChildAtIndex(0).getText() ?? 'unknownFunction';
       supplement = JSON.stringify({ ...parsed[2], functionName }, null, 2);
       ret.push({
         ...err,
-        code: code,
+        code: code.toString(),
         lines: [],
         parsed: [],
         codes: [],
