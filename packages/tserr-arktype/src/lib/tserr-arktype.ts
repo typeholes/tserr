@@ -5,9 +5,10 @@ const notSemantic = { isSemantic: false, fixes: [] satisfies {label: string, fn:
 export const tsErrPlugin = {
   semanticErrorIdentifiers: [
    (err: ParsedError, fromNode: Node) => {
-      if ( ! (err.type === 'unknownError' && err.parts[5] === 'is unresolvable"')) { return notSemantic; }
+      if ( ! (err.type === 'notAssignable' && err.to.endsWith('is unresolvable"'))) { return notSemantic; }
 
-      const alias = err.parts[4];
+      const alias = err.to.slice(2).replace(/'[^']*$/,'');
+
       const callNode = fromNode.getFirstAncestorByKind(SyntaxKind.CallExpression);
       if (!callNode) { return notSemantic; }
 
@@ -23,9 +24,8 @@ export const tsErrPlugin = {
         }
       }
 
-        err.parts[0] = 'Type or scope alias not found';
-        err.parts[1] = alias;
-        err.parts.length = 2;
+        Object.assign(err, { type: 'unknownError', parts: [
+         'Type or scope alias not found', alias]});
 
         return { isSemantic: true, fixes: [fix]};
 
