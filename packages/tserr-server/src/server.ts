@@ -1,6 +1,10 @@
 import { Server } from 'socket.io';
 import express from 'express';
 
+import { Node } from 'ts-morph';
+
+  export const semanticErrorIdentifiers : ((err :ParsedError, fromNode: Node) => { isSemantic: boolean, fixes: {label: string, fn: ()=> void }[] })[] = [];
+
 export type Diagnostic = {
   message: string;
   start: {
@@ -21,7 +25,7 @@ process.on('uncaughtException', function (err) {
 // import * as fs from 'fs';
 import * as path from 'path';
 import * as http from 'http';
-import type { FlatErr } from './Err';
+import { flattenErr, type FlatErr, type ParsedError } from '@typeholes/tserr-common'
 
 // Do not use these until startServer is called
 let app: ReturnType<typeof express> = undefined as never;
@@ -116,6 +120,12 @@ export function startServer(basePath: string) {
   //    console.log('emitted test diagnostic');
   // }, 1000);
 
+  console.log(semanticErrorIdentifiers);
+
+  function addSemanticErrorIdentifiers(...identifiers: typeof semanticErrorIdentifiers ) {
+    semanticErrorIdentifiers.push(...identifiers);
+  }
+
   return {
     sendDiagnostic,
     onGotoDefinition,
@@ -123,5 +133,6 @@ export function startServer(basePath: string) {
     sendResetResolvedErrors,
     sendSupplement,
     sendFixes,
+    addSemanticErrorIdentifiers,
   };
 }

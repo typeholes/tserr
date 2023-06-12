@@ -1,2 +1,6 @@
 export * from './lib/tserr-common';
-export * as parseError from './lib/parseError';
+
+export * from './lib/Err';
+
+export * from './lib/ParsedError';
+

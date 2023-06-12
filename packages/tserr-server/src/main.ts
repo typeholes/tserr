@@ -6,6 +6,8 @@ import { join as joinPath, resolve as resolvePath } from 'path';
 import { cpSync } from 'fs';
 import { version as nodeVersion } from 'process';
 
+import { tsErrPlugin as arkTypePlugin } from '@typeholes/tserr-arktype'
+
 
 const errorSamplePath = '/home/hw/projects/nx/typeholes/error_samples';
 const { projectPath } = processArgs();
@@ -28,7 +30,7 @@ function processArgs(): { projectPath: string } {
 
     console.log('from path', resolvePath(samplePath), projectPath);
     try {
-    cpSync(samplePath, projectPath, { errorOnExist: true})
+    cpSync( samplePath, projectPath, { errorOnExist: true })
     } catch (e) {
       console.error('temp sample directory already exists');
     };
@@ -74,6 +76,8 @@ function processEvents() {
     events = [];
   }
 }
+
+server.addSemanticErrorIdentifiers(...arkTypePlugin.semanticErrorIdentifiers);
 
 const watcher = watch(projectPath);
 watcher.on('all', handleEvent);

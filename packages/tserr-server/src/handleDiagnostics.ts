@@ -9,14 +9,15 @@ import {
   Type,
   TypeNode,
   SyntaxKind,
+  Identifier,
 } from 'ts-morph';
 import { parseError } from './parseError.js';
 import { FunctionDeclaration, TypeAliasDeclaration } from 'ts-morph';
 import { MethodDeclaration } from 'ts-morph';
 import { ClassDeclaration } from 'ts-morph';
-import { type ErrorServer } from './server.js';
+import { semanticErrorIdentifiers, type ErrorServer } from './server.js';
 import { group } from './util.js';
-import { Err, FlatErr, flattenErr } from './Err.js';
+import { Err, FlatErr, flattenErr } from '@typeholes/tserr-common'
 import { kindHandlers, onNodeKind } from './kindHandler.js';
 
 type Declaration =
@@ -85,6 +86,7 @@ function processFileEvents(events: [string, string][]) {
         const resolved = handleError(diagnostic, fileName);
         if (resolved) {
           // console.log(resolved);
+
           payload.push(...resolved);
         }
       }
@@ -118,6 +120,16 @@ function handleError(diagnostic: Diagnostic, fileName: string): FlatErr[] {
   const err = diagnosticToErr(diagnostic);
 
   const resolved = resolveError(fromNode, err);
+
+  resolved.forEach(err => err.parsed.forEach( parsed =>
+    semanticErrorIdentifiers.forEach( identifier => {
+      const idenfied = identifier(parsed[2], fromNode)
+      if (idenfied.isSemantic) {
+        const fixes = idenfied.fixes.map( x => mkFix(x.label, x.fn) )
+        server?.sendFixes({[parsed[0]]: fixes })
+      }
+    }))
+  );
 
   return resolved;
 
@@ -153,6 +165,9 @@ function resolveError(fromNode: Node, err: Err): FlatErr[] {
 }
 
 let maxFixId = 0;
+export function mkFix(description: string, fn: () => void) : [fixId: number, fixDescription: string, fixFn: () => void] {
+  return [maxFixId++, description, fn];
+}
 function createFixes(e: FlatErr['parsed'][number], fromNode: Node) {
   const fixes: [fixId: number, fixDescription: string, fixFn: () => void][] =
     [];

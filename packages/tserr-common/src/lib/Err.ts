@@ -1,4 +1,4 @@
-import { ParsedError } from './parseError';
+import { ParsedError } from './ParsedError';
 
 export type Err = {
   code: number;

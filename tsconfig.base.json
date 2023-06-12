@@ -1,6 +1,7 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
+    "strict": true,
     "rootDir": ".",
     "sourceMap": true,
     "declaration": false,
@@ -15,6 +16,7 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
+      "@typeholes/tserr-arktype": ["packages/tserr-arktype/src/index.ts"],
       "@typeholes/tserr-common": ["packages/tserr-common/src/index.ts"]
     },
     "noErrorTruncation": true

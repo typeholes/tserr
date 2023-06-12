@@ -52,7 +52,7 @@
         "development": {
           "buildTarget": "tserr-server:build:development",
           "runtimeArgs": [
-            "--builtin-examples"
+            "/home/hw/projects/nx/typeholes/error_samples"
           ]
         },
         "production": {
