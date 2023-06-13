@@ -17,7 +17,8 @@
     "baseUrl": ".",
     "paths": {
       "@typeholes/tserr-arktype": ["packages/tserr-arktype/src/index.ts"],
-      "@typeholes/tserr-common": ["packages/tserr-common/src/index.ts"]
+      "@typeholes/tserr-common": ["packages/tserr-common/src/index.ts"],
+      "@typeholes/tserr-vscode": ["packages/tserr-vscode/src/index.ts"]
     },
     "noErrorTruncation": true
   },
