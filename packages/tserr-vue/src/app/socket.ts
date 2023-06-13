@@ -26,7 +26,10 @@ export function startSocket() {
 
   return {
     applyFix: (fixId: number) => {
-      socket.emit('applyFix', fixId)
+      socket.emit('applyFix', fixId);
+    },
+    setPlugin: (pluginKey: string, active: boolean) => {
+      socket.emit('setPlugin', pluginKey, active);
     },
   };
 }

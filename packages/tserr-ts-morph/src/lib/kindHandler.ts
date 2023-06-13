@@ -73,4 +73,3 @@ kindHandlers.FunctionDeclaration.push(checkEmptyObjectTypes);
 kindHandlers.VariableDeclaration.push(checkEmptyObjectTypes);
 kindHandlers.TypeAliasDeclaration.push(checkEmptyObjectTypes);
 // kindHandlers.AsExpression.push(checkTscIgnore);
-

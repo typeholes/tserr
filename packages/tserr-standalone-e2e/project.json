@@ -1,7 +1,7 @@
 {
   "name": "tserr-server-e2e",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "implicitDependencies": ["tserr-server"],
+  "implicitDependencies": ["tserr-standalone"],
   "targets": {
     "e2e": {
       "executor": "@nx/jest:jest",

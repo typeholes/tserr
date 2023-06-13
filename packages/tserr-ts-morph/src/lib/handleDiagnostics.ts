@@ -9,16 +9,19 @@ import {
   Type,
   TypeNode,
   SyntaxKind,
-  Identifier,
 } from 'ts-morph';
-import { parseError } from './parseError.js';
+import { parseError } from './parseError';
 import { FunctionDeclaration, TypeAliasDeclaration } from 'ts-morph';
 import { MethodDeclaration } from 'ts-morph';
 import { ClassDeclaration } from 'ts-morph';
-import { semanticErrorIdentifiers, type ErrorServer } from './server.js';
+import {
+  TserrPlugin,
+  TserrPluginApi,
+  semanticErrorIdentifiers,
+} from '@typeholes/tserr-server';
 import { group } from './util.js';
-import { Err, FlatErr, flattenErr } from '@typeholes/tserr-common'
-import { kindHandlers, onNodeKind } from './kindHandler.js';
+import { Err, FlatErr, flattenErr } from '@typeholes/tserr-common';
+import { kindHandlers, onNodeKind } from './kindHandler';
 
 type Declaration =
   | VariableDeclaration
@@ -36,19 +39,21 @@ const declarationKinds = [
 
 let project: Project | undefined;
 let tsConfigFilePath: string | undefined = undefined;
-let server: ErrorServer | undefined = undefined;
+let tserrApi: TserrPluginApi | undefined = undefined;
 
-export function setProject(path: string, forServer: ErrorServer) {
-  // console.log('path: ', path);
-  server = forServer;
-  if (project) {
-    project === undefined;
-  }
-  tsConfigFilePath = path;
-  return processFileEvents;
-}
+export const plugin: TserrPlugin = {
+  key: 'ts-morph',
+  displayName: 'ts-morph',
+  register(api) {
+    tserrApi = api;
+    api.onOpenProject(openProject);
+    api.addProjectEventHandlers(processFileEvents);
+  },
+};
 
-function openProject() {
+function openProject(path: string) {
+  tsConfigFilePath = path + '/tsconfig.json';
+  console.log({ tsConfigFilePath });
   if (project !== undefined || tsConfigFilePath === undefined) {
     return;
   }
@@ -58,16 +63,19 @@ function openProject() {
     },
     tsConfigFilePath,
   });
+  console.log('ts-morph opened project');
 }
 
-function processFileEvents(events: [string, string][]) {
+function processFileEvents(events: { type: string; filePath: string }[]) {
   if (!project) {
-    openProject();
+    return;
   }
+
+  console.log('ts-morph processing file events');
 
   const promises = events.map(
     (e) =>
-      project?.getSourceFile(e[1])?.refreshFromFileSystem() ??
+      project?.getSourceFile(e.filePath)?.refreshFromFileSystem() ??
       Promise.resolve(undefined)
   );
   Promise.all(promises).then(() => {
@@ -90,7 +98,7 @@ function processFileEvents(events: [string, string][]) {
           payload.push(...resolved);
         }
       }
-      server?.sendResolvedError(fileName, payload);
+      tserrApi?.sendResolvedError(fileName, payload);
     }
 
     project.getSourceFiles().forEach((file) => {
@@ -121,14 +129,16 @@ function handleError(diagnostic: Diagnostic, fileName: string): FlatErr[] {
 
   const resolved = resolveError(fromNode, err);
 
-  resolved.forEach(err => err.parsed.forEach( parsed =>
-    semanticErrorIdentifiers.forEach( identifier => {
-      const idenfied = identifier(parsed[2], fromNode)
-      if (idenfied.isSemantic) {
-        const fixes = idenfied.fixes.map( x => mkFix(x.label, x.fn) )
-        server?.sendFixes({[parsed[0]]: fixes })
-      }
-    }))
+  resolved.forEach((err) =>
+    err.parsed.forEach((parsed) =>
+      semanticErrorIdentifiers.forEach((identifier) => {
+        const idenfied = identifier(parsed[2], fromNode);
+        if (idenfied.isSemantic) {
+          const fixes = idenfied.fixes.map((x) => mkFix(x.label, x.fn));
+          tserrApi?.sendFixes({ [parsed[0]]: fixes });
+        }
+      })
+    )
   );
 
   return resolved;
@@ -165,7 +175,10 @@ function resolveError(fromNode: Node, err: Err): FlatErr[] {
 }
 
 let maxFixId = 0;
-export function mkFix(description: string, fn: () => void) : [fixId: number, fixDescription: string, fixFn: () => void] {
+function mkFix(
+  description: string,
+  fn: () => void
+): [fixId: number, fixDescription: string, fixFn: () => void] {
   return [maxFixId++, description, fn];
 }
 function createFixes(e: FlatErr['parsed'][number], fromNode: Node) {
@@ -209,7 +222,7 @@ function createFixes(e: FlatErr['parsed'][number], fromNode: Node) {
       }
     }
   }
-  server?.sendFixes({ [id]: fixes });
+  tserrApi?.sendFixes({ [id]: fixes });
 }
 
 function createSupplement(e: FlatErr['parsed'][number], fromNode: Node) {
@@ -223,7 +236,7 @@ function createSupplement(e: FlatErr['parsed'][number], fromNode: Node) {
         .map(([x]) => nodeToLineText(x))
         .join('\n');
       // console.log('self ref: \n', pathText);
-      server?.sendSupplement(id, pathText);
+      tserrApi?.sendSupplement(id, pathText);
       // debugger;
     }
   }
@@ -520,7 +533,7 @@ function refineErrror(err: FlatErr, fromNode: Node): FlatErr[] {
       top.lines.push(line);
       top.parsed.push(parsed);
       if (supplement !== undefined) {
-        server?.sendSupplement(parsed[0], supplement);
+        tserrApi?.sendSupplement(parsed[0], supplement);
         supplement = undefined;
       }
     }

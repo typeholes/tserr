@@ -3,8 +3,8 @@ import { appState } from '../appState'
 import ResolvedError from './ResolvedError.vue'
 // import type { ResolvedError as ResolvedErrorType } from '../resolvedError'
 
-function getErrors(fileName: string) {
-  return appState.resolvedErrors.get(fileName)
+function getErrors(pluginKey: string, fileName: string) {
+  return appState.resolvedErrors[pluginKey].get(fileName)
 }
 
 // function getParsed(e: ResolvedErrorType, key: string) {
@@ -17,12 +17,14 @@ function getErrors(fileName: string) {
 <template>
   <div>
     <div class="files">
-      <template v-for="fileName in appState.resolvedErrors.keys()" :key="fileName">
+      <template v-for="(map, pluginKey) in appState.resolvedErrors" :key="pluginKey">
+        {{  pluginKey }}
+      <template v-for="fileName in map.keys()" :key="fileName">
         <div>
           <hr />
           <span> {{ fileName }} </span>
           <!-- <pre>{{ getErrors(fileName) }}</pre> -->
-          <div v-for="(err, idx) of getErrors(fileName)" :key="idx">
+          <div v-for="(err, idx) of getErrors(pluginKey, fileName)" :key="idx">
             <hr />
             <span> Line: {{ err.line }} </span>
             <!-- <pre> {{ err.lines.join('\n') }}</pre> -->
@@ -49,6 +51,7 @@ function getErrors(fileName: string) {
             </div>
           </div> -->
         </div>
+      </template>
       </template>
     </div>
   </div>

@@ -9,9 +9,19 @@
   "contributes": {
     "commands": [
       {
-        "command": "tserr-vscode-start",
-        "title": "Start tserr"
+        "command": "tserr-problems-view.openExternal",
+        "title": "TsErr open external"
       }
-    ]
+    ],
+    "views": {
+      "explorer": [
+        {
+          "type": "webview",
+          "id": "TsErr.problems",
+          "name": "TsErr Problems View",
+          "contextualTitle": "TsErr Problems"
+        }
+      ]
+    }
   }
 }

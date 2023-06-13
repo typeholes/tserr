@@ -37,7 +37,9 @@ export function parseError(err: string): ParsedError {
     }
   });
 
-  for (let i=0;i<parts.length;i++) { parts[i] = parts[i].trim()}
+  for (let i = 0; i < parts.length; i++) {
+    parts[i] = parts[i].trim();
+  }
 
   if (parts[parts.length - 1] === '.') {
     parts.length--;

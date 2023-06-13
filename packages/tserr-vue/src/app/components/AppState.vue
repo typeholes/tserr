@@ -2,12 +2,14 @@
 import { appState } from '../appState';
 // import ProblemsView from './ProblemsView.vue';
 import ResolvedErrors from './ResolvedErrors.vue';
+import PluginManager from './PluginManager.vue';
 </script>
 
 <template>
   <div class="appstate">
     <span> socket started: {{ appState.socketStarted }} </span>
     <span> connected: {{ appState.connected }} </span>
+    <PluginManager/>
     <!-- <span> error: {{ appState.error }} </span> -->
     <!-- <ProblemsView /> -->
     <ResolvedErrors />

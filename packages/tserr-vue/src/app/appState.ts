@@ -11,8 +11,8 @@ export const socketHandlers = {
   resetResolvedErrors: handleResetResolvedErrors,
   supplement: handleSupplement,
   fixes: handleFixes,
+  addPlugin: handleAddPlugin,
 };
-
 
 type FileName = string;
 
@@ -35,15 +35,20 @@ export const appState = reactive({
   lastObject: {},
   socketStarted: false,
   error: '',
+  plugins: {} as Record<string, { active: boolean; displayName: string }>,
   requests: new Map<
     number,
     { resolve: (...args: any[]) => void; reject: (...args: any[]) => void }
   >(),
   diagnostics: new Map<FileName, Diagnostic[]>(),
-  resolvedErrors: new Map<FileName, ReturnType<typeof deserialize>>(),
+  resolvedErrors: {} as Record<string, Map<FileName, ReturnType<typeof deserialize>>>,
   supplements: {} as Record<number, string[]>,
   fixes: {} as Record<number, [fixId: number, fixDescription: string][]>,
 });
+
+function handleAddPlugin(key: string, active: boolean, displayName: string) {
+  appState.plugins[key] = { active, displayName };
+}
 
 function handleRequestError(requestId: number, ...args: any[]) {
   const request = appState.requests.get(requestId);
@@ -73,19 +78,19 @@ function handleDiagnostic(fileName: FileName, diagnostics: Diagnostic[]) {
   appState.diagnostics.set(fileName, diagnostics);
 }
 
-function handleResolvedError(filename: FileName, resolved: [unknown][]) {
-  appState.resolvedErrors.set(filename, deserialize(resolved));
+function handleResolvedError(pluginKey: string, filename: FileName, resolved: [unknown][]) {
+  appState.resolvedErrors[pluginKey].set(filename, deserialize(resolved));
 }
 
-function handleResetResolvedErrors() {
-  appState.resolvedErrors = new Map();
+function handleResetResolvedErrors(pluginKey: string) {
+  appState.resolvedErrors[pluginKey] = new Map();
   appState.supplements = [];
   appState.fixes = {};
 }
 
 function handleSupplement(id: number, supplement: string) {
   appState.supplements[id] ??= [];
-  appState.supplements[id].push( supplement);
+  appState.supplements[id].push(supplement);
 }
 
 function handleFixes(
