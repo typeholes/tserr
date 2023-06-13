@@ -6,6 +6,10 @@
     {
       "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
       "rules": {
+        "@typescript-eslint/no-unused-vars": [
+          "error",
+          { "varsIgnorePattern": "^_", "argsIgnorePattern": "^_" }
+        ],
         "@nx/enforce-module-boundaries": [
           "error",
           {
