@@ -56,13 +56,15 @@ let io: Server = undefined as never;
 let gotoDefinition = (
   fileName: string,
   text: string,
-  diagnostic: Diagnostic
+  searchFromLine: number,
+  searchToLine: number
 ) => {
-  /* todo */ console.log({ fileName, text, diagnostic });
+  /* todo */ console.log({ fileName, text, searchFromLine, searchToLine });
 };
 
 export type ErrorServer = ReturnType<typeof startServer>;
 export function startServer(basePath: string) {
+  console.log('in start server');
   app = express();
   httpServer = http.createServer(app);
   io = new Server(httpServer, { cors: { origin: 'http://localhost:4200' } });
@@ -79,8 +81,8 @@ export function startServer(basePath: string) {
     });
     socket.on(
       'gotoDefinition',
-      (_requestId: number, filename, text, diagnostic) => {
-        gotoDefinition(filename, text, diagnostic);
+      (filename, text, searchFromLine, searchToLine) => {
+        gotoDefinition(filename, text, searchFromLine, searchToLine);
       }
     );
     socket.on('applyFix', (fixId: number) => fixFunctions[fixId]());
@@ -118,7 +120,12 @@ export function startServer(basePath: string) {
     };
 
   function onGotoDefinition(
-    callback: (fileName: string, text: string, diagnostic: Diagnostic) => void
+    callback: (
+      fileName: string,
+      text: string,
+      searchFromLine: number,
+      searchToLine: number
+    ) => void
   ) {
     gotoDefinition = callback;
   }
@@ -236,5 +243,19 @@ export function startServer(basePath: string) {
     });
   }
 
-  return { openProject, loadPlugin };
+  function shutdownServer() {
+    httpServer.close();
+    io.close();
+    httpServer.closeAllConnections();
+  }
+
+  const ret = {
+    openProject,
+    loadPlugin,
+    onGotoDefinition,
+    shutdownServer,
+    foo: 'bar',
+  };
+  console.log('start server returning', ret);
+  return ret;
 }

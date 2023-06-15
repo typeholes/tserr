@@ -1,0 +1,13 @@
+  {
+    "name": "error_samples",
+    "version": "0.0.0",
+    "license": "MIT",
+    "scripts": {},
+    "private": true,
+    "dependencies": {
+      "arktype": "^1.0.14-alpha"
+    },
+    "devDependencies": {
+      "typescript": "^5.0.4"
+    }
+  }

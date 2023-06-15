@@ -8,6 +8,9 @@ import DisplaySupplement from './DisplaySupplement.vue';
 
 const props = defineProps<{
   parsed: ResolvedError;
+  startLine: number;
+  endLine: number;
+  fileName: string;
 }>();
 
 function getOrder() {
@@ -24,10 +27,19 @@ function unknownPartsToBlock(parts: string[]) {
   });
   return blocks;
 }
+
+function problemClick(e: MouseEvent) {
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  if (el && el.textContent) {
+    console.log('found element:', el);
+    console.log('calling gotoDefinition', props.fileName, el.textContent, props.startLine);
+    emitters?.gotoDefinition(props.fileName, el.textContent, props.startLine, props.endLine);
+  }
+}
 </script>
 
 <template>
-  <div class="row" :style="{ order: getOrder() }">
+  <div class="row" :style="{ order: getOrder() }" @click="problemClick">
     <!-- <div>parsed: {{ props.parsed}}</div> -->
     <div>{{ props.parsed[2].type }}</div>
     <span :style="{ minWidth: `${props.parsed[1] ?? 0}rem` }"></span>

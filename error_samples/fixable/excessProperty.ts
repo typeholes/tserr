@@ -34,4 +34,4 @@ function overDeep(deep: Deep | Deep2): number {
 }
 
 overDeep({ z: 2, a: { b: { c: { d: 1 } } } });
-// 
+//

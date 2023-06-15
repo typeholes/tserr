@@ -101,9 +101,9 @@ function processFileEvents(events: { type: string; filePath: string }[]) {
       tserrApi?.sendResolvedError(fileName, payload);
     }
 
-    project.getSourceFiles().forEach((file) => {
-      file.getDescendants().forEach((node) => onNodeKind(kindHandlers, node));
-    });
+    // project.getSourceFiles().forEach((file) => {
+    //   file.getDescendants().forEach((node) => onNodeKind(kindHandlers, node));
+    // });
   });
 }
 
@@ -163,7 +163,7 @@ function handleError(diagnostic: Diagnostic, fileName: string): FlatErr[] {
 }
 
 function resolveError(fromNode: Node, err: Err): FlatErr[] {
-  const flattened = flattenErr(err);
+  const flattened = flattenErr(err, fromNode.getEndLineNumber());
   const refined = refineErrror(flattened, fromNode);
   refined.forEach((flat) =>
     flat.parsed.forEach((p) => {

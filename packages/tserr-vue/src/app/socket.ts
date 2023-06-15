@@ -31,6 +31,21 @@ export function startSocket() {
     setPlugin: (pluginKey: string, active: boolean) => {
       socket.emit('setPlugin', pluginKey, active);
     },
+    gotoDefinition: (
+      filename: string,
+      textContent: string,
+      fromLine: number,
+      toLine: number
+    ) => {
+      console.log(
+        'socket.gotoDefinition',
+        filename,
+        textContent,
+        fromLine,
+        toLine
+      );
+      socket.emit('gotoDefinition', filename, textContent, fromLine, toLine);
+    },
   };
 }
 

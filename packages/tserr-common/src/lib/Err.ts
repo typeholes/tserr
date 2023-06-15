@@ -12,6 +12,7 @@ export type Err = {
 export type FlatErr = {
   code: string;
    line: number;
+   endLine: number;
    start: number;
    lines: string[];
    codes: number[];
@@ -19,7 +20,7 @@ export type FlatErr = {
 };
 
 let parsedId = 0;
-function _flattenErr(e: Err[0]): FlatErr {
+function _flattenErr(e: Err[0], endLine: number): FlatErr {
    const parsed: [id: number, depth: number, parsed: ParsedError][] = [];
    const codes : number[] =[];
    function go(e: Err[0], depth: number) {
@@ -32,13 +33,13 @@ function _flattenErr(e: Err[0]): FlatErr {
 
    go(e, 0);
 
-   const ret: FlatErr = { ...e, code: e.code.toString(), parsed: parsed, codes };
+   const ret: FlatErr = { ...e, code: e.code.toString(), parsed: parsed, codes, endLine };
 
    return ret;
 }
 
-export function flattenErr(e: Err): FlatErr {
-   const flatArr = e.map(_flattenErr);
+export function flattenErr(e: Err, endLine: number): FlatErr {
+   const flatArr = e.map( x => _flattenErr(x, endLine));
    for (let i = 1; i < flatArr.length; i++) {
       flatArr[0].parsed.push(...flatArr[i].parsed);
    }

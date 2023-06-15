@@ -57,6 +57,7 @@ export type SplitResolvedErrors = ReturnType<typeof splitResolvedErrors>;
 export const err = scope({
   err: {
     line: 'number',
+    endLine: 'number',
     start: 'number',
     lines: 'string[]',
     parsed: arrayOf([type('number'), type('number'), type('unknown')]),

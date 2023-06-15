@@ -72,12 +72,12 @@ function formatCode(code: string) {
 
     <table>
       <tr>
-        <template v-for="(text, index) in words" :key="index">
+        <template v-for="(text, _index) in words" :key="_index">
           <th>{{ text }}</th>
         </template>
       </tr>
       <tr>
-        <template v-for="(html, index) in highlighted" :key="index">
+        <template v-for="(html, _index) in highlighted" :key="_index">
           <td>
             <code>
               <div v-html="html" />

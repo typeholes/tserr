@@ -11,17 +11,27 @@ import * as vscode from 'vscode';
 import { startServer } from '@typeholes/tserr-server';
 import { ProblemViewProvider } from './ProblemViewProvider';
 
-// On activation
+// let server: ReturnType<typeof startServer> | undefined = undefined;
+
+// export function deactivate() {
+//   console.log('tserr-vscode deactivate');
+//   if (server) {
+//     server.shutdownServer();
+//   }
+//   server = undefined;
+// }
+
 export function activate(context: ExtensionContext) {
   window.showInformationMessage('activating tserr');
   const server = startServer(__dirname + '../../../../tserr-vue/');
+  console.log({ server }, 'foo', server.foo);
   server.loadPlugin(__dirname + '/../../../tserr-ts-morph/src/index.js');
   workspace.findFiles('**/tsconfig.json').then((uris) => {
     const shortest = uris
       .map((uri) => [uri, workspace.asRelativePath(uri).split('/')] as const)
       .sort((a, b) => a[1].length - b[1].length)[0][0];
     console.log({ shortest });
-    server.openProject(shortest.fsPath.replace('tsconfig.json',''));
+    server?.openProject(shortest.fsPath.replace('tsconfig.json', ''));
   });
 
   commands.registerCommand('tserr-problems-view.openExternal', () => {
@@ -37,4 +47,69 @@ export function activate(context: ExtensionContext) {
       viewProvider
     )
   );
+
+  if (server.onGotoDefinition instanceof Function) {
+    server.onGotoDefinition(
+      async (uriString, text, searchFromLine, searchToLine) => {
+        const uri = vscode.Uri.parse(uriString);
+        console.log('in vscode gotoDefinition');
+        // eslint-disable-next-line no-debugger
+        let editor = vscode.window.visibleTextEditors.find(
+          (editor) => editor.document.uri.toString() === uri.toString()
+        );
+        if (!editor) {
+          const document = vscode.workspace.textDocuments.find(
+            (document) => document.uri.toString() === uri.toString()
+          );
+          if (document) {
+            editor = await vscode.window.showTextDocument(document);
+          } else {
+            await vscode.commands.executeCommand('vscode.open', uri);
+            const document = vscode.workspace.textDocuments.find(
+              (document) => document.uri.toString() === uri.toString()
+            );
+            if (document) {
+              editor = await vscode.window.showTextDocument(document);
+            }
+          }
+        }
+        if (editor) {
+          const document = editor.document;
+          for (let line = searchFromLine - 1; line < searchToLine; line++) {
+            const lineText = document.lineAt(line).text;
+            const re = new RegExp(`\\b(${text})\\b`, 'g');
+            let match: ReturnType<typeof re.exec>;
+            while ((match = re.exec(lineText))) {
+              console.log('found', match, line, match.index);
+              const position = new vscode.Position(line, match.index);
+              vscode.commands
+                .executeCommand(
+                  // 'vscode.executeTypeDefinitionProvider',
+                  'vscode.executeDefinitionProvider',
+                  document.uri,
+                  position
+                )
+                .then((result) => {
+                  if (Array.isArray(result) && result.length > 0) {
+                    vscode.commands.executeCommand(
+                      'editor.action.goToLocations',
+                      document.uri,
+                      position,
+                      result,
+                      'goto',
+                      'No Type Definition Found'
+                    );
+                  }
+                  console.log('result', result);
+                });
+            }
+          }
+        }
+      }
+    );
+  } else {
+    console.log('server.onGotoDefinition not a function', server);
+    // eslint-disable-next-line no-debugger
+    debugger;
+  }
 }
