@@ -1,3 +1,10 @@
+# [1.0.0-alpha.5](https://github.com/typeholes/tserr/compare/tserr-arktype-plugin-v1.0.0-alpha.4...tserr-arktype-plugin-v1.0.0-alpha.5) (2023-06-16)
+
+
+### Bug Fixes
+
+* **tserr-arktype-plugin:** dummy update ([0fe99b3](https://github.com/typeholes/tserr/commit/0fe99b361bcd1ba1c042048beb5354c215de1c87))
+
 # [1.0.0-alpha.4](https://github.com/typeholes/tserr/compare/tserr-arktype-plugin-v1.0.0-alpha.3...tserr-arktype-plugin-v1.0.0-alpha.4) (2023-06-16)
 
 
