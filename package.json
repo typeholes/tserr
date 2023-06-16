@@ -72,9 +72,6 @@
   },
   "nxrelease": {
     "repositoryUrl": "https://github.com/typeholes/tserr",
-    "dryRun": true,
-    "branches": [
-      "alpha"
-    ]
+    "ci": false
   }
 }
