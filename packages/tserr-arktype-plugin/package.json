@@ -6,6 +6,7 @@
     "npm": true,
     "npmPublish": true,
     "github": false,
-    "ci": false
+    "ci": false,
+    "buildTarget": "build"
   }
 }
