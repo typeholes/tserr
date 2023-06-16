@@ -1,6 +1,6 @@
 {
   "name": "tserr-arktype-plugin",
-  "version": "1.0.0-alpha.3",
+  "version": "1.0.0-alpha.4",
   "nxrelease": {
     "repositoryUrl": "https://github.com/typeholes/tserr",
     "npm": true,
@@ -8,6 +8,7 @@
     "github": false,
     "ci": false,
     "buildTarget": "build",
-    "outputPath": "${WORKSPACE_DIR}/dist/packages/${PROJECT_NAME}"
+    "outputPath": "${WORKSPACE_DIR}/dist/packages/${PROJECT_NAME}",
+    "dryRun": true
   }
 }
