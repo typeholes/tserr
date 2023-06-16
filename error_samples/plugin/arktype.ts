@@ -6,7 +6,6 @@ const { form } = scope({
         password: "string",
         confirmPassword: "password"
     },
-    password: 'unknown' 
 }).compile();
 
 
