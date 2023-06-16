@@ -1,7 +1,7 @@
 {
   "name": "@typeholes/tserr-vscode",
   "publisher": "typeholes",
-  "version": "0.0.1",
+  "version": "0.1.0-alpha.1",
   "main": "./src/index.js",
   "engines": {
     "vscode": "^1.44.0"

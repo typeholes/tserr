@@ -1,0 +1,45 @@
+{
+  "name": "tserr-arktype-plugin",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/tserr-arktype-plugin/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/packages/tserr-arktype-plugin",
+        "tsConfig": "packages/tserr-arktype-plugin/tsconfig.lib.json",
+        "packageJson": "packages/tserr-arktype-plugin/package.json",
+        "main": "packages/tserr-arktype-plugin/src/index.ts",
+        "assets": ["packages/tserr-arktype-plugin/*.md"]
+      }
+    },
+    "publish": {
+      "command": "node tools/scripts/publish.mjs tserr-arktype-plugin {args.ver} {args.tag}",
+      "dependsOn": ["build"]
+    },
+    "lint": {
+      "executor": "@nx/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["packages/tserr-arktype-plugin/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "packages/tserr-arktype-plugin/jest.config.ts",
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "codeCoverage": true
+        }
+      }
+    }
+  },
+  "tags": []
+}

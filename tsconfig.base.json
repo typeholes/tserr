@@ -21,7 +21,8 @@
       "@typeholes/tserr-server": ["packages/tserr-server/src/index.ts"],
       "@typeholes/tserr-server-old": ["packages/tserr-server-old/src/index.ts"],
       "@typeholes/tserr-ts-morph": ["packages/tserr-ts-morph/src/index.ts"],
-      "@typeholes/tserr-vscode": ["packages/tserr-vscode/src/index.ts"]
+      "@typeholes/tserr-vscode": ["packages/tserr-vscode/src/index.ts"],
+      "tserr-arktype-plugin": ["packages/tserr-arktype-plugin/src/index.ts"]
     },
     "noErrorTruncation": true
   },
