@@ -1,3 +1,3 @@
 export function tserrArktypePlugin(): string {
-  return 'TODO: tserr-arktype-plugin';
+  return 'fixme: tserr-arktype-plugin';
 }
