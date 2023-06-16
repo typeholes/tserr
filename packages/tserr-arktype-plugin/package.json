@@ -1,6 +1,6 @@
 {
   "name": "tserr-arktype-plugin",
-  "version": "1.0.0-alpha.2",
+  "version": "1.0.0-alpha.3",
   "nxrelease": {
     "repositoryUrl": "https://github.com/typeholes/tserr",
     "npm": true,
