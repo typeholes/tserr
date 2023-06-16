@@ -25,6 +25,12 @@
       "options": {
         "lintFilePatterns": ["packages/tserr-common/**/*.ts"]
       }
+    },
+    "version": {
+      "executor": "@jscutlery/semver:version",
+      "options": {
+        "preset": "conventional"
+      }
     }
   },
   "tags": []

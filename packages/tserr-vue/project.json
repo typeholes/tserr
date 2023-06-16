@@ -67,6 +67,12 @@
       "options": {
         "lintFilePatterns": ["packages/tserr-vue/**/*.ts"]
       }
+    },
+    "version": {
+      "executor": "@jscutlery/semver:version",
+      "options": {
+        "preset": "conventional"
+      }
     }
   }
 }

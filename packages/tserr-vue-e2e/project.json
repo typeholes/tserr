@@ -23,6 +23,12 @@
       "options": {
         "lintFilePatterns": ["packages/tserr-vue-e2e/**/*.{js,ts}"]
       }
+    },
+    "version": {
+      "executor": "@jscutlery/semver:version",
+      "options": {
+        "preset": "conventional"
+      }
     }
   },
   "tags": [],
