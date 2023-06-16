@@ -4,6 +4,7 @@
   "nxrelease": {
     "repositoryUrl": "https://github.com/typeholes/tserr",
     "npm": true,
+    "npmPublish": true,
     "github": false,
     "ci": false
   }

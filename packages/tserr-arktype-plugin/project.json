@@ -4,6 +4,9 @@
   "sourceRoot": "packages/tserr-arktype-plugin/src",
   "projectType": "library",
   "targets": {
+        "semantic-release": {
+          "executor": "@theunderscorer/nx-semantic-release:semantic-release"
+        },
     "build": {
       "executor": "@nx/js:tsc",
       "outputs": ["{options.outputPath}"],
