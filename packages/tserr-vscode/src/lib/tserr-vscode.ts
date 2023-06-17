@@ -10,6 +10,7 @@ import * as vscode from 'vscode';
 
 import { startServer } from '@typeholes/tserr-server';
 import { ProblemViewProvider } from './ProblemViewProvider';
+import { ts } from 'ts-morph';
 
 // let server: ReturnType<typeof startServer> | undefined = undefined;
 
@@ -49,67 +50,145 @@ export function activate(context: ExtensionContext) {
   );
 
   if (server.onGotoDefinition instanceof Function) {
-    server.onGotoDefinition(
-      async (uriString, text, searchFromLine, searchToLine) => {
-        const uri = vscode.Uri.parse(uriString);
-        console.log('in vscode gotoDefinition');
-        // eslint-disable-next-line no-debugger
-        let editor = vscode.window.visibleTextEditors.find(
-          (editor) => editor.document.uri.toString() === uri.toString()
-        );
-        if (!editor) {
-          const document = vscode.workspace.textDocuments.find(
-            (document) => document.uri.toString() === uri.toString()
-          );
-          if (document) {
-            editor = await vscode.window.showTextDocument(document);
-          } else {
-            await vscode.commands.executeCommand('vscode.open', uri);
-            const document = vscode.workspace.textDocuments.find(
-              (document) => document.uri.toString() === uri.toString()
-            );
-            if (document) {
-              editor = await vscode.window.showTextDocument(document);
-            }
-          }
-        }
-        if (editor) {
-          const document = editor.document;
-          for (let line = searchFromLine - 1; line < searchToLine; line++) {
-            const lineText = document.lineAt(line).text;
-            const re = new RegExp(`\\b(${text})\\b`, 'g');
-            let match: ReturnType<typeof re.exec>;
-            while ((match = re.exec(lineText))) {
-              console.log('found', match, line, match.index);
-              const position = new vscode.Position(line, match.index);
-              vscode.commands
-                .executeCommand(
-                  // 'vscode.executeTypeDefinitionProvider',
-                  'vscode.executeDefinitionProvider',
-                  document.uri,
-                  position
-                )
-                .then((result) => {
-                  if (Array.isArray(result) && result.length > 0) {
-                    vscode.commands.executeCommand(
-                      'editor.action.goToLocations',
-                      document.uri,
-                      position,
-                      result,
-                      'goto',
-                      'No Type Definition Found'
-                    );
-                  }
-                  console.log('result', result);
-                });
-            }
-          }
-        }
-      }
-    );
+    server.onGotoDefinition(handleGotoDefinition);
   } else {
     console.log('server.onGotoDefinition not a function', server);
     // eslint-disable-next-line no-debugger
     debugger;
   }
+
+
+  context.subscriptions.push(
+    vscode.languages.registerHoverProvider(
+      { language: 'typescript', pattern: '**/*.ts' },
+      {
+        provideHover(document, position) {
+          // eslint-disable-next-line no-debugger
+          const editor = window.activeTextEditor;
+          const range = document.getWordRangeAtPosition(position);
+          const message = document.getText(editor!.selection);
+
+          const content = getHoverMarkDown();
+          return { contents: [content] };
+        },
+      }
+    )
+  );
 }
+
+async function handleGotoDefinition(
+  uriString: string,
+  text: string,
+  searchFromLine: number,
+  searchToLine: number
+) {
+  const uri = vscode.Uri.parse(uriString);
+  console.log('in vscode gotoDefinition');
+  // eslint-disable-next-line no-debugger
+  let editor = vscode.window.visibleTextEditors.find(
+    (editor) => editor.document.uri.toString() === uri.toString()
+  );
+  if (!editor) {
+    const document = vscode.workspace.textDocuments.find(
+      (document) => document.uri.toString() === uri.toString()
+    );
+    if (document) {
+      editor = await vscode.window.showTextDocument(document);
+    } else {
+      await vscode.commands.executeCommand('vscode.open', uri);
+      const document = vscode.workspace.textDocuments.find(
+        (document) => document.uri.toString() === uri.toString()
+      );
+      if (document) {
+        editor = await vscode.window.showTextDocument(document);
+      }
+    }
+  }
+  if (editor) {
+    const document = editor.document;
+    for (let line = searchFromLine - 1; line < searchToLine; line++) {
+      const lineText = document.lineAt(line).text;
+      const re = new RegExp(`\\b(${text})\\b`, 'g');
+      let match: ReturnType<typeof re.exec>;
+      while ((match = re.exec(lineText))) {
+        console.log('found', match, line, match.index);
+        const position = new vscode.Position(line, match.index);
+        vscode.commands
+          .executeCommand(
+            // 'vscode.executeTypeDefinitionProvider',
+            'vscode.executeDefinitionProvider',
+            document.uri,
+            position
+          )
+          .then((result) => {
+            if (Array.isArray(result) && result.length > 0) {
+              vscode.commands.executeCommand(
+                'editor.action.goToLocations',
+                document.uri,
+                position,
+                result,
+                'goto',
+                'No Type Definition Found'
+              );
+            }
+            console.log('result', result);
+          });
+      }
+    }
+  }
+}
+
+
+  function getHoverMarkDown() {
+    const hoverInfo = [
+      [
+        { type: 'text', body: 'from', color: '#f00', backgroundColor: '#00f' },
+        { type: 'text', body: 'to', color: '#f00', backgroundColor: '#00f' },
+      ],
+      [
+        {
+          type: 'code',
+          body: '{a: 1}',
+          color: '#f00',
+          backgroundColor: '#00f',
+        },
+        {
+          type: 'code',
+          body: 'ZipTied',
+          color: '#f00',
+          backgroundColor: '#00f',
+        },
+      ],
+    ];
+
+    const md = new vscode.MarkdownString('\n');
+    md.isTrusted = true;
+    md.supportHtml = true;
+
+    md.appendMarkdown('<table>');
+    for (const row of hoverInfo) {
+      md.appendMarkdown('<tr>');
+      for (const col of row) {
+        md.appendMarkdown('<td>');
+        const color = col.color ? 'color=' + col.color + ';' : '';
+        const backgroundColor = col.backgroundColor
+          ? 'background-color=' + col.backgroundColor + ';'
+          : '';
+        if (col.type === 'text') {
+          //prettier-ignore
+          md.appendMarkdown( `<span style="${color}${backgroundColor}">${col.body}</span>`);
+        } else if (col.type === 'code') {
+          md.appendMarkdown(`<span style="${color}${backgroundColor}">`);
+          md.appendText('\n');
+          md.appendCodeblock(col.body, 'ts');
+          md.appendText('\n');
+          md.appendMarkdown(`</span>`);
+        }
+        md.appendMarkdown('</td>');
+      }
+      md.appendMarkdown('</tr>');
+    }
+    md.appendMarkdown('</table>');
+
+    return md;
+  }
