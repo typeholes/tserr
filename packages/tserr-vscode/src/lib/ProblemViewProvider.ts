@@ -61,22 +61,9 @@ export class ProblemViewProvider implements vscode.WebviewViewProvider {
 			<head>
 				<meta charset="UTF-8">
                 </head>
-                <style>
-::-webkit-scrollbar {
-  width: 1em;
-}
 
-::-webkit-scrollbar-track {
-  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
-}
-
-::-webkit-scrollbar-thumb {
-  background-color: darkgrey;
-  outline: 1px solid slategrey;
-}
-                </style>
                 <body>
-     <iframe src="http://localhost:3000/" style="position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; border: none"></iframe>
+     <iframe src="http://localhost:3000/" style="position:fixed; top:0; left:0; bottom:0; right:0; width:100%; height:100%; border:none; margin:0; padding:0; overflow:hidden; z-index:999999;">></iframe>
 			</body>
 			</html>`;
   }
