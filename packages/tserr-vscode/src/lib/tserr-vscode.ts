@@ -8,6 +8,8 @@ import {
 } from 'vscode';
 import * as vscode from 'vscode';
 
+import { plugin as tsmorphPlugin } from '@typeholes/tserr-ts-morph';
+
 import { startServer } from '@typeholes/tserr-server';
 import { ProblemViewProvider } from './ProblemViewProvider';
 
@@ -24,14 +26,22 @@ import { ProblemViewProvider } from './ProblemViewProvider';
 export function activate(context: ExtensionContext) {
   window.showInformationMessage('activating tserr');
   const server = startServer(__dirname + '../../../../tserr-vue/');
-  console.log({ server }, 'foo', server.foo);
-  server.loadPlugin(__dirname + '/../../../tserr-ts-morph/src/index.js');
+  const tserr = server.mkPluginInterface({
+    key: 'vscode',
+    displayName: 'vscode',
+    register: () => {
+      /**/
+    },
+  });
+
+  server.mkPluginInterface(tsmorphPlugin);
+
   workspace.findFiles('**/tsconfig.json').then((uris) => {
     const shortest = uris
       .map((uri) => [uri, workspace.asRelativePath(uri).split('/')] as const)
       .sort((a, b) => a[1].length - b[1].length)[0][0];
     console.log({ shortest });
-    server?.openProject(shortest.fsPath.replace('tsconfig.json', ''));
+    tserr.send.openProject(shortest.fsPath.replace('tsconfig.json', ''));
   });
 
   commands.registerCommand('tserr-problems-view.openExternal', () => {

@@ -1,5 +1,5 @@
 import { watch } from 'chokidar';
-import { PluginStates } from './tserr-server';
+import { PluginState} from './tserr-server.types'
 
 export type ProjectEventType =
   | 'add'
@@ -11,7 +11,7 @@ export type ProjectEvent = { type: ProjectEventType; filePath: string };
 
 export type Project = ReturnType<typeof mkProject>;
 
-export function mkProject(projectPath: string, plugins: PluginStates) {
+export function mkProject(projectPath: string, plugins: Record<string,PluginState>) {
   let waiting = true;
   let events: ProjectEvent[] = [];
 

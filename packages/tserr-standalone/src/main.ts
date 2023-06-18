@@ -49,12 +49,10 @@ function processArgs(): { projectPath: string } {
   }
 }
 
-const server = startServer(__dirname + '../../../../../tserr-vue/');
-server.loadPlugin(
-  __dirname + '/../../../../../packages/tserr-ts-morph/src/index.js'
-).then( () => {
+import { plugin as tsmorphPlugin } from '@typeholes/tserr-ts-morph';
 
-server.openProject(projectPath);
-})
+const server = startServer(__dirname + '../../../../../tserr-vue/');
+const tsmorph = server.mkPluginInterface(tsmorphPlugin);
+
+tsmorph.send.openProject(projectPath);
 console.log('dirname: ', __dirname);
- 

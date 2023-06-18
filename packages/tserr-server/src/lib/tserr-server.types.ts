@@ -1,24 +1,30 @@
 import { FlatErr } from '@typeholes/tserr-common';
 import { ProjectEvent } from './project';
 
-export type TserrPluginApi = {
-  // sendDiagnostic: (fileName: string, diagnostics: Diagnostic[]) => void;
-  // onGotoDefinition: (callback: (fileName: string, text: string, diagnostic: Diagnostic) => void) => void;
-  sendResolvedError: (fileName: string, resolvedError: FlatErr[]) => void;
-  sendResetResolvedErrors: () => void;
-  sendSupplement: (id: number, supplement: string) => void;
-  sendFixes: (
+export type TserrPluginEvents = {
+  resolvedErrors: (fileName: string, resolvedError: FlatErr[]) => void;
+  resetResolvedErrors: () => void;
+
+  supplement: (id: number, supplement: string) => void;
+
+  fixes: (
     fixesRec: Record<
       number,
       [fixId: number, fixDescription: string, fn: () => void][]
     >
   ) => void;
+
+  openProject: (projectPath: string) => void;
+};
+
+export type TserrPluginApi = {
   // addSemanticErrorIdentifiers: (...identifiers: typeof semanticErrorIdentifiers) => void;
   getProjectPath: () => string | undefined;
   addProjectEventHandlers: (
     ...handlers: ((projectEvents: ProjectEvent[]) => void)[]
   ) => void;
-  onOpenProject: (on: (projectPath: string) => void) => void;
+  send: TserrPluginEvents;
+  on: { [K in keyof TserrPluginEvents]: (on: TserrPluginEvents[K]) => void };
 };
 
 export type TserrPlugin = {
@@ -28,3 +34,14 @@ export type TserrPlugin = {
 };
 
 export type ProjectEventHandlers = ((projectEvents: ProjectEvent[]) => void)[];
+
+//prettier-ignore
+export type OnPluginState<K extends keyof TserrPluginApi & `on${string}`> = TserrPluginApi[K] extends (...args: any[])=>void ? Parameters<TserrPluginApi[K]>[0] : never;
+
+export type PluginState = {
+  active: boolean;
+  displayName: string;
+  api: TserrPluginApi;
+  projectEventHandlers: ProjectEventHandlers;
+  on: TserrPluginEvents;
+};

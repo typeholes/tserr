@@ -21,7 +21,6 @@ import {
 } from '@typeholes/tserr-server';
 import { group } from './util.js';
 import { Err, FlatErr, flattenErr } from '@typeholes/tserr-common';
-import { kindHandlers, onNodeKind } from './kindHandler';
 
 type Declaration =
   | VariableDeclaration
@@ -46,7 +45,7 @@ export const plugin: TserrPlugin = {
   displayName: 'ts-morph',
   register(api) {
     tserrApi = api;
-    api.onOpenProject(openProject);
+    api.on.openProject(openProject);
     api.addProjectEventHandlers(processFileEvents);
   },
 };
@@ -98,7 +97,7 @@ function processFileEvents(events: { type: string; filePath: string }[]) {
           payload.push(...resolved);
         }
       }
-      tserrApi?.sendResolvedError(fileName, payload);
+      tserrApi?.send.resolvedErrors(fileName, payload);
     }
 
     // project.getSourceFiles().forEach((file) => {
@@ -135,7 +134,7 @@ function handleError(diagnostic: Diagnostic, fileName: string): FlatErr[] {
         const idenfied = identifier(parsed[2], fromNode);
         if (idenfied.isSemantic) {
           const fixes = idenfied.fixes.map((x) => mkFix(x.label, x.fn));
-          tserrApi?.sendFixes({ [parsed[0]]: fixes });
+          tserrApi?.send.fixes({ [parsed[0]]: fixes });
         }
       })
     )
@@ -222,7 +221,7 @@ function createFixes(e: FlatErr['parsed'][number], fromNode: Node) {
       }
     }
   }
-  tserrApi?.sendFixes({ [id]: fixes });
+  tserrApi?.send.fixes({ [id]: fixes });
 }
 
 function createSupplement(e: FlatErr['parsed'][number], fromNode: Node) {
@@ -236,7 +235,7 @@ function createSupplement(e: FlatErr['parsed'][number], fromNode: Node) {
         .map(([x]) => nodeToLineText(x))
         .join('\n');
       // console.log('self ref: \n', pathText);
-      tserrApi?.sendSupplement(id, pathText);
+      tserrApi?.send.supplement(id, pathText);
       // debugger;
     }
   }
@@ -533,7 +532,7 @@ function refineErrror(err: FlatErr, fromNode: Node): FlatErr[] {
       top.lines.push(line);
       top.parsed.push(parsed);
       if (supplement !== undefined) {
-        tserrApi?.sendSupplement(parsed[0], supplement);
+        tserrApi?.send.supplement(parsed[0], supplement);
         supplement = undefined;
       }
     }
