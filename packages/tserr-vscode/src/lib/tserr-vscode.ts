@@ -8,11 +8,12 @@ import {
 } from 'vscode';
 import * as vscode from 'vscode';
 
-import { plugin as tsmorphPlugin } from '@typeholes/tserr-ts-morph';
+import { ProblemViewProvider } from './ProblemViewProvider';
 
 import { startServer } from '@typeholes/tserr-server';
-import { ProblemViewProvider } from './ProblemViewProvider';
-import { ts } from 'ts-morph';
+import { FlatErr } from '@typeholes/tserr-common';
+import { plugin as tsmorphPlugin } from '@typeholes/tserr-ts-morph';
+import { parse } from 'path';
 
 // let server: ReturnType<typeof startServer> | undefined = undefined;
 
@@ -24,6 +25,8 @@ import { ts } from 'ts-morph';
 //   server = undefined;
 // }
 
+let errors: Record<string, FlatErr[]> = {};
+
 export function activate(context: ExtensionContext) {
   window.showInformationMessage('activating tserr');
   const server = startServer(__dirname + '../../../../tserr-vue/');
@@ -33,6 +36,13 @@ export function activate(context: ExtensionContext) {
     register: () => {
       /**/
     },
+  });
+
+  tserr.on.resetResolvedErrors(() => (errors = {}));
+
+  tserr.on.resolvedErrors((fileName, resolvedErrors) => {
+    errors[fileName] ??= [];
+    errors[fileName].push(...resolvedErrors);
   });
 
   server.mkPluginInterface(tsmorphPlugin);
@@ -67,18 +77,19 @@ export function activate(context: ExtensionContext) {
     debugger;
   }
 
-
   context.subscriptions.push(
     vscode.languages.registerHoverProvider(
       { language: 'typescript', pattern: '**/*.ts' },
       {
         provideHover(document, position) {
           // eslint-disable-next-line no-debugger
-          const editor = window.activeTextEditor;
           const range = document.getWordRangeAtPosition(position);
-          const message = document.getText(editor!.selection);
+          if (!range) {
+            return { contents: [] };
+          }
+          // const message = document.getText(editor.selection);
 
-          const content = getHoverMarkDown();
+          const content = getHoverMarkDown(document.uri, range);
           return { contents: [content] };
         },
       }
@@ -148,57 +159,108 @@ async function handleGotoDefinition(
   }
 }
 
+type HoverInfo = {
+  type: 'text' | 'code';
+  body: string;
+  color?: string | undefined;
+  backgroundColor?: string | undefined;
+}[][];
 
-  function getHoverMarkDown() {
-    const hoverInfo = [
-      [
-        { type: 'text', body: 'from', color: '#f00', backgroundColor: '#00f' },
-        { type: 'text', body: 'to', color: '#f00', backgroundColor: '#00f' },
-      ],
-      [
-        {
-          type: 'code',
-          body: '{a: 1}',
-          color: '#f00',
-          backgroundColor: '#00f',
-        },
-        {
-          type: 'code',
-          body: 'ZipTied',
-          color: '#f00',
-          backgroundColor: '#00f',
-        },
-      ],
-    ];
-
-    const md = new vscode.MarkdownString('\n');
-    md.isTrusted = true;
-    md.supportHtml = true;
-
-    md.appendMarkdown('<table>');
-    for (const row of hoverInfo) {
-      md.appendMarkdown('<tr>');
-      for (const col of row) {
-        md.appendMarkdown('<td>');
-        const color = col.color ? 'color=' + col.color + ';' : '';
-        const backgroundColor = col.backgroundColor
-          ? 'background-color=' + col.backgroundColor + ';'
-          : '';
-        if (col.type === 'text') {
-          //prettier-ignore
-          md.appendMarkdown( `<span style="${color}${backgroundColor}">${col.body}</span>`);
-        } else if (col.type === 'code') {
-          md.appendMarkdown(`<span style="${color}${backgroundColor}">`);
-          md.appendText('\n');
-          md.appendCodeblock(col.body, 'ts');
-          md.appendText('\n');
-          md.appendMarkdown(`</span>`);
-        }
-        md.appendMarkdown('</td>');
-      }
-      md.appendMarkdown('</tr>');
+function getHoverMarkDown(uri: vscode.Uri, range: vscode.Range) {
+  const fileName = uri.fsPath;
+  const info: HoverInfo = [];
+  for (const err of errors[fileName]) {
+    //todo really should check position as well
+    if (range.start.line >= err.line - 1 && range.end.line <= err.endLine - 1) {
+      info.push(...getErrorHoverInfo(err), []);
     }
-    md.appendMarkdown('</table>');
-
-    return md;
   }
+
+  return hoverInfoToMarkdown(info);
+}
+
+function getErrorHoverInfo(err: FlatErr): HoverInfo {
+  const hoverInfo: HoverInfo = [];
+  //   [
+  //     { type: 'text', body: 'from', color: '#f00', backgroundColor: '#00f' },
+  //     { type: 'text', body: 'to', color: '#f00', backgroundColor: '#00f' },
+  //   ],
+  //   [
+  //     {
+  //       type: 'code',
+  //       body: '{a: 1}',
+  //       color: '#f00',
+  //       backgroundColor: '#00f',
+  //     },
+  //     {
+  //       type: 'code',
+  //       body: 'ZipTied',
+  //       color: '#f00',
+  //       backgroundColor: '#00f',
+  //     },
+  //   ],
+  // ];
+
+  err.parsed.forEach((p) => {
+    const [_id, depth, parsed] = p;
+    if (parsed.type === 'unknownError') {
+      const keys = parsed.parts.filter((_, idx) => idx % 2 === 0);
+      const values = parsed.parts.filter((_, idx) => idx % 2 === 1);
+      const keyCells = keys.map((x) => ({ type: 'text', body: x } as const));
+      const valueCells = keys.map((x) => ({ type: 'code', body: x } as const));
+      hoverInfo.push(keyCells, valueCells);
+    } else {
+      const keys = [];
+      const values = [];
+      for (const key of ['type', 'key', 'from', 'to']) {
+        if (key in parsed) {
+          if (key === 'type') {
+            keys.push(parsed[key as never]);
+            values.push('');
+          } else {
+            keys.push(key);
+            values.push(parsed[key as never]);
+          }
+        }
+      }
+      const keyCells = keys.map((x) => ({ type: 'text', body: x } as const));
+      const valueCells = values.map((x) => ({ type: 'code', body: x } as const));
+      hoverInfo.push(keyCells, valueCells);
+    }
+  });
+
+  return hoverInfo;
+}
+
+function hoverInfoToMarkdown(hoverInfo: HoverInfo) {
+  const md = new vscode.MarkdownString('\n');
+  md.isTrusted = true;
+  md.supportHtml = true;
+
+  md.appendMarkdown('<table>');
+  for (const row of hoverInfo) {
+    md.appendMarkdown('<tr>');
+    for (const col of row) {
+      md.appendMarkdown('<td>');
+      const color = col.color ? 'color=' + col.color + ';' : '';
+      const backgroundColor = col.backgroundColor
+        ? 'background-color=' + col.backgroundColor + ';'
+        : '';
+      if (col.type === 'text') {
+        //prettier-ignore
+        md.appendMarkdown( `<span style="${color}${backgroundColor}">${col.body}</span>`);
+      } else if (col.type === 'code') {
+        md.appendMarkdown(`<span style="${color}${backgroundColor}">`);
+        md.appendText('\n');
+        md.appendCodeblock(col.body, 'ts');
+        md.appendText('\n');
+        md.appendMarkdown(`</span>`);
+      }
+      md.appendMarkdown('</td>');
+    }
+    md.appendMarkdown('</tr>');
+  }
+  md.appendMarkdown('</table>');
+
+  return md;
+}
