@@ -1,26 +1,49 @@
-import express from 'express';
+import express, { application } from 'express';
 import { Server } from 'socket.io';
 
-import { type FlatErr, type ParsedError } from '@typeholes/tserr-common';
+import {
+  U2T,
+  type FlatErr,
+  type ParsedError,
+  tupleToObject,
+} from '@typeholes/tserr-common';
 import * as http from 'http';
 import * as path from 'path';
 import { Node } from 'ts-morph';
-import { ProjectEventHandlers, TserrPluginApi } from './tserr-server.types';
-import { Project, ProjectEvent, mkProject } from './project';
-import { stringify } from 'querystring';
+import {
+  PluginState,
+  ProjectEventHandlers,
+  TserrPluginApi,
+  TserrPluginEvents,
+  TserrPlugin,
+} from './tserr-server.types';
+import { Project, mkProject } from './project';
 
 export { TserrPluginApi, TserrPlugin } from './tserr-server.types';
 
-export type PluginStates = Record<
-  string,
-  {
-    active: boolean;
-    displayName: string;
-    api: TserrPluginApi;
-    onOpenProject: (projectPath: string) => void;
-    projectEventHandlers: ProjectEventHandlers;
-  }
->;
+export const tserrPluginEvents: U2T<keyof TserrPluginEvents> = [
+  'resolvedErrors',
+  'resetResolvedErrors',
+  'supplement',
+  'fixes',
+  'openProject',
+];
+
+const doNothing = () => {
+  /* */
+};
+const doNothingEvents = tupleToObject<TserrPluginEvents>(tserrPluginEvents)(
+  (_) => doNothing
+);
+
+//Object.fromEntries(tserrPluginEvents.map(event => [event, doNothing] as const)) as unknown as TserrPluginEvents
+const _doNothingEvents: TserrPluginEvents = {
+  fixes: doNothing,
+  openProject: doNothing,
+  resetResolvedErrors: doNothing,
+  resolvedErrors: doNothing,
+  supplement: doNothing,
+};
 
 export const semanticErrorIdentifiers: ((
   err: ParsedError,
@@ -65,6 +88,10 @@ let gotoDefinition = (
 export type ErrorServer = ReturnType<typeof startServer>;
 export function startServer(basePath: string) {
   console.log('in start server');
+
+  const plugins: Record<string, PluginState> = {};
+  const pluginOrder: string[] = [];
+
   app = express();
   httpServer = http.createServer(app);
   io = new Server(httpServer, { cors: { origin: 'http://localhost:4200' } });
@@ -92,7 +119,7 @@ export function startServer(basePath: string) {
         (plugins[pluginKey].active = active)
     );
 
-    for (const pluginKey in plugins) {
+    for (const pluginKey of pluginOrder) {
       sendAddPlugin(pluginKey);
     }
   });
@@ -106,19 +133,6 @@ export function startServer(basePath: string) {
     io.emit('addPlugin', pluginKey, active, displayName);
   }
 
-  function sendSupplement(id: number, supplement: string) {
-    io.emit('supplement', id, supplement);
-  }
-
-  function sendDiagnostic(fileName: string, diagnostics: Diagnostic[]) {
-    io.emit('diagnostics', fileName, diagnostics);
-  }
-
-  const sendResolvedErrors = (pluginKey: string) =>
-    function (fileName: string, resolvedError: FlatErr[]) {
-      io.emit('resolvedError', pluginKey, fileName, resolvedError);
-    };
-
   function onGotoDefinition(
     callback: (
       fileName: string,
@@ -131,34 +145,6 @@ export function startServer(basePath: string) {
   }
 
   let fixFunctions: Record<number, () => void> = {};
-  const sendResetResolvedErrors = (pluginKey: string) =>
-    function () {
-      io.emit('resetResolvedErrors', pluginKey);
-      fixFunctions = {};
-    };
-
-  function sendFixes(
-    fixesRec: Record<
-      number,
-      [fixId: number, fixDescription: string, fn: () => void][]
-    >
-  ) {
-    for (const fixes of Object.values(fixesRec)) {
-      for (const fix of fixes) {
-        fixFunctions[fix[0]] = fix[2];
-      }
-    }
-    io.emit('fixes', fixesRec);
-  }
-
-  // let idx = 0;
-  // setInterval(() => {
-  //    idx++;
-  //    onDiagnostic('testFile', [
-  //       `type 'foo${idx}' is not assignable to type 'Foo<number>'.`,
-  //    ]);
-  //    console.log('emitted test diagnostic');
-  // }, 1000);
 
   console.log(semanticErrorIdentifiers);
 
@@ -174,14 +160,6 @@ export function startServer(basePath: string) {
     return projectPath;
   }
 
-  function openProject(path: string) {
-    projectPath = path;
-    project = mkProject(path, plugins);
-    for (const pluginKey in plugins) {
-      plugins[pluginKey].onOpenProject(path);
-    }
-  }
-
   const addProjectEventHandlers = (pluginKey: string) =>
     function (...handlers: ProjectEventHandlers) {
       plugins[pluginKey].projectEventHandlers.push(...handlers);
@@ -189,26 +167,97 @@ export function startServer(basePath: string) {
 
   // addSemanticErrorIdentifiers(...arkTypePlugin.semanticErrorIdentifiers);
 
-  function mkPluginInterface(pluginKey: string): TserrPluginApi {
-    return {
-      // sendDiagnostic,
-      // onGotoDefinition,
-      sendResolvedError: sendResolvedErrors(pluginKey),
-      sendResetResolvedErrors: sendResetResolvedErrors(pluginKey),
-      sendSupplement,
-      sendFixes,
+  const senders = {
+    fixes:
+      (pluginKey: string) =>
+      (
+        fixesRec: Record<
+          number,
+          [fixId: number, fixDescription: string, fn: () => void][]
+        >
+      ) => {
+        for (const fixes of Object.values(fixesRec)) {
+          for (const fix of fixes) {
+            fixFunctions[fix[0]] = fix[2];
+          }
+        }
+        io.emit('fixes', fixesRec);
+      },
+    openProject: (pluginKey: string) => (path: string) => {
+      projectPath = path;
+      project = mkProject(path, plugins);
+    },
+    resetResolvedErrors: (pluginKey: string) => () => {
+      io.emit('resetResolvedErrors', pluginKey);
+      fixFunctions = {};
+    },
+    resolvedErrors:
+      (pluginKey: string) => (fileName: string, resolvedError: FlatErr[]) => {
+        io.emit('resolvedError', pluginKey, fileName, resolvedError);
+      },
+    supplement: (pluginKey: string) => (id: number, supplement: string) => {
+      io.emit('supplement', id, supplement);
+    },
+  } as const;
+
+  function mkPluginInterface(plugin: TserrPlugin): TserrPluginApi {
+    if (plugin.key in plugins) {
+      throw new Error(`plugin key ${plugin.key} already registered`);
+    }
+
+    const api = {
+      send: tupleToObject<TserrPluginEvents>(tserrPluginEvents)((event) => {
+        return app(event);
+      }),
+      on: tupleToObject<TserrPluginEvents>(tserrPluginEvents)((event) =>
+        store(event)
+      ),
       // addSemanticErrorIdentifiers,
       getProjectPath,
-      addProjectEventHandlers: addProjectEventHandlers(pluginKey),
-      onOpenProject: (on: (projectPath: string) => void) => {
-        plugins[pluginKey].onOpenProject = on;
-      },
+      addProjectEventHandlers: addProjectEventHandlers(plugin.key),
+      // sendOpenProject: app(openProject),
     };
+
+    pluginOrder.push(plugin.key);
+    plugins[plugin.key] = {
+      active: true,
+      displayName: plugin.displayName,
+      api,
+      on: doNothingEvents,
+      projectEventHandlers: [() => api.send.resetResolvedErrors()],
+    };
+
+    plugin.register(api);
+
+    sendAddPlugin(plugin.key);
+
+    return api;
+
+    function app<T extends keyof typeof senders>(sendKey: T) {
+      const fn = senders[sendKey];
+      return (...args: any[]) => {
+        fn(plugin.key)(
+          // @ts-expect-error let me spread
+          ...args
+        );
+
+        // propogate to other plugins in order of registration
+        for (const toPlugin of pluginOrder) {
+          if (plugins[toPlugin].active && plugin.key !== toPlugin) {
+            plugins[toPlugin].on[sendKey](
+              // @ts-expect-error let me spread
+              ...args
+            );
+          }
+        }
+      };
+    }
+    function store<T extends keyof TserrPluginApi['on']>(key: T) {
+      return (on: PluginState['on'][T]) => (plugins[plugin.key].on[key] = on);
+    }
   }
 
-  const plugins: PluginStates = {};
-
-  async function loadPlugin(pluginPath: string) {
+  async function importPlugin(pluginPath: string) {
     await import(pluginPath).then((module) => {
       const plugin = module.plugin;
       if (
@@ -221,25 +270,8 @@ export function startServer(basePath: string) {
         throw new Error('invalid plugin');
       }
 
-      if (plugin.key in plugins) {
-        throw new Error(`plugin key ${plugin.key} already registered`);
-      }
-
-      const api = mkPluginInterface(plugin.key);
-
-      plugins[plugin.key] = {
-        active: true,
-        displayName: plugin.displayName,
-        api,
-        onOpenProject: () => {
-          /**/
-        },
-        projectEventHandlers: [() => api.sendResetResolvedErrors()],
-      };
-
-      plugin.register(api);
-
-      sendAddPlugin(plugin.key);
+      const api = mkPluginInterface(plugin);
+      return api;
     });
   }
 
@@ -250,11 +282,10 @@ export function startServer(basePath: string) {
   }
 
   const ret = {
-    openProject,
-    loadPlugin,
+    importPlugin,
     onGotoDefinition,
     shutdownServer,
-    foo: 'bar',
+    mkPluginInterface,
   };
   console.log('start server returning', ret);
   return ret;

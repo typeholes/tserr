@@ -4,3 +4,4 @@ export * from './lib/Err';
 
 export * from './lib/ParsedError';
 
+export * from './lib/util';
