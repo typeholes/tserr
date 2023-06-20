@@ -5,8 +5,12 @@ import * as shiki from 'shiki';
 
 // import './assets/main.css'
 
+
+
+
 import '@mdi/font/css/materialdesignicons.css';
 import 'vuetify/styles';
+import './typeholes-reset.css';
 import { createVuetify } from 'vuetify';
 // import { aliases, mdi } from 'vuetify/iconsets/mdi';
 
@@ -18,7 +22,14 @@ const vuetify = createVuetify({
     defaultTheme: 'dark',
   },
   defaults: {
-    global: { dense: true, 'no-gutters': true },
+    global: {
+      dense: true,
+      'no-gutters': true,
+      class: 'mt0 pt0',
+      style: 'min-height: 0px',
+    },
+    VExpansionPanelTitle: { style: 'padding: 4px 4px; min-height: 0px' },
+    VContainer: { style: 'padding: 0px' },
   },
 });
 

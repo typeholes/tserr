@@ -38,38 +38,12 @@ function formatCode(code: string | undefined) {
 </script>
 
 <template>
-  <div class="row">
     <code>
       <div v-html="highlighted" />
     </code>
-  </div>
 </template>
 
 <style scoped>
-table,
-th,
-td {
-  border: 1px solid rgb(105, 129, 0);
-  border-collapse: collapse;
-  padding-left: 0.3rem;
-  padding-right: 0.3rem;
-  align-content: top;
-}
-
-td {
-  width: max-content;
-  vertical-align: top;
-}
-
-table {
-  width: max-content;
-}
-
-.row {
-  display: flex;
-  flex-direction: row;
-  gap: 0.1rem;
-}
 
 code {
   white-space: pre-wrap;

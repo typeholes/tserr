@@ -48,16 +48,16 @@ function groupBy<T, U extends number | string>(
         >
           <v-expansion-panel :title="fileName">
             <template #text>
-              <v-expansion-panels multiple>
+              <v-expansion-panels multiple dense noGutters class="mt0 pt0">
                 <template v-for="(errors, pluginName) in map" :key="pluginName">
-                  <v-expansion-panel :title="pluginName">
+                  <v-expansion-panel :title="pluginName" dense class="mt0 pt0">
                     <template #text>
-                      <v-expansion-panels multiple variant="accordion">
+                      <v-expansion-panels multiple variant="accordion" dense noGutters class="mt0 pt0">
                         <template
                           v-for="(errs, _idx) of groupErrors(errors)"
                           :key="_idx"
                         >
-                          <v-expansion-panel :title="'Line: ' + errs[0]">
+                          <v-expansion-panel :title="'Line: ' + errs[0]" class="mt0 pt0">
                             <template #text>
                               <v-container fluid>
                                 <!-- <pre> {{ err.lines.join('\n') }}</pre> -->
