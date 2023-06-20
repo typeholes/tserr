@@ -61,7 +61,7 @@ const tserr = server.mkPluginInterface({
   },
 });
 
- server.mkPluginInterface(tsmorphPlugin);
+server.mkPluginInterface(tsmorphPlugin);
 
 tserr.send.openProject(projectPath);
 console.log('dirname: ', __dirname);

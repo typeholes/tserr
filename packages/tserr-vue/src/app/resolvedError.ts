@@ -43,8 +43,8 @@ const _resolvedError = scope({
   // }
 });
 export const resolvedError = _resolvedError.compile();
-const unionedResolvedError = _resolvedError.type(
-  'aliasSelfReferenceResult|unknownError|notAssignable'
+export const unionedResolvedError = _resolvedError.type(
+  'aliasSelfReferenceResult|unknownError|notAssignable|excessProperty'
 );
 export type ResolvedError = typeof unionedResolvedError.infer;
 
@@ -54,27 +54,18 @@ export type AliasSelfReferenceResult =
 export const splitResolvedErrors = arkSplitter(resolvedError);
 export type SplitResolvedErrors = ReturnType<typeof splitResolvedErrors>;
 
-export const err = scope({
+export const flatErr = scope({
   err: {
     line: 'number',
     endLine: 'number',
     start: 'number',
     lines: 'string[]',
-    parsed: arrayOf([type('number'), type('number'), type('unknown')]),
+    parsed: arrayOf(unionedResolvedError)
   },
 }).compile();
+export type FlatErr = typeof flatErr.err.infer;
 
-export const splitErr = arkSplitter(err);
-export type SplitErr = ReturnType<typeof splitErr>;
 
-export function deserialize(x: unknown[]) {
-  const errs = splitErr(x).err;
-  const ret = errs.map((e) => ({
-    ...e,
-    parsed: splitResolvedErrors(e.parsed, 'first'),
-  }));
-  return ret;
-}
 
 const example = [
   {

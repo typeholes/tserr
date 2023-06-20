@@ -19,12 +19,15 @@
     "socket.io": "^4.6.1",
     "socket.io-client": "^4.6.1",
     "ts-morph": "^18.0.0",
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "vite-plugin-vuetify": "^1.0.2",
+    "vuetify": "^3.3.3"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.0.0",
     "@commitlint/config-conventional": "^17.0.0",
     "@jscutlery/semver": "^3.0.0",
+    "@mdi/font": "^7.2.96",
     "@nx/cypress": "16.3.1",
     "@nx/esbuild": "16.3.1",
     "@nx/eslint-plugin": "16.3.1",

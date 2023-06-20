@@ -7,9 +7,7 @@ import PluginManager from './PluginManager.vue';
 
 <template>
   <div class="appstate">
-    <span> socket started: {{ appState.socketStarted }} </span>
-    <span> connected: {{ appState.connected }} </span>
-    <PluginManager/>
+
     <!-- <span> error: {{ appState.error }} </span> -->
     <!-- <ProblemsView /> -->
     <ResolvedErrors />

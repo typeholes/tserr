@@ -1,6 +1,7 @@
 import { reactive } from 'vue';
 // import {} from '@/socket'
-import { deserialize } from './resolvedError';
+import { FlatErr, flatErr } from './resolvedError';
+import { FileName, PluginName } from '@typeholes/tserr-common';
 
 export const socketHandlers = {
   connect: () => (appState.connected = true),
@@ -13,8 +14,6 @@ export const socketHandlers = {
   fixes: handleFixes,
   addPlugin: handleAddPlugin,
 };
-
-type FileName = string;
 
 export type Diagnostic = {
   message: string;
@@ -35,19 +34,20 @@ export const appState = reactive({
   lastObject: {},
   socketStarted: false,
   error: '',
-  plugins: {} as Record<string, { active: boolean; displayName: string }>,
+  plugins: {} as Record<PluginName, { active: boolean; displayName: string }>,
   requests: new Map<
     number,
     { resolve: (...args: any[]) => void; reject: (...args: any[]) => void }
   >(),
   diagnostics: new Map<FileName, Diagnostic[]>(),
-  resolvedErrors: {} as Record<string, Map<FileName, ReturnType<typeof deserialize>>>,
+  resolvedErrors: {} as Record<FileName, Record<PluginName, FlatErr[]>>,
   supplements: {} as Record<number, string[]>,
   fixes: {} as Record<number, [fixId: number, fixDescription: string][]>,
 });
 
 function handleAddPlugin(key: string, active: boolean, displayName: string) {
-  appState.plugins[key] = { active, displayName };
+  const pName = PluginName(key);
+  appState.plugins[pName] = { active, displayName };
 }
 
 function handleRequestError(requestId: number, ...args: any[]) {
@@ -78,12 +78,28 @@ function handleDiagnostic(fileName: FileName, diagnostics: Diagnostic[]) {
   appState.diagnostics.set(fileName, diagnostics);
 }
 
-function handleResolvedError(pluginKey: string, filename: FileName, resolved: [unknown][]) {
-  appState.resolvedErrors[pluginKey].set(filename, deserialize(resolved));
+function handleResolvedError(
+  pluginKey: string,
+  fileName: string,
+  resolved: [unknown][]
+) {
+  const pName = PluginName.for(pluginKey);
+  const fName = FileName.for(fileName);
+  appState.resolvedErrors[fName] ??= {};
+  appState.resolvedErrors[fName][pName] ??= [];
+
+  for (const err of resolved) {
+    if (flatErr.err.allows(err)) {
+      appState.resolvedErrors[fName][pName].push(err);
+    }
+  }
 }
 
 function handleResetResolvedErrors(pluginKey: string) {
-  appState.resolvedErrors[pluginKey] = new Map();
+  for (const fileName in appState.resolvedErrors) {
+    appState.resolvedErrors[FileName.for(fileName)][PluginName.for(pluginKey)] =
+      [];
+  }
   appState.supplements = [];
   appState.fixes = {};
 }

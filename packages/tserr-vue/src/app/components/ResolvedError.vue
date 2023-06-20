@@ -1,21 +1,15 @@
 <script setup lang="ts">
 import CodeGrid from './CodeGrid.vue';
-import type { ResolvedError } from '../resolvedError';
+import type { FlatErr } from '../resolvedError';
 import { appState } from '../appState';
 import { inject } from 'vue';
 import { Emitters } from '../socket';
 import DisplaySupplement from './DisplaySupplement.vue';
 
 const props = defineProps<{
-  parsed: ResolvedError;
-  startLine: number;
-  endLine: number;
+  err: FlatErr;
   fileName: string;
 }>();
-
-function getOrder() {
-  return (props.parsed as any).getOrder();
-}
 
 const emitters = inject<Emitters>('emitters');
 
@@ -32,49 +26,59 @@ function problemClick(e: MouseEvent) {
   const el = document.elementFromPoint(e.clientX, e.clientY);
   if (el && el.textContent) {
     console.log('found element:', el);
-    console.log('calling gotoDefinition', props.fileName, el.textContent, props.startLine);
-    emitters?.gotoDefinition(props.fileName, el.textContent, props.startLine, props.endLine);
+    console.log(
+      'calling gotoDefinition',
+      props.fileName,
+      el.textContent,
+      props.err.line
+    );
+    emitters?.gotoDefinition(
+      props.fileName,
+      el.textContent,
+      props.err.line,
+      props.err.endLine
+    );
   }
 }
 </script>
 
 <template>
-  <div class="row" :style="{ order: getOrder() }" @click="problemClick">
-    <!-- <div>parsed: {{ props.parsed}}</div> -->
-    <div>{{ props.parsed[2].type }}</div>
-    <span :style="{ minWidth: `${props.parsed[1] ?? 0}rem` }"></span>
+  <v-row no-gutters  @click="problemClick" v-for="parsed, idx of props.err.parsed" :key="idx">
+    <v-col>{{ parsed[2].type }}</v-col>
+    <v-col :style="{ minWidth: `${parsed[1] ?? 0}rem` }"></v-col>
     <!-- <span v-if="props.parsed[2].type === 'unknownError'">
       {{ props.parsed[2].parts }}
     </span> -->
-    <span v-if="props.parsed[2].type === 'aliasSelfReference'">
-      {{ props.parsed[2].from }}
-    </span>
-    <div
-      v-if="['notAssignable', 'excessProperty'].includes(props.parsed[2].type)"
+    <v-col v-if="parsed[2].type === 'aliasSelfReference'">
+      {{ parsed[2].from }}
+    </v-col>
+    <v-col
+      v-if="['notAssignable', 'excessProperty'].includes(parsed[2].type)"
     >
-      <CodeGrid :blocks="Object.entries(props.parsed[2])" header-key="type" />
-    </div>
-    <div v-if="props.parsed[2].type === 'unknownError'">
+      <CodeGrid :blocks="Object.entries(parsed[2])" header-key="type" />
+    </v-col>
+    <v-col v-if="parsed[2].type === 'unknownError'">
       <CodeGrid
-        :blocks="unknownPartsToBlock(props.parsed[2].parts)"
+        :blocks="unknownPartsToBlock(parsed[2].parts)"
         header-key=""
       />
-    </div>
-    <div
+    </v-col>
+    <v-col
       class="supplements"
-      v-for="text in appState.supplements[props.parsed[0]]"
+      v-for="text in appState.supplements[parsed[0]]"
       :key="text"
     >
       <DisplaySupplement :text="text" />
-    </div>
-    <div class="fixes">
-      <template v-for="fix of appState.fixes[props.parsed[0]]" :key="fix">
+    </v-col>
+    <v-col><v-container>
+      <v-row v-for="fix of appState.fixes[parsed[0]]" :key="fix[0]">
         <button @click="emitters?.applyFix(fix[0])">
           {{ fix[1] }}
         </button>
-      </template>
-    </div>
-  </div>
+      </v-row>
+    </v-container></v-col>
+    <!-- </div> -->
+  </v-row>
 </template>
 
 <style scoped>
