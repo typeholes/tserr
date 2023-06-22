@@ -1,4 +1,4 @@
-import { FlatErr } from '@typeholes/tserr-common';
+import { FlatErr, ProjectPath } from '@typeholes/tserr-common';
 import { ProjectEvent } from './project';
 
 export type TserrPluginEvents = {
@@ -14,12 +14,14 @@ export type TserrPluginEvents = {
     >
   ) => void;
 
+  hasProject: (projectPath: string) => void;
   openProject: (projectPath: string) => void;
+  closeProject: (projectPath: string) => void;
 };
 
 export type TserrPluginApi = {
   // addSemanticErrorIdentifiers: (...identifiers: typeof semanticErrorIdentifiers) => void;
-  getProjectPath: () => string | undefined;
+  getProjectPaths: () => ProjectPath[];
   addProjectEventHandlers: (
     ...handlers: ((projectEvents: ProjectEvent[]) => void)[]
   ) => void;

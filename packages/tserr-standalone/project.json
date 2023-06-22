@@ -6,16 +6,22 @@
   "targets": {
     "build": {
       "executor": "@nx/esbuild:esbuild",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "defaultConfiguration": "production",
       "options": {
         "platform": "node",
         "outputPath": "dist/packages/tserr-standalone",
-        "format": ["cjs"],
+        "format": [
+          "cjs"
+        ],
         "bundle": false,
         "main": "packages/tserr-standalone/src/main.ts",
         "tsConfig": "packages/tserr-standalone/tsconfig.app.json",
-        "assets": ["packages/tserr-standalone/src/assets"],
+        "assets": [
+          "packages/tserr-standalone/src/assets"
+        ],
         "generatePackageJson": true,
         "esbuildOptions": {
           "sourcemap": true,
@@ -45,7 +51,9 @@
       "configurations": {
         "development": {
           "buildTarget": "tserr-standalone:build:development",
-          "runtimeArgs": ["/home/hw/projects/nx/typeholes/error_samples"]
+          "runtimeArgs": [
+            "/home/hw/projects/nx/typeholes"
+          ]
         },
         "production": {
           "buildTarget": "tserr-standalone:build:production"
@@ -54,14 +62,20 @@
     },
     "lint": {
       "executor": "@nx/linter:eslint",
-      "outputs": ["{options.outputFile}"],
+      "outputs": [
+        "{options.outputFile}"
+      ],
       "options": {
-        "lintFilePatterns": ["packages/tserr-standalone/**/*.ts"]
+        "lintFilePatterns": [
+          "packages/tserr-standalone/**/*.ts"
+        ]
       }
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
       "options": {
         "jestConfig": "packages/tserr-standalone/jest.config.ts",
         "passWithNoTests": true

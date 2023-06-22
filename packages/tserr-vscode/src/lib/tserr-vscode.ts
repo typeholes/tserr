@@ -52,7 +52,7 @@ export function activate(context: ExtensionContext) {
       .map((uri) => [uri, workspace.asRelativePath(uri).split('/')] as const)
       .sort((a, b) => a[1].length - b[1].length)[0][0];
     console.log({ shortest });
-    tserr.send.openProject(shortest.fsPath.replace('tsconfig.json', ''));
+    tserr.send.hasProject(shortest.fsPath.replace('tsconfig.json', ''));
   });
 
   commands.registerCommand('tserr-problems-view.openExternal', () => {
@@ -224,7 +224,9 @@ function getErrorHoverInfo(err: FlatErr): HoverInfo {
         }
       }
       const keyCells = keys.map((x) => ({ type: 'text', body: x } as const));
-      const valueCells = values.map((x) => ({ type: 'code', body: x } as const));
+      const valueCells = values.map(
+        (x) => ({ type: 'code', body: x } as const)
+      );
       hoverInfo.push(keyCells, valueCells);
     }
   });

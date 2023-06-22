@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import ServerState from './app/components/ServerState.vue';
 import AppState from './app/components/AppState.vue';
-import { appState } from './app/appState';
-import PluginManager from './app/components/PluginManager.vue';
 import { useTheme } from 'vuetify';
 
 const drawer = ref(false);
@@ -31,9 +30,7 @@ const toggleTheme = () =>
       <v-btn variant="text" icon="mdi-dots-vertical"></v-btn>
     </v-app-bar>
     <v-navigation-drawer v-model="drawer" location="bottom" temporary>
-      <span> socket started: {{ appState.socketStarted }} </span>
-      <span> connected: {{ appState.connected }} </span>
-      <PluginManager />
+      <ServerState/>
     </v-navigation-drawer>
     <v-main>
       <AppState />

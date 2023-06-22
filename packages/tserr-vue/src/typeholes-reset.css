@@ -3,3 +3,9 @@
 div.v-expansion-panel-text__wrapper {
     padding: 0px 12px 0px;
 }
+
+.v-input--density-compact {
+  --v-input-control-height: 1rem;
+  --v-input-paddin-top: 0.1rem;
+}
+

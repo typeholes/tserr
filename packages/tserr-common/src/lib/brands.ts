@@ -32,6 +32,9 @@ const brandStr = mkBrand<string>();
 export const FileName = brandStr('FileName');
 export type FileName = ReturnType<typeof FileName>;
 
+export const ProjectPath = brandStr('ProjectPath');
+export type ProjectPath = ReturnType<typeof ProjectPath>;
+
 const plugins: string[] = [];
 
 export const PluginName = mkBrand(

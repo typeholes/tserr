@@ -36,8 +36,8 @@ const declarationKinds = [
   SyntaxKind.ClassDeclaration,
 ];
 
-let project: Project | undefined;
-let tsConfigFilePath: string | undefined = undefined;
+const projects: Record<string, Project> = {};
+
 let tserrApi: TserrPluginApi | undefined = undefined;
 
 export const plugin: TserrPlugin = {
@@ -46,64 +46,80 @@ export const plugin: TserrPlugin = {
   register(api) {
     tserrApi = api;
     api.on.openProject(openProject);
+    api.on.closeProject(closeProject);
+
     api.addProjectEventHandlers(processFileEvents);
   },
 };
 
+function closeProject(path: string) {
+  const tsConfigFilePath = path;
+  if (tsConfigFilePath in projects) {
+    delete projects[tsConfigFilePath];
+  }
+}
 function openProject(path: string) {
-  tsConfigFilePath = path + '/tsconfig.json';
-  console.log({ tsConfigFilePath });
-  if (project !== undefined || tsConfigFilePath === undefined) {
+  const tsConfigFilePath = path;
+  if (tsConfigFilePath in projects) {
     return;
   }
-  project = new Project({
+  console.log({ tsConfigFilePath });
+
+  projects[tsConfigFilePath] = new Project({
     compilerOptions: {
       target: ScriptTarget.ESNext,
     },
     tsConfigFilePath,
   });
-  console.log('ts-morph opened project');
+  console.log(
+    'ts-morph opened project',
+    projects[tsConfigFilePath].getCompilerOptions()
+  );
 }
 
 function processFileEvents(events: { type: string; filePath: string }[]) {
-  if (!project) {
-    return;
-  }
+  for (const tsConfigFilePath in projects) {
+    const project = projects[tsConfigFilePath];
 
-  console.log('ts-morph processing file events');
-
-  const promises = events.map(
-    (e) =>
-      project?.getSourceFile(e.filePath)?.refreshFromFileSystem() ??
-      Promise.resolve(undefined)
-  );
-  Promise.all(promises).then(() => {
     if (!project) {
-      return;
+      continue;
     }
-    const diagnostics = group(
-      project.getPreEmitDiagnostics(),
-      (diagnostic) =>
-        diagnostic.getSourceFile()?.getFilePath() ?? 'unknown file'
+
+    console.log('ts-morph processing file events');
+
+    const promises = events.map(
+      (e) =>
+        project?.getSourceFile(e.filePath)?.refreshFromFileSystem() ??
+        Promise.resolve(undefined)
     );
-
-    for (const fileName in diagnostics) {
-      const payload: FlatErr[] = [];
-      for (const diagnostic of diagnostics[fileName]) {
-        const resolved = handleError(diagnostic, fileName);
-        if (resolved) {
-          // console.log(resolved);
-
-          payload.push(...resolved);
-        }
+    Promise.all(promises).then(() => {
+      if (!project) {
+        return;
       }
-      tserrApi?.send.resolvedErrors(fileName, payload);
-    }
+      const diagnostics = group(
+        project.getPreEmitDiagnostics(),
+        (diagnostic) =>
+          diagnostic.getSourceFile()?.getFilePath() ?? 'unknown file'
+      );
 
-    // project.getSourceFiles().forEach((file) => {
-    //   file.getDescendants().forEach((node) => onNodeKind(kindHandlers, node));
-    // });
-  });
+      for (const fileName in diagnostics) {
+        const payload: FlatErr[] = [];
+        for (const diagnostic of diagnostics[fileName]) {
+          const resolved = handleError(diagnostic, fileName);
+          if (resolved) {
+            // console.log(resolved);
+
+            payload.push(...resolved);
+          }
+        }
+        tserrApi?.send.resolvedErrors(fileName, payload);
+      }
+
+      // project.getSourceFiles().forEach((file) => {
+      //   file.getDescendants().forEach((node) => onNodeKind(kindHandlers, node));
+      // });
+    });
+  }
 }
 
 function handleError(diagnostic: Diagnostic, fileName: string): FlatErr[] {

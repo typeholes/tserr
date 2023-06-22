@@ -1,10 +1,10 @@
 import { startServer } from '@typeholes/tserr-server';
 import { tmpdir } from 'os';
 import { join as joinPath, resolve as resolvePath } from 'path';
-import { cpSync } from 'fs';
+import { cpSync, readdirSync, statSync } from 'fs';
 import { version as nodeVersion } from 'process';
 
-const errorSamplePath = '/home/hw/projects/nx/typeholes/error_samples';
+const errorSamplePath = '/home/hw/projects/nx/typeholes'; // /error_samples';
 const { projectPath } = processArgs();
 
 function processArgs(): { projectPath: string } {
@@ -63,5 +63,25 @@ const tserr = server.mkPluginInterface({
 
 server.mkPluginInterface(tsmorphPlugin);
 
-tserr.send.openProject(projectPath);
+const configs: string[] = [];
+
+function findConfigs(dirPath: string) {
+  readdirSync(dirPath).forEach((file) => {
+    const path = joinPath(dirPath, file);
+    if (file === 'node_modules') {
+      return;
+    }
+    if (statSync(path).isDirectory()) {
+      findConfigs(path);
+    } else {
+      if (file.match(/^tsconfig.*\.json$/)) {
+        configs.push(path);
+        console.log('found project ${path}');
+      }
+    }
+  });
+}
+
+findConfigs(projectPath);
+configs.forEach(tserr.send.hasProject);
 console.log('dirname: ', __dirname);

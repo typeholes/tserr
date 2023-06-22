@@ -25,6 +25,12 @@ export function startSocket() {
   console.log('socket started');
 
   return {
+    closeProject: (path: string) => {
+      socket.emit('closeProject', path);
+    },
+    openProject: (path: string) => {
+      socket.emit('openProject', path);
+    },
     applyFix: (fixId: number) => {
       socket.emit('applyFix', fixId);
     },

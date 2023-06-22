@@ -1,7 +1,7 @@
 import { reactive } from 'vue';
 // import {} from '@/socket'
 import { FlatErr, flatErr } from './resolvedError';
-import { FileName, PluginName } from '@typeholes/tserr-common';
+import { FileName, PluginName, ProjectPath } from '@typeholes/tserr-common';
 
 export const socketHandlers = {
   connect: () => (appState.connected = true),
@@ -13,6 +13,8 @@ export const socketHandlers = {
   supplement: handleSupplement,
   fixes: handleFixes,
   addPlugin: handleAddPlugin,
+  openProject: handleOpenProject,
+  hasProject: handleHasProject,
 };
 
 export type Diagnostic = {
@@ -43,6 +45,7 @@ export const appState = reactive({
   resolvedErrors: {} as Record<FileName, Record<PluginName, FlatErr[]>>,
   supplements: {} as Record<number, string[]>,
   fixes: {} as Record<number, [fixId: number, fixDescription: string][]>,
+  projects: {} as Record<ProjectPath, undefined | boolean>,
 });
 
 function handleAddPlugin(key: string, active: boolean, displayName: string) {
@@ -115,6 +118,18 @@ function handleFixes(
   for (const parseId in fixes) {
     appState.fixes[parseId] ??= [];
     appState.fixes[parseId].push(...fixes[parseId]);
+  }
+}
+
+function handleHasProject(path: string) {
+  if (!(path in appState.projects)) {
+    appState.projects[ProjectPath(path)] ??= false;
+  }
+}
+
+function handleOpenProject(path: string) {
+  if (path in appState.projects) {
+    appState.projects[ProjectPath(path)] = true;
   }
 }
 

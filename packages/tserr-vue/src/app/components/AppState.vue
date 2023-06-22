@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import { appState } from '../appState';
 // import ProblemsView from './ProblemsView.vue';
 import ResolvedErrors from './ResolvedErrors.vue';
-import PluginManager from './PluginManager.vue';
 </script>
 
 <template>

@@ -6,6 +6,8 @@ import {
   type FlatErr,
   type ParsedError,
   tupleToObject,
+  ProjectPath,
+  PluginName,
 } from '@typeholes/tserr-common';
 import * as http from 'http';
 import * as path from 'path';
@@ -26,7 +28,9 @@ export const tserrPluginEvents: U2T<keyof TserrPluginEvents> = [
   'resetResolvedErrors',
   'supplement',
   'fixes',
+  'hasProject',
   'openProject',
+  'closeProject',
 ];
 
 const doNothing = () => {
@@ -39,7 +43,9 @@ const doNothingEvents = tupleToObject<TserrPluginEvents>(tserrPluginEvents)(
 //Object.fromEntries(tserrPluginEvents.map(event => [event, doNothing] as const)) as unknown as TserrPluginEvents
 const _doNothingEvents: TserrPluginEvents = {
   fixes: doNothing,
+  hasProject: doNothing,
   openProject: doNothing,
+  closeProject: doNothing,
   resetResolvedErrors: doNothing,
   resolvedErrors: doNothing,
   supplement: doNothing,
@@ -93,6 +99,7 @@ export function startServer(basePath: string) {
   const pluginOrder: string[] = [];
 
   app = express();
+  ('openProject');
   httpServer = http.createServer(app);
   io = new Server(httpServer, { cors: { origin: 'http://localhost:4200' } });
   app.get('/', (req, res) => {
@@ -101,17 +108,32 @@ export function startServer(basePath: string) {
 
   app.use(express.static(basePath));
 
+  let hasConnection = false;
+  const queuedEmits: [any, any[]][] = [];
   io.on('connection', (socket) => {
+    hasConnection = true;
     socket.use((packet, next) => {
       console.log(packet);
       next();
     });
-    socket.on(
-      'gotoDefinition',
-      (filename, text, searchFromLine, searchToLine) => {
-        gotoDefinition(filename, text, searchFromLine, searchToLine);
+    socket.on('openProject', (path) => {
+      for (const pluginKey of pluginOrder) {
+        plugins[pluginKey]?.on.openProject(path);
       }
-    );
+      projects[path]?.project.open();
+    }),
+      socket.on('closeProject', (path) => {
+        for (const pluginKey of pluginOrder) {
+          plugins[pluginKey]?.on.closeProject(path);
+        }
+        projects[path]?.project.close();
+      }),
+      socket.on(
+        'gotoDefinition',
+        (filename, text, searchFromLine, searchToLine) => {
+          gotoDefinition(filename, text, searchFromLine, searchToLine);
+        }
+      );
     socket.on('applyFix', (fixId: number) => fixFunctions[fixId]());
     socket.on(
       'setPlugin',
@@ -122,15 +144,40 @@ export function startServer(basePath: string) {
     for (const pluginKey of pluginOrder) {
       sendAddPlugin(pluginKey);
     }
+
+    for (const [event, args] of queuedEmits) {
+      io.emit(event, ...args);
+    }
+    queuedEmits.length = 0;
   });
 
   httpServer.listen(3000, () => {
     console.log('listening on *:3000');
   });
 
+  function emit(event: string, ...args: any[]) {
+    if (hasConnection) {
+      io.emit(event, ...args);
+    } else {
+      queuedEmits.push([event, args]);
+    }
+  }
+
+  function sendOpenProject(projectPath: ProjectPath) {
+    emit('openProject', projectPath);
+  }
+
+  function sendCloseProject(projectPath: ProjectPath) {
+    emit('closeProject', projectPath);
+  }
+
+  function sendHasProject(projectPath: ProjectPath) {
+    emit('hasProject', projectPath);
+  }
+
   function sendAddPlugin(pluginKey: string) {
     const { active, displayName } = plugins[pluginKey];
-    io.emit('addPlugin', pluginKey, active, displayName);
+    emit('addPlugin', pluginKey, active, displayName);
   }
 
   function onGotoDefinition(
@@ -154,10 +201,13 @@ export function startServer(basePath: string) {
     semanticErrorIdentifiers.push(...identifiers);
   }
 
-  let projectPath: undefined | string = undefined;
-  let project: undefined | Project = undefined;
-  function getProjectPath() {
-    return projectPath;
+  const projects: Record<
+    ProjectPath,
+    { project: Project; openedBy: PluginName }
+  > = {};
+
+  function getProjectPaths() {
+    return Object.keys(projects) as ProjectPath[];
   }
 
   const addProjectEventHandlers = (pluginKey: string) =>
@@ -181,22 +231,56 @@ export function startServer(basePath: string) {
             fixFunctions[fix[0]] = fix[2];
           }
         }
-        io.emit('fixes', fixesRec);
+        emit('fixes', fixesRec);
       },
+    hasProject: (pluginKey: string) => (path: string) => {
+      if (path in projects) {
+        return;
+      }
+      const projectPath = ProjectPath(path);
+
+      projects[projectPath] = {
+        project: mkProject(path, plugins),
+        openedBy: PluginName.for(pluginKey),
+      };
+      sendHasProject(projectPath);
+    },
     openProject: (pluginKey: string) => (path: string) => {
-      projectPath = path;
-      project = mkProject(path, plugins);
+      if (path in projects) {
+        throw new Error('project `${path}` is already open');
+      }
+      const projectPath = ProjectPath(path);
+
+      if (!(projectPath in projects)) {
+        projects[projectPath] = {
+          project: mkProject(path, plugins),
+          openedBy: PluginName.for(pluginKey),
+        };
+        sendHasProject(projectPath);
+      }
+
+      projects[projectPath].project.open();
+      sendOpenProject(projectPath);
+    },
+    closeProject: (pluginKey: string) => (path: string) => {
+      if (!(path in projects)) {
+        return;
+      }
+      const projectPath = ProjectPath(path);
+
+      projects[projectPath].project.close();
+      sendCloseProject(projectPath);
     },
     resetResolvedErrors: (pluginKey: string) => () => {
-      io.emit('resetResolvedErrors', pluginKey);
+      emit('resetResolvedErrors', pluginKey);
       fixFunctions = {};
     },
     resolvedErrors:
       (pluginKey: string) => (fileName: string, resolvedError: FlatErr[]) => {
-        io.emit('resolvedError', pluginKey, fileName, resolvedError);
+        emit('resolvedError', pluginKey, fileName, resolvedError);
       },
     supplement: (pluginKey: string) => (id: number, supplement: string) => {
-      io.emit('supplement', id, supplement);
+      emit('supplement', id, supplement);
     },
   } as const;
 
@@ -213,7 +297,7 @@ export function startServer(basePath: string) {
         store(event)
       ),
       // addSemanticErrorIdentifiers,
-      getProjectPath,
+      getProjectPaths,
       addProjectEventHandlers: addProjectEventHandlers(plugin.key),
       // sendOpenProject: app(openProject),
     };
