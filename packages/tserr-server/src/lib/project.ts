@@ -20,8 +20,8 @@ export function mkProject(
   let events: ProjectEvent[] = [];
 
   function handleWatcher(type: ProjectEventType, filePath: string) {
-    events.push({ type, filePath });
-    waiting = true;
+      events.push({ type, filePath });
+      waiting = true;
   }
 
   function processEvents() {
@@ -48,7 +48,13 @@ export function mkProject(
   let eventInterval: NodeJS.Timer | undefined = undefined;
 
   function open() {
-    watcher = watch(projectPath.replace(/\/.*\.json$/, ''));
+    const dir = projectPath.replace(/\/[^\/]*\.json$/, '');
+    watcher = watch(dir + '/**/*.ts', {
+      awaitWriteFinish: { pollInterval: 100, stabilityThreshold: 100}, // need to play with these values
+      atomic: true,
+      ignored: ['**/node_modules','**/dist', '**/out'], // should come from tsconfig
+    }
+    );
     watcher.on('all', handleWatcher);
     eventInterval = setInterval(processEvents, 100);
   }
