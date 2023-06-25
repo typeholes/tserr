@@ -49,7 +49,7 @@
     "@vitest/coverage-c8": "^0.31.0",
     "@vitest/ui": "^0.31.0",
     "cypress": "^12.11.0",
-    "esbuild": "^0.17.17",
+    "esbuild": "^0.17.19",
     "eslint": "~8.15.0",
     "eslint-config-prettier": "8.1.0",
     "eslint-plugin-cypress": "^2.10.3",

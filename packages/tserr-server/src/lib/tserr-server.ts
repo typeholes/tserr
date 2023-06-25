@@ -101,7 +101,8 @@ export function startServer(basePath: string) {
   app = express();
   ('openProject');
   httpServer = http.createServer(app);
-  io = new Server(httpServer, { cors: { origin: 'http://localhost:4200' } });
+  io = new Server(httpServer, { cors: { origin: '*' } });
+  //io = new Server(httpServer, { cors: { origin: 'http://localhost:4200' } });
   app.get('/', (req, res) => {
     res.sendFile(path.join(basePath, 'index.html'));
   });

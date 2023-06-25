@@ -1,0 +1,49 @@
+{
+  "name": "tserr-vscode",
+  "publisher": "typeholes",
+  "version": "0.0.1",
+  "main": "./src/index.js",
+  "engines": {
+    "vscode": "^1.44.0"
+  },
+  "activationEvents": [
+    "*"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "tserr-problems-view.openExternal",
+        "title": "TsErr open external"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "type": "webview",
+          "id": "TsErr.problems",
+          "name": "TsErr Problems View",
+          "contextualTitle": "TsErr Problems"
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "@typeholes/tserr-common": "^0.0.1",
+    "@typeholes/tserr-server": "^0.0.1",
+    "@typeholes/tserr-ts-morph": "^0.0.1",
+    "@typeholes/tserr-vscode": "^0.0.1",
+    "0.0.1": "^1.0.1",
+    "arktype": "^1.0.14-alpha",
+    "axios": "^1.0.0",
+    "express": "~4.18.1",
+    "marked": "^4.3.0",
+    "shiki": "^0.14.1",
+    "shiki-themes": "^0.2.7",
+    "socket.io": "^4.6.1",
+    "socket.io-client": "^4.6.1",
+    "ts-morph": "^18.0.0",
+    "tslib": "^2.3.0",
+    "vite-plugin-vuetify": "^1.0.2",
+    "vuetify": "^3.3.3"
+  }
+}

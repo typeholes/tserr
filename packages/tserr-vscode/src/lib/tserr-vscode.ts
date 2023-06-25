@@ -28,8 +28,13 @@ import { parse } from 'path';
 let errors: Record<string, FlatErr[]> = {};
 
 export function activate(context: ExtensionContext) {
+  console.log(vscode.extensions.all.map((e) => e.id));
+
+  const extPath =
+    vscode.extensions.getExtension('typeholes.tserr-vscode')?.extensionPath ??
+    __dirname + '../../../../tserr-vue/';
   window.showInformationMessage('activating tserr');
-  const server = startServer(__dirname + '../../../../tserr-vue/');
+  const server = startServer(extPath);
   const tserr = server.mkPluginInterface({
     key: 'vscode',
     displayName: 'vscode',
@@ -52,7 +57,7 @@ export function activate(context: ExtensionContext) {
       .map((uri) => [uri, workspace.asRelativePath(uri).split('/')] as const)
       .sort((a, b) => a[1].length - b[1].length)[0][0];
     console.log({ shortest });
-    tserr.send.hasProject(shortest.fsPath.replace('tsconfig.json', ''));
+    tserr.send.hasProject(shortest.fsPath);
   });
 
   commands.registerCommand('tserr-problems-view.openExternal', () => {
@@ -169,7 +174,7 @@ type HoverInfo = {
 function getHoverMarkDown(uri: vscode.Uri, range: vscode.Range) {
   const fileName = uri.fsPath;
   const info: HoverInfo = [];
-  for (const err of errors[fileName]) {
+  for (const err of errors[fileName] ?? []) {
     //todo really should check position as well
     if (range.start.line >= err.line - 1 && range.end.line <= err.endLine - 1) {
       info.push(...getErrorHoverInfo(err), []);
