@@ -1,5 +1,5 @@
-import { FlatErr, ProjectPath } from '@typeholes/tserr-common';
-import { ProjectConfigs,  ProjectEvent } from './project';
+import { FlatErr, ProjectPath, ProjectConfigs } from '@typeholes/tserr-common';
+import { ProjectEvent } from './project';
 
 export type TserrPluginEvents = {
   resolvedErrors: (fileName: string, resolvedError: FlatErr[]) => void;

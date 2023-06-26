@@ -6,7 +6,8 @@ let socket: Socket;
 export type Emitters = ReturnType<typeof startSocket>;
 
 export function startSocket() {
-  const URL = 'http://localhost:3000';
+  const port = (window as any).TsErrPort ?? '3000';
+  const URL = `http://localhost:${port}`;
 
   socket = io(URL, { autoConnect: false });
 

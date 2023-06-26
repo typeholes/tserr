@@ -2,7 +2,11 @@ import { watch } from 'chokidar';
 import { PluginState } from './tserr-server.types';
 import { FSWatcher, readdirSync, statSync, readFileSync } from 'fs';
 import { join as joinPath, parse as parsePath, sep as pathSep } from 'path';
-import { TsErrConfig, tsErrConfig } from '@typeholes/tserr-common';
+import {
+  ProjectConfigs,
+  TsErrConfig,
+  tsErrConfig,
+} from '@typeholes/tserr-common';
 
 export type ProjectEventType =
   | 'add'
@@ -67,8 +71,6 @@ export function mkProject(
 
   return { close, open };
 }
-
-export type ProjectConfigs = ReturnType<typeof resolveConfigs>;
 
 export function findConfigs(
   dirPath: string,

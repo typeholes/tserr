@@ -20,6 +20,8 @@ import {
   TserrPlugin,
 } from './tserr-server.types';
 import { Project, findConfigs, mkProject } from './project';
+import { readFileSync, writeFileSync } from 'fs';
+import { join as joinPath } from 'path';
 
 export { TserrPluginApi, TserrPlugin } from './tserr-server.types';
 
@@ -92,11 +94,21 @@ let gotoDefinition = (
 };
 
 export type ErrorServer = ReturnType<typeof startServer>;
-export function startServer(servePath: string, projectRoot: string, serverPort = 3000) {
+export function startServer(
+  servePath: string,
+  projectRoot: string,
+  serverPort = 3000
+) {
   console.log('in start server');
 
   const configs = findConfigs(projectRoot);
   console.log(configs);
+
+  // hacky way to set the port in the vue app.  Really should find a better way
+  const indexFile = readFileSync(joinPath(servePath, 'index.html'))
+    .toString()
+    .replace("window.TsErrPort = '3100'", `window.TsErrPort = '${serverPort}'`);
+  writeFileSync(joinPath(servePath, 'index.fixed.html'), indexFile);
 
   const plugins: Record<string, PluginState> = {};
   const pluginOrder: string[] = [];
@@ -107,7 +119,7 @@ export function startServer(servePath: string, projectRoot: string, serverPort =
   io = new Server(httpServer, { cors: { origin: '*' } });
   //io = new Server(httpServer, { cors: { origin: 'http://localhost:4200' } });
   app.get('/', (req, res) => {
-    res.sendFile(path.join(servePath, 'index.html'));
+    res.sendFile(path.join(servePath, 'index.fixed.html'));
   });
 
   app.use(express.static(servePath));
@@ -169,6 +181,10 @@ export function startServer(servePath: string, projectRoot: string, serverPort =
 
   function sendOpenProject(projectPath: ProjectPath) {
     emit('openProject', projectPath);
+  }
+
+  function sendConfigs() {
+    emit('configs', configs);
   }
 
   function sendCloseProject(projectPath: ProjectPath) {
@@ -376,6 +392,8 @@ export function startServer(servePath: string, projectRoot: string, serverPort =
     shutdownServer,
     mkPluginInterface,
   };
+
+  sendConfigs();
   console.log('start server returning', ret);
   return ret;
 }

@@ -3,6 +3,7 @@ import { inject } from 'vue';
 import { appState } from '../appState';
 import { Emitters } from '../socket';
 import { ProjectPath } from '@typeholes/tserr-common';
+import ConfigView from './ConfigView.vue';
 
 const emitters = inject<Emitters>('emitters');
 
@@ -16,6 +17,9 @@ function toggleProject(open: boolean, path: string) {
     <v-row dense> socket started: {{ appState.socketStarted }} </v-row>
     <v-row dense> connected: {{ appState.connected }} </v-row>
     <v-row dense><PluginManager /></v-row>
+    <v-row dense>
+      <ConfigView/>
+    </v-row>
     <v-row
       dense
       v-for="path in Object.keys(appState.projects).sort()"

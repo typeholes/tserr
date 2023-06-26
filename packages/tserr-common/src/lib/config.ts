@@ -10,3 +10,17 @@ export const TsErrConfigDefault: TsErrConfig = {
   openProjects: [],
   ignoreErrCodes: [],
 };
+
+export type ProjectConfigs = {
+  [x: string]: {
+    tsconfig?: string[] | undefined;
+    tserr?: string | undefined;
+    parentPath: string;
+    config?:
+      | {
+          openProjects: string[];
+          ignoreErrCodes: string[];
+        }
+      | undefined;
+  };
+};
