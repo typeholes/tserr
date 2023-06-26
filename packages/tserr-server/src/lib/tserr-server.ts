@@ -1,4 +1,4 @@
-import express, { application } from 'express';
+import express from 'express';
 import { Server } from 'socket.io';
 
 import {
@@ -19,7 +19,7 @@ import {
   TserrPluginEvents,
   TserrPlugin,
 } from './tserr-server.types';
-import { Project, mkProject } from './project';
+import { Project, findConfigs, mkProject } from './project';
 
 export { TserrPluginApi, TserrPlugin } from './tserr-server.types';
 
@@ -92,8 +92,11 @@ let gotoDefinition = (
 };
 
 export type ErrorServer = ReturnType<typeof startServer>;
-export function startServer(basePath: string) {
+export function startServer(servePath: string, projectRoot: string, serverPort = 3000) {
   console.log('in start server');
+
+  const configs = findConfigs(projectRoot);
+  console.log(configs);
 
   const plugins: Record<string, PluginState> = {};
   const pluginOrder: string[] = [];
@@ -104,10 +107,10 @@ export function startServer(basePath: string) {
   io = new Server(httpServer, { cors: { origin: '*' } });
   //io = new Server(httpServer, { cors: { origin: 'http://localhost:4200' } });
   app.get('/', (req, res) => {
-    res.sendFile(path.join(basePath, 'index.html'));
+    res.sendFile(path.join(servePath, 'index.html'));
   });
 
-  app.use(express.static(basePath));
+  app.use(express.static(servePath));
 
   let hasConnection = false;
   const queuedEmits: [any, any[]][] = [];
@@ -152,8 +155,8 @@ export function startServer(basePath: string) {
     queuedEmits.length = 0;
   });
 
-  httpServer.listen(3000, () => {
-    console.log('listening on *:3000');
+  httpServer.listen(serverPort, () => {
+    console.log(`listening on *:${serverPort}`);
   });
 
   function emit(event: string, ...args: any[]) {
@@ -298,6 +301,7 @@ export function startServer(basePath: string) {
         store(event)
       ),
       // addSemanticErrorIdentifiers,
+      getConfigs: () => configs,
       getProjectPaths,
       addProjectEventHandlers: addProjectEventHandlers(plugin.key),
       // sendOpenProject: app(openProject),

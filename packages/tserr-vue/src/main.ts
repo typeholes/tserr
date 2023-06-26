@@ -51,4 +51,5 @@ shiki
     });
 
     app.mount('#app');
+
   });

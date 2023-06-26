@@ -7,3 +7,5 @@ export * from './lib/ParsedError';
 export * from './lib/util';
 
 export * from './lib/brands';
+
+export * from './lib/config';

@@ -4,17 +4,22 @@ import { join as joinPath, resolve as resolvePath } from 'path';
 import { cpSync, readdirSync, statSync } from 'fs';
 import { version as nodeVersion } from 'process';
 
-const errorSamplePath = '/home/hw/projects/nx/typeholes'; // /error_samples';
+let port = 3000;
 const { projectPath } = processArgs();
 
 function processArgs(): { projectPath: string } {
   // process.argv[2] ?? errorSamplePath;
-  if (process.argv.length != 3) {
-    console.error('Usage: node main.js <path to project directory');
+  if (process.argv.length < 3 || process.argv.length > 4) {
+    console.error('Usage: node main.js <path to project directory> <port>');
     throw new Error('project path not specified');
   }
 
   const arg = process.argv[2];
+  port = parseInt(process.argv[3] ?? '3000');
+  if (port < 1000 || port > 9999) {
+    port = 3000;
+  }
+
   if (arg === '--builtin-examples') {
     if (nodeVersion !== 'v18.15.0') {
       console.error(
@@ -51,7 +56,11 @@ function processArgs(): { projectPath: string } {
 
 import { plugin as tsmorphPlugin } from '@typeholes/tserr-ts-morph';
 
-const server = startServer(__dirname + '../../../../../tserr-vue/');
+const server = startServer(
+  __dirname + '../../../../../tserr-vue/',
+  projectPath,
+  port
+);
 
 const tserr = server.mkPluginInterface({
   key: 'standalone',
@@ -61,27 +70,17 @@ const tserr = server.mkPluginInterface({
   },
 });
 
-server.mkPluginInterface(tsmorphPlugin);
+const tsmorph = server.mkPluginInterface(tsmorphPlugin);
 
-const configs: string[] = [];
+const configs = tserr.getConfigs();
 
-function findConfigs(dirPath: string) {
-  readdirSync(dirPath).forEach((file) => {
-    const path = joinPath(dirPath, file);
-    if (file === 'node_modules') {
-      return;
-    }
-    if (statSync(path).isDirectory()) {
-      findConfigs(path);
-    } else {
-      if (file.match(/^tsconfig.*\.json$/)) {
-        configs.push(path);
-        console.log('found project ${path}');
-      }
-    }
+for (const path in configs) {
+  const config = configs[path];
+  config.tsconfig?.forEach((fileName) => {
+    tsmorph.send.hasProject(joinPath(path, fileName));
+  });
+  config.config?.openProjects.forEach((projectFile) => {
+    tsmorph.send.openProject(joinPath(projectPath, projectFile));
   });
 }
-
-findConfigs(projectPath);
-configs.forEach(tserr.send.hasProject);
 console.log('dirname: ', __dirname);

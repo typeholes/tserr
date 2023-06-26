@@ -52,7 +52,8 @@
         "development": {
           "buildTarget": "tserr-standalone:build:development",
           "runtimeArgs": [
-            "/home/hw/projects/nx/typeholes"
+            "/home/hw/projects/nx/typeholes",
+            "3100",
           ]
         },
         "production": {

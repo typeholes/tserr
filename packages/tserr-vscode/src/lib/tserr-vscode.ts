@@ -13,7 +13,6 @@ import { ProblemViewProvider } from './ProblemViewProvider';
 import { startServer } from '@typeholes/tserr-server';
 import { FlatErr } from '@typeholes/tserr-common';
 import { plugin as tsmorphPlugin } from '@typeholes/tserr-ts-morph';
-import { parse } from 'path';
 
 // let server: ReturnType<typeof startServer> | undefined = undefined;
 
@@ -34,7 +33,10 @@ export function activate(context: ExtensionContext) {
     vscode.extensions.getExtension('typeholes.tserr-vscode')?.extensionPath ??
     __dirname + '../../../../tserr-vue/';
   window.showInformationMessage('activating tserr');
-  const server = startServer(extPath);
+  const server = startServer(
+    extPath,
+    (workspace.workspaceFolders ?? [])[0]?.uri?.fsPath ?? __dirname
+  );
   const tserr = server.mkPluginInterface({
     key: 'vscode',
     displayName: 'vscode',
@@ -51,14 +53,6 @@ export function activate(context: ExtensionContext) {
   });
 
   server.mkPluginInterface(tsmorphPlugin);
-
-  workspace.findFiles('**/tsconfig.json').then((uris) => {
-    const shortest = uris
-      .map((uri) => [uri, workspace.asRelativePath(uri).split('/')] as const)
-      .sort((a, b) => a[1].length - b[1].length)[0][0];
-    console.log({ shortest });
-    tserr.send.hasProject(shortest.fsPath);
-  });
 
   commands.registerCommand('tserr-problems-view.openExternal', () => {
     env.openExternal(Uri.parse('http://localhost:3000/'));
