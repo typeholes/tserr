@@ -24,7 +24,8 @@ function toggleRightDrawer() {
 
         <q-toolbar-title>
           <q-avatar>
-            <img src="https://cdn.quasar.dev/logo-v2/svg/logo-mono-white.svg" />
+          <q-img src="./assets/tsFire.jpg" img-class="logo-image"/>
+
           </q-avatar>
           TsErr Problems View
         </q-toolbar-title>
@@ -65,4 +66,10 @@ function toggleRightDrawer() {
 
 </template>
 
-<style></style>
+<style>
+
+.logo-image {
+  mix-blend-mode: screen;
+  filter: invert();
+}
+</style>
