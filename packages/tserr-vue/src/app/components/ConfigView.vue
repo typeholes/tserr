@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import ConfigTree from './ConfigTree.vue';
 import { ProjectConfigs } from '@typeholes/tserr-common';
 import { appState } from '../appState';
 import { ref } from 'vue';

@@ -44,7 +44,7 @@ function toggleRightDrawer() {
       <!-- drawer content -->
     </q-drawer>
 
-    <q-drawer show-if-above v-model="rightDrawerOpen" side="right" bordered width="500">
+    <q-drawer show-if-above v-model="rightDrawerOpen" side="right" bordered :width="500">
       <ServerState />
     </q-drawer>
 
