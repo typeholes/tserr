@@ -43,22 +43,18 @@ function problemClick(e: MouseEvent) {
 </script>
 
 <template>
-  <v-row
-    no-gutters
+  <div
+    class="row"
     @click="problemClick"
     v-for="(parsed, idx) of props.err.parsed"
     :key="idx"
   >
-    <v-col cols="12" :style="{ minWidth: 'contents'}" >{{ parsed[2].type }}</v-col>
-    <!-- <v-col :style="{ minWidth: `${parsed[1] ?? 0}rem` }"></v-col> -->
+    <div :style="{ minWidth: 'contents'}" >{{ parsed[2].type }}</div>
+    <!-- <div :style="{ minWidth: `${parsed[1] ?? 0}rem` }"></div> -->
     <!-- <span v-if="props.parsed[2].type === 'unknownError'">
       {{ props.parsed[2].parts }}
     </span> -->
-    <v-col cols="">
-      <v-container>
-        <!-- <span v-if="parsed[2].type === 'aliasSelfReference'">
-          {{ parsed[2].from }}
-        </span> -->
+    <div cols="">
         <CodeGrid
           :blocks="Object.entries(parsed[2])"
           header-key="type"
@@ -69,27 +65,26 @@ function problemClick(e: MouseEvent) {
           header-key=""
           v-if="parsed[2].type === 'unknownError'"
         />
-      </v-container>
-    </v-col>
-    <v-col
+    </div>
+    <div
     cols=""
       class="supplements"
       v-for="text in appState.supplements[parsed[0]]"
       :key="text"
     >
       <DisplaySupplement :text="text" />
-    </v-col>
-    <v-col
-      ><v-container>
-        <v-row v-for="fix of appState.fixes[parsed[0]]" :key="fix[0]">
+    </div>
+    <div
+      >
+        <div v-for="fix of appState.fixes[parsed[0]]" :key="fix[0]">
           <button @click="emitters?.applyFix(fix[0])">
             {{ fix[1] }}
           </button>
-        </v-row>
-      </v-container></v-col
+        </div>
+      </div
     >
     <!-- </div> -->
-  </v-row>
+  </div>
 </template>
 
 <style scoped>

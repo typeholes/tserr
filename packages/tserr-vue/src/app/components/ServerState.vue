@@ -4,6 +4,7 @@ import { appState } from '../appState';
 import { Emitters } from '../socket';
 import { ProjectPath } from '@typeholes/tserr-common';
 import ConfigView from './ConfigView.vue';
+import PluginManager from './PluginManager.vue';
 
 const emitters = inject<Emitters>('emitters');
 
@@ -13,25 +14,26 @@ function toggleProject(open: boolean, path: string) {
 </script>
 
 <template>
-  <v-container dense>
-    <v-row dense> socket started: {{ appState.socketStarted }} </v-row>
-    <v-row dense> connected: {{ appState.connected }} </v-row>
-    <v-row dense><PluginManager /></v-row>
-    <v-row dense>
-      <ConfigView/>
-    </v-row>
-    <v-row
+  <div>
+    <div dense>socket started: {{ appState.socketStarted }}</div>
+    <div dense>connected: {{ appState.connected }}</div>
+    <div dense><PluginManager /></div>
+    <div dense>
+      <ConfigView />
+    </div>
+    <!-- <div
       dense
       v-for="path in Object.keys(appState.projects).sort()"
       :key="path"
     >
-      <v-checkbox
+      <q-checkbox
         density="compact"
         hide-details="auto"
         :label="path"
         v-model="appState.projects[ProjectPath.for(path)]"
         @update:model-value="(open) => toggleProject(open, path)"
       />
-    </v-row>
-  </v-container>
+    </div>
+  -->
+  </div>
 </template>

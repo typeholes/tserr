@@ -5,7 +5,8 @@ import { visualizer } from 'rollup-plugin-visualizer';
 
 import viteTsConfigPaths from 'vite-tsconfig-paths';
 
-import vuetify from 'vite-plugin-vuetify';
+import { quasar, transformAssetUrls } from '@quasar/vite-plugin';
+
 
 export default defineConfig({
   cacheDir: '../../node_modules/.vite/tserr-vue',
@@ -13,7 +14,7 @@ export default defineConfig({
   server: {
     port: 4200,
     host: 'localhost',
-    fs: { allow: ['.', '/home/hw/projects/nx/typeholes/node_modules/@mdi'] },
+    fs: { allow: ['.', '/home/hw/projects/nx/typeholes/node_modules/@quasar/extras', ] },
   },
 
   preview: {
@@ -25,9 +26,14 @@ export default defineConfig({
     viteTsConfigPaths({
       root: '../../',
     }),
-    vue(),
-    vuetify(),
+    vue({
+      template: { transformAssetUrls },
+    }),
     visualizer(),
+    quasar({
+      autoImportComponentCase: 'combined',
+      sassVariables: 'src/quasar-variables.sass',
+    }),
   ],
 
   resolve: {

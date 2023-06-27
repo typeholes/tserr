@@ -41,38 +41,34 @@ function groupBy<T, U extends number | string>(
 <template>
   <div>
     <div class="files">
-      <v-expansion-panels multiple>
+      <q-list>
         <template
           v-for="(map, fileName) in appState.resolvedErrors"
           :key="fileName"
         >
-          <v-expansion-panel :title="fileName">
-            <template #text>
-              <v-expansion-panels multiple dense noGutters class="mt0 pt0">
-                <template v-for="(errors, pluginName) in map" :key="pluginName">
-                  <v-expansion-panel :title="pluginName" dense class="mt0 pt0">
-                    <template #text>
-                      <v-expansion-panels multiple variant="accordion" dense noGutters class="mt0 pt0">
-                        <template
-                          v-for="(errs, _idx) of groupErrors(errors)"
-                          :key="_idx"
-                        >
-                          <v-expansion-panel :title="'Line: ' + errs[0]" class="mt0 pt0">
-                            <template #text>
-                              <v-container fluid>
-                                <!-- <pre> {{ err.lines.join('\n') }}</pre> -->
-                                <template v-for="err of errs[1]" :key="err">
-                                  <ResolvedError
-                                    :err="err"
-                                    :fileName="fileName"
-                                  />
-                                </template>
-                              </v-container>
-                            </template>
-                          </v-expansion-panel>
-                        </template>
-                      </v-expansion-panels>
-                      <!-- <div
+          <q-expansion-item :label="fileName">
+            <q-list dense>
+              <template v-for="(errors, pluginName) in map" :key="pluginName">
+                <q-expansion-item :label="pluginName" dense >
+                  <q-list dense>
+                    <template
+                      v-for="(errs, _idx) of groupErrors(errors)"
+                      :key="_idx"
+                    >
+                      <q-expansion-item
+                        :label="'Line: ' + errs[0]"
+                        class="mt0 pt0"
+                      >
+                        <div>
+                          <!-- <pre> {{ err.lines.join('\n') }}</pre> -->
+                          <template v-for="err of errs[1]" :key="err">
+                            <ResolvedError :err="err" :fileName="fileName" />
+                          </template>
+                        </div>
+                      </q-expansion-item>
+                    </template>
+                  </q-list>
+                  <!-- <div
             class="errors"
             v-for="(group, idx) of appState.resolvedErrors.get(fileName)?.flat() ?? []"
             :key="idx"
@@ -85,14 +81,12 @@ function groupBy<T, U extends number | string>(
               <ResolvedError :error="(error as unknown as AliasSelfReferenceResult)" />
             </div>
           </div> -->
-                    </template>
-                  </v-expansion-panel>
-                </template>
-              </v-expansion-panels>
-            </template>
-          </v-expansion-panel>
+                </q-expansion-item>
+              </template>
+            </q-list>
+          </q-expansion-item>
         </template>
-      </v-expansion-panels>
+      </q-list>
     </div>
   </div>
 </template>

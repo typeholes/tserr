@@ -2,40 +2,67 @@
 import { ref } from 'vue';
 import ServerState from './app/components/ServerState.vue';
 import AppState from './app/components/AppState.vue';
-import { useTheme } from 'vuetify';
 
-const drawer = ref(false);
+const leftDrawerOpen = ref(false);
+const rightDrawerOpen = ref(false);
 
-const theme = useTheme();
+function toggleLeftDrawer() {
+  leftDrawerOpen.value = !leftDrawerOpen.value;
+}
 
-const toggleTheme = () =>
-  (theme.global.name.value = theme.global.current.value.dark
-    ? 'light'
-    : 'dark');
+function toggleRightDrawer() {
+  rightDrawerOpen.value = !rightDrawerOpen.value;
+}
+
 </script>
 
 <template>
-  <v-layout>
-    <v-app-bar color="primary">
-      <v-app-bar-nav-icon
-        variant="text"
-        @click.stop="drawer = !drawer"
-      ></v-app-bar-nav-icon>
+  <q-layout view="hHh lpR fFf">
+    <q-header elevated class="bg-primary text-white" height-hint="98">
+      <q-toolbar>
+        <q-btn dense flat round icon="menu" @click="toggleLeftDrawer" />
 
-      <v-toolbar-title>TsErr Problems View</v-toolbar-title>
+        <q-toolbar-title>
+          <q-avatar>
+            <img src="https://cdn.quasar.dev/logo-v2/svg/logo-mono-white.svg" />
+          </q-avatar>
+          TsErr Problems View
+        </q-toolbar-title>
 
-      <v-spacer></v-spacer>
-      <v-btn @click="toggleTheme" icon="mdi-theme-light-dark" />
-      <v-icon icon="mdi-refresh" />
-      <v-btn variant="text" icon="mdi-dots-vertical"></v-btn>
-    </v-app-bar>
-    <v-navigation-drawer v-model="drawer" location="bottom" temporary>
-      <ServerState/>
-    </v-navigation-drawer>
-    <v-main>
+        <q-btn dense flat round icon="menu" @click="toggleRightDrawer" />
+      </q-toolbar>
+
+      <!-- <q-tabs align="left">
+        <q-route-tab to="/page1" label="Page One" />
+        <q-route-tab to="/page2" label="Page Two" />
+        <q-route-tab to="/page3" label="Page Three" />
+      </q-tabs> -->
+    </q-header>
+
+    <q-drawer show-if-above v-model="leftDrawerOpen" side="left" bordered>
+      <!-- drawer content -->
+    </q-drawer>
+
+    <q-drawer show-if-above v-model="rightDrawerOpen" side="right" bordered width="500">
+      <ServerState />
+    </q-drawer>
+
+    <q-page-container>
       <AppState />
-    </v-main>
-  </v-layout>
+    </q-page-container>
+
+    <q-footer elevated class="bg-grey-8 text-white">
+      <q-toolbar>
+        <q-toolbar-title>
+          <q-avatar>
+            <img src="https://cdn.quasar.dev/logo-v2/svg/logo-mono-white.svg" />
+          </q-avatar>
+          <div>TsErr Problems View</div>
+        </q-toolbar-title>
+      </q-toolbar>
+    </q-footer>
+  </q-layout>
+
 </template>
 
 <style></style>

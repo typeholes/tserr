@@ -1,37 +1,18 @@
 import { createApp } from 'vue';
+import { Quasar } from 'quasar';
+
+// Import icon libraries
+import '@quasar/extras/roboto-font-latin-ext/roboto-font-latin-ext.css';
+import '@quasar/extras/material-icons/material-icons.css';
+
+// Import Quasar css
+import 'quasar/src/css/index.sass';
+
 import App from './App.vue';
 import { startSocket } from './app/socket';
 import * as shiki from 'shiki';
 
 // import './assets/main.css'
-
-
-
-
-import '@mdi/font/css/materialdesignicons.css';
-import 'vuetify/styles';
-import './typeholes-reset.css';
-import { createVuetify } from 'vuetify';
-// import { aliases, mdi } from 'vuetify/iconsets/mdi';
-
-const vuetify = createVuetify({
-  icons: {
-    defaultSet: 'mdi',
-  },
-  theme: {
-    defaultTheme: 'dark',
-  },
-  defaults: {
-    global: {
-      dense: true,
-      'no-gutters': true,
-      class: 'mt0 pt0',
-      style: 'min-height: 0px',
-    },
-    VExpansionPanelTitle: { style: 'padding: 4px 4px; min-height: 0px' },
-    VContainer: { style: 'padding: 0px' },
-  },
-});
 
 shiki
   .getHighlighter({
@@ -39,8 +20,6 @@ shiki
   })
   .then((highlighter) => {
     const app = createApp(App);
-
-    app.use(vuetify);
 
     const emitters = startSocket();
     app.use({
@@ -50,6 +29,22 @@ shiki
       },
     });
 
-    app.mount('#app');
+    app.use(Quasar, {
+      plugins: {}, // import Quasar plugins and add here
+      config: {
+        dark: 'auto',
+        /*
+    brand: {
+      // primary: '#e46262',
+      // ... or all other brand colors
+    },
+    notify: {...}, // default set of options for Notify Quasar plugin
+    loading: {...}, // default set of options for Loading Quasar plugin
+    loadingBar: { ... }, // settings for LoadingBar Quasar plugin
+    // ..and many more (check Installation card on each Quasar component/directive/plugin)
+  */
+      },
+    });
 
+    app.mount('#app');
   });
