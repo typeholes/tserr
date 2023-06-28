@@ -99,7 +99,7 @@ function processFileEvents(events: { type: string; filePath: string }[]) {
       const diagnostics = group(
         project.getPreEmitDiagnostics(),
         (diagnostic) =>
-          diagnostic.getSourceFile()?.getFilePath() ?? 'unknown file'
+          diagnostic.getSourceFile()?.getFilePath() ?? tsConfigFilePath
       );
 
       for (const fileName in diagnostics) {
@@ -123,9 +123,25 @@ function processFileEvents(events: { type: string; filePath: string }[]) {
 }
 
 function handleError(diagnostic: Diagnostic, fileName: string): FlatErr[] {
+  function fakeParsed(e: (typeof err)[0]['parsed'][0]): FlatErr['parsed'][0] {
+    return [0, 0, e];
+  }
+
   const sourceFile = diagnostic.getSourceFile();
   if (sourceFile === undefined) {
-    return [];
+    const err = diagnosticToErr(diagnostic);
+
+    return [
+      {
+        code: err[0].code.toString(),
+        line: err[0].line,
+        endLine: err[0].line,
+        codes: err.map((e) => e.code),
+        lines: err.map((e) => e.lines).flat(),
+        parsed: err.map((e) => e.parsed.map(fakeParsed)).flat(),
+        start: 0,
+      },
+    ];
   }
 
   const pos = diagnostic.getStart();
