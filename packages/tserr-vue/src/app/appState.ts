@@ -109,8 +109,15 @@ function handleResolvedError(
 
 function handleResetResolvedErrors(pluginKey: string) {
   for (const fileName in appState.resolvedErrors) {
-    appState.resolvedErrors[FileName.for(fileName)][PluginName.for(pluginKey)] =
-      [];
+    const filePath = FileName.for(fileName);
+    appState.resolvedErrors[filePath][PluginName.for(pluginKey)] = [];
+    if (
+      Object.entries(appState.resolvedErrors[filePath]).every(
+        (e) => (e[1].length === 0)
+      )
+    ) {
+      delete appState.resolvedErrors[FileName.for(fileName)];
+    }
   }
   appState.supplements = [];
   appState.fixes = {};
@@ -185,7 +192,7 @@ export function toggleProject(path: string) {
 function relativeProjectPath(path: string) {
   return ProjectPath.for(
     path.startsWith(appState.projectRoot)
-      ? path.replace(appState.projectRoot, '').replace(/^\//,'')
+      ? path.replace(appState.projectRoot, '').replace(/^\//, '')
       : path
   );
 }
