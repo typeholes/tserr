@@ -32,6 +32,10 @@ function groupBy<T, U extends number | string>(
   return ret;
 }
 
+function relativePath(name: string) {
+  return name.startsWith(appState.projectRoot) ? name.replace(appState.projectRoot,'.') : name;
+}
+
 // function getParsed(e: ResolvedErrorType, key: string) {
 //   return e[key as keyof typeof e]
 //   // <template v-for="parsed of err.parsed[key as keyof typeof err.parsed]" :key="parsed">
@@ -46,7 +50,8 @@ function groupBy<T, U extends number | string>(
           v-for="(map, fileName) in appState.resolvedErrors"
           :key="fileName"
         >
-          <q-expansion-item :label="fileName">
+          <q-expansion-item :label="relativePath(fileName)">
+          <!-- <q-expansion-item :label="fileName"> -->
             <q-list dense>
               <template v-for="(errors, pluginName) in map" :key="pluginName">
                 <q-expansion-item :label="pluginName" dense >

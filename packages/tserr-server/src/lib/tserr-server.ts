@@ -21,7 +21,7 @@ import {
 } from './tserr-server.types';
 import { Project, findConfigs, mkProject } from './project';
 import { readFileSync, writeFileSync } from 'fs';
-import { join as joinPath } from 'path';
+import { parse as parsePath, join as joinPath, sep as pathSep } from 'path';
 
 export { TserrPluginApi, TserrPlugin } from './tserr-server.types';
 
@@ -133,12 +133,14 @@ export function startServer(
       next();
     });
     socket.on('openProject', (path) => {
+      writeConfig('openProject', path);
       for (const pluginKey of pluginOrder) {
         plugins[pluginKey]?.on.openProject(path);
       }
       projects[path]?.project.open();
     }),
       socket.on('closeProject', (path) => {
+        writeConfig('closeProject', path);
         for (const pluginKey of pluginOrder) {
           plugins[pluginKey]?.on.closeProject(path);
         }
@@ -156,6 +158,15 @@ export function startServer(
       (pluginKey: string, active: boolean) =>
         (plugins[pluginKey].active = active)
     );
+
+    socket.on('refreshFrontend', () => {
+      sendProjectRoot();
+      sendConfigs();
+      for (const path in projects) {
+        const projectPath = ProjectPath.for(path);
+        sendHasProject(projectPath, projects[projectPath].project.isOpen());
+      }
+    });
 
     for (const pluginKey of pluginOrder) {
       sendAddPlugin(pluginKey);
@@ -179,6 +190,10 @@ export function startServer(
     }
   }
 
+  function sendProjectRoot() {
+    emit('projectRoot', projectRoot);
+  }
+
   function sendOpenProject(projectPath: ProjectPath) {
     emit('openProject', projectPath);
   }
@@ -191,8 +206,8 @@ export function startServer(
     emit('closeProject', projectPath);
   }
 
-  function sendHasProject(projectPath: ProjectPath) {
-    emit('hasProject', projectPath);
+  function sendHasProject(projectPath: ProjectPath, isOpen?: boolean) {
+    emit('hasProject', projectPath, isOpen);
   }
 
   function sendAddPlugin(pluginKey: string) {
@@ -386,6 +401,42 @@ export function startServer(
     httpServer.closeAllConnections();
   }
 
+  function writeConfig(event: string, atPath: string) {
+    const parsed = parsePath(atPath);
+    const fileName = parsed.base;
+    let configPath = '.' + pathSep + parsed.dir + pathSep;
+    const path = configPath + fileName;
+    let config = configs[configPath];
+
+    while (config?.tserr === undefined) {
+      if (!config) {
+        return;
+      }
+      config = configs[(configPath = config.parentPath)];
+    }
+
+    switch (event) {
+      case 'openProject': {
+        if (!config.config?.openProjects.includes(path)) {
+          config.config?.openProjects.push(path);
+        }
+        break;
+      }
+      case 'closeProject': {
+        if (config.config) {
+          config.config.openProjects = config.config?.openProjects.filter(
+            (p) => p !== path
+          );
+        }
+        break;
+      }
+    }
+
+    config.tserr = JSON.stringify(config.config, null, 2);
+    const tgtPath = joinPath(projectRoot, configPath, 'tserr.json');
+    writeFileSync(tgtPath, config.tserr);
+  }
+
   const ret = {
     importPlugin,
     onGotoDefinition,
@@ -393,6 +444,7 @@ export function startServer(
     mkPluginInterface,
   };
 
+  sendProjectRoot();
   sendConfigs();
   console.log('start server returning', ret);
   return ret;

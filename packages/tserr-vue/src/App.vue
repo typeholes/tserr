@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { inject, ref } from 'vue';
 import ServerState from './app/components/ServerState.vue';
 import AppState from './app/components/AppState.vue';
+import { Emitters } from './app/socket';
+
+const emitters = inject<Emitters>('emitters');
 
 const leftDrawerOpen = ref(false);
 const rightDrawerOpen = ref(false);
@@ -14,6 +17,9 @@ function toggleRightDrawer() {
   rightDrawerOpen.value = !rightDrawerOpen.value;
 }
 
+function refresh() {
+  emitters?.refreshFrontend();
+}
 </script>
 
 <template>
@@ -24,12 +30,12 @@ function toggleRightDrawer() {
 
         <q-toolbar-title>
           <q-avatar>
-          <q-img src="./assets/tsFire.jpg" img-class="logo-image"/>
-
+            <q-img src="./assets/tsFire.jpg" img-class="logo-image" />
           </q-avatar>
           TsErr Problems View
         </q-toolbar-title>
 
+        <q-btn dense flat round icon="refresh" @click="refresh" />
         <q-btn dense flat round icon="menu" @click="toggleRightDrawer" />
       </q-toolbar>
 
@@ -44,7 +50,13 @@ function toggleRightDrawer() {
       <!-- drawer content -->
     </q-drawer>
 
-    <q-drawer show-if-above v-model="rightDrawerOpen" side="right" bordered :width="500">
+    <q-drawer
+      show-if-above
+      v-model="rightDrawerOpen"
+      side="right"
+      bordered
+      :width="500"
+    >
       <ServerState />
     </q-drawer>
 
@@ -63,11 +75,9 @@ function toggleRightDrawer() {
       </q-toolbar>
     </q-footer>
   </q-layout>
-
 </template>
 
 <style>
-
 .logo-image {
   mix-blend-mode: screen;
   filter: invert();

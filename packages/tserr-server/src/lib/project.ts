@@ -25,6 +25,8 @@ export function mkProject(
   let waiting = true;
   let events: ProjectEvent[] = [];
 
+  let isOpen = false;
+
   function handleWatcher(type: ProjectEventType, filePath: string) {
     events.push({ type, filePath });
     waiting = true;
@@ -62,14 +64,16 @@ export function mkProject(
     });
     watcher.on('all', handleWatcher);
     eventInterval = setInterval(processEvents, 100);
+    isOpen = true;
   }
 
   function close() {
     clearInterval(eventInterval);
     watcher?.close();
+    isOpen = false;
   }
 
-  return { close, open };
+  return { close, open, isOpen: () => isOpen };
 }
 
 export function findConfigs(

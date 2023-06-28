@@ -1,5 +1,4 @@
 import { reactive } from 'vue';
-// import {} from '@/socket'
 import { FlatErr, flatErr } from './resolvedError';
 import {
   FileName,
@@ -7,6 +6,7 @@ import {
   ProjectPath,
   ProjectConfigs,
 } from '@typeholes/tserr-common';
+import { emitters } from './socket';
 
 export const socketHandlers = {
   connect: () => (appState.connected = true),
@@ -21,6 +21,7 @@ export const socketHandlers = {
   addPlugin: handleAddPlugin,
   openProject: handleOpenProject,
   hasProject: handleHasProject,
+  projectRoot: (path: string) => (appState.projectRoot = path),
 };
 
 export type Diagnostic = {
@@ -53,6 +54,7 @@ export const appState = reactive({
   fixes: {} as Record<number, [fixId: number, fixDescription: string][]>,
   projects: {} as Record<ProjectPath, undefined | boolean>,
   configs: {} as ProjectConfigs,
+  projectRoot: '',
 });
 
 function handleAddPlugin(key: string, active: boolean, displayName: string) {
@@ -132,15 +134,34 @@ function handleConfigs(configs: ProjectConfigs) {
   appState.configs = configs;
 }
 
-function handleHasProject(path: string) {
-  if (!(path in appState.projects)) {
-    appState.projects[ProjectPath(path)] ??= false;
+function handleHasProject(path: string, isOpen?: boolean) {
+  const relPath = relativeProjectPath(path);
+  if (!(relPath in appState.projects)) {
+    appState.projects[ProjectPath(relPath)] ??= false;
+  }
+
+  if (isOpen) {
+    handleOpenProject(relPath);
   }
 }
 
 function handleOpenProject(path: string) {
-  if (path in appState.projects) {
-    appState.projects[ProjectPath(path)] = true;
+  const relPath = relativeProjectPath(path);
+  if (relPath in appState.projects) {
+    appState.projects[relPath] = true;
+  }
+}
+
+export function toggleProject(path: string) {
+  const projectPath = ProjectPath.for(path);
+  if (projectPath in appState.projects) {
+    if (appState.projects[projectPath]) {
+      appState.projects[projectPath] = false;
+      emitters?.closeProject(projectPath);
+    } else {
+      appState.projects[projectPath] = true;
+      emitters?.openProject(projectPath);
+    }
   }
 }
 
@@ -160,3 +181,11 @@ function handleOpenProject(path: string) {
 //   // 'semanticDiag'
 //   'syntaxDiag'
 // ]
+
+function relativeProjectPath(path: string) {
+  return ProjectPath.for(
+    path.startsWith(appState.projectRoot)
+      ? path.replace(appState.projectRoot, '').replace(/^\//,'')
+      : path
+  );
+}

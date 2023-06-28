@@ -3,9 +3,18 @@ import { socketHandlers, appState } from './appState';
 
 let socket: Socket;
 
-export type Emitters = ReturnType<typeof startSocket>;
+export type Emitters = {
+    refreshFrontend: () => void;
+    closeProject: (path: string) => void;
+    openProject: (path: string) => void;
+    applyFix: (fixId: number) => void;
+    setPlugin: (pluginKey: string, active: boolean) => void;
+    gotoDefinition: (filename: string, textContent: string, fromLine: number, toLine: number) => void;
+}
 
-export function startSocket() {
+export let emitters : Emitters | undefined = undefined;
+
+export function startSocket() : Emitters {
   const port = (window as any).TsErrPort ?? '3000';
   const URL = `http://localhost:${port}`;
 
@@ -25,7 +34,10 @@ export function startSocket() {
 
   console.log('socket started');
 
-  return {
+  return (emitters = {
+    refreshFrontend: () => {
+      socket.emit('refreshFrontend');
+    },
     closeProject: (path: string) => {
       socket.emit('closeProject', path);
     },
@@ -53,7 +65,7 @@ export function startSocket() {
       );
       socket.emit('gotoDefinition', filename, textContent, fromLine, toLine);
     },
-  };
+  });
 }
 
 let requestId = 0;

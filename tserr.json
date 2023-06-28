@@ -1,4 +1,6 @@
 {
-"openProjects": ["error_samples/tsconfig.json"],
-"ignoreErrCodes": ["tsc2742"]
+  "openProjects": [],
+  "ignoreErrCodes": [
+    "tsc2742"
+  ]
 }
