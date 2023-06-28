@@ -21,6 +21,7 @@ export type TserrPluginEvents = {
 
 export type TserrPluginApi = {
   // addSemanticErrorIdentifiers: (...identifiers: typeof semanticErrorIdentifiers) => void;
+  getProjectRoot: () => string;
   getConfigs: () => ProjectConfigs;
   getProjectPaths: () => ProjectPath[];
   addProjectEventHandlers: (

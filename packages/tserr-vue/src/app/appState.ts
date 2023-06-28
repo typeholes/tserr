@@ -195,8 +195,9 @@ export function toggleProject(path: string) {
 
 function relativeProjectPath(path: string) {
   return ProjectPath.for(
-    path.startsWith(appState.projectRoot)
-      ? path.replace(appState.projectRoot, '').replace(/^\//, '')
+    (path.startsWith(appState.projectRoot)
+      ? path.replace(appState.projectRoot, '')
       : path
+    ).replace(/^\.?\/?/, '')
   );
 }

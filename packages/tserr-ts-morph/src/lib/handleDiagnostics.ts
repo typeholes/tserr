@@ -21,6 +21,7 @@ import {
 } from '@typeholes/tserr-server';
 import { group } from './util.js';
 import { Err, FlatErr, flattenErr } from '@typeholes/tserr-common';
+import { join as joinPath } from 'path';
 
 type Declaration =
   | VariableDeclaration
@@ -59,7 +60,13 @@ function closeProject(path: string) {
   }
 }
 function openProject(path: string) {
-  const tsConfigFilePath = path;
+  if (!tserrApi) {
+    return;
+  }
+  const projectRoot = tserrApi.getProjectRoot();
+  const tsConfigFilePath = path.startsWith(projectRoot)
+    ? path
+    : joinPath(projectRoot, path);
   if (tsConfigFilePath in projects) {
     return;
   }

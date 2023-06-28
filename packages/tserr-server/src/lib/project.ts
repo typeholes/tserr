@@ -5,6 +5,7 @@ import { join as joinPath, parse as parsePath, sep as pathSep } from 'path';
 import {
   ProjectConfigs,
   TsErrConfig,
+  absPath,
   tsErrConfig,
 } from '@typeholes/tserr-common';
 
@@ -19,6 +20,7 @@ export type ProjectEvent = { type: ProjectEventType; filePath: string };
 export type Project = ReturnType<typeof mkProject>;
 
 export function mkProject(
+  projectRoot: string,
   projectPath: string,
   plugins: Record<string, PluginState>
 ) {
@@ -56,7 +58,8 @@ export function mkProject(
   let eventInterval: NodeJS.Timer | undefined = undefined;
 
   function open() {
-    const dir = projectPath.replace(/\/[^/]*\.json$/, '');
+    const fullPath = absPath(projectRoot,projectPath, '/');
+    const dir = fullPath.replace(/\/[^/]*\.json$/, '').replace(/\/$/,'');
     watcher = watch(dir + '/**/*.ts', {
       awaitWriteFinish: { pollInterval: 100, stabilityThreshold: 100 }, // need to play with these values
       atomic: true,
@@ -74,7 +77,7 @@ export function mkProject(
     const paths = Object.entries(watched).map ( ([dir, files]) => files.map( f => joinPath(dir,f))).flat();
 
 
-  
+
     watcher?.close();
     isOpen = false;
 
@@ -103,11 +106,11 @@ export function findConfigs(
     } else {
       if (file.match(/^tsconfig.*\.json$/)) {
         tsConfigs.push(path);
-        console.log('found project ${path}');
+        console.log(`found project ${path}`);
       }
       if (file.match(/^tserr.json$/)) {
         errConfigs.push(path);
-        console.log('found tserr config ${path}');
+        console.log(`found tserr config ${path}`);
       }
     }
   });
@@ -141,7 +144,7 @@ function resolveConfigs(rootPath: string, ts: string[], err: string[]) {
   }
   for (const err of errPaths) {
     const parentConfig = resolved[err[0]]?.config;
-    const config = mergeConfig(parentConfig, readConfig(err[0], err[1]));
+    const config = mergeConfig(parentConfig, readConfig(rootPath, err[0], err[1]));
 
     resolved[err[0]] = {
       tsconfig: resolved[err[0]]?.tsconfig,
@@ -165,8 +168,8 @@ function path2tuple(rootPath: string, pathStr: string) {
   ] as const;
 }
 
-function readConfig(dir: string, fileName: string): TsErrConfig {
-  const file = readFileSync(joinPath(dir, fileName));
+function readConfig(rootPath: string, dir: string, fileName: string): TsErrConfig {
+  const file = readFileSync(joinPath(rootPath, dir, fileName));
   const json = JSON.parse(file.toString());
   const { data, problems } = tsErrConfig(json);
   if (problems) {

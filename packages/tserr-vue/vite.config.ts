@@ -7,14 +7,18 @@ import viteTsConfigPaths from 'vite-tsconfig-paths';
 
 import { quasar, transformAssetUrls } from '@quasar/vite-plugin';
 
-
 export default defineConfig({
   cacheDir: '../../node_modules/.vite/tserr-vue',
 
   server: {
     port: 4200,
     host: 'localhost',
-    fs: { allow: ['.', '/home/hw/projects/nx/typeholes/node_modules/@quasar/extras', ] },
+    fs: {
+      allow: [
+        '.',
+        '/home/hw/projects/nx/typeholes/node_modules/@quasar/extras',
+      ],
+    },
   },
 
   preview: {
@@ -60,7 +64,7 @@ export default defineConfig({
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
   },
 
-  // build: {
-  //   minify: false,
-  // },
+  build: {
+    minify: false,
+  },
 });

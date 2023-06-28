@@ -8,6 +8,7 @@ import {
   tupleToObject,
   ProjectPath,
   PluginName,
+  relPath,
 } from '@typeholes/tserr-common';
 import * as http from 'http';
 import * as path from 'path';
@@ -133,17 +134,19 @@ export function startServer(
       next();
     });
     socket.on('openProject', (path) => {
-      writeConfig('openProject', path);
+      const relative = relPath(projectRoot, path, pathSep);
+      writeConfig('openProject', relative);
       for (const pluginKey of pluginOrder) {
-        plugins[pluginKey]?.on.openProject(path);
+        plugins[pluginKey]?.on.openProject(relative);
       }
-      projects[path]?.project.open();
+      projects[relative as ProjectPath]?.project.open();
     }),
       socket.on('closeProject', (path) => {
-        writeConfig('closeProject', path);
-        const files = projects[path]?.project.close();
+      const relative = relPath(projectRoot, path, pathSep);
+        writeConfig('closeProject', relative);
+        const files = projects[relative as ProjectPath]?.project.close();
         for (const pluginKey of pluginOrder) {
-          plugins[pluginKey]?.on.closeProject(path);
+          plugins[pluginKey]?.on.closeProject(relative);
           plugins[pluginKey]?.api.send.resetResolvedErrors(files);
         }
       }),
@@ -270,26 +273,29 @@ export function startServer(
         emit('fixes', fixesRec);
       },
     hasProject: (pluginKey: string) => (path: string) => {
-      if (path in projects) {
+      const relative = relPath(projectRoot,path, pathSep);
+      if (relative in projects) {
         return;
       }
-      const projectPath = ProjectPath(path);
+      const projectPath = ProjectPath(relative);
+
 
       projects[projectPath] = {
-        project: mkProject(path, plugins),
+        project: mkProject(projectRoot, relative, plugins),
         openedBy: PluginName.for(pluginKey),
       };
       sendHasProject(projectPath);
     },
     openProject: (pluginKey: string) => (path: string) => {
-      if (path in projects) {
-        throw new Error('project `${path}` is already open');
+      const relative = relPath(projectRoot,path, pathSep);
+      if (relative in projects) {
+        return;
       }
-      const projectPath = ProjectPath(path);
+      const projectPath = ProjectPath(relative);
 
       if (!(projectPath in projects)) {
         projects[projectPath] = {
-          project: mkProject(path, plugins),
+          project: mkProject(projectRoot, relative, plugins),
           openedBy: PluginName.for(pluginKey),
         };
         sendHasProject(projectPath);
@@ -298,11 +304,12 @@ export function startServer(
       projects[projectPath].project.open();
       sendOpenProject(projectPath);
     },
-    closeProject: (pluginKey: string) => (path: string) => {
-      if (!(path in projects)) {
+    closeProject: (_pluginKey: string) => (path: string) => {
+      const relative = relPath(projectRoot,path, pathSep);
+      if (!(relative in projects)) {
         return;
       }
-      const projectPath = ProjectPath(path);
+      const projectPath = ProjectPath(relative);
 
       projects[projectPath].project.close();
       sendCloseProject(projectPath);
@@ -315,7 +322,7 @@ export function startServer(
       (pluginKey: string) => (fileName: string, resolvedError: FlatErr[]) => {
         emit('resolvedError', pluginKey, fileName, resolvedError);
       },
-    supplement: (pluginKey: string) => (id: number, supplement: string) => {
+    supplement: (_pluginKey: string) => (id: number, supplement: string) => {
       emit('supplement', id, supplement);
     },
   } as const;
@@ -333,6 +340,7 @@ export function startServer(
         store(event)
       ),
       // addSemanticErrorIdentifiers,
+      getProjectRoot: () => projectRoot,
       getConfigs: () => configs,
       getProjectPaths,
       addProjectEventHandlers: addProjectEventHandlers(plugin.key),
@@ -405,7 +413,7 @@ export function startServer(
   function writeConfig(event: string, atPath: string) {
     const parsed = parsePath(atPath);
     const fileName = parsed.base;
-    let configPath = '.' + pathSep + parsed.dir + pathSep;
+    let configPath = relPath(projectRoot, parsed.dir,  pathSep);
     const path = configPath + fileName;
     let config = configs[configPath];
 

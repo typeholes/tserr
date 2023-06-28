@@ -52,8 +52,8 @@
         "development": {
           "buildTarget": "tserr-standalone:build:development",
           "runtimeArgs": [
-            "/home/hw/projects/nx/typeholes",
-            "3100",
+            "/home/hw/projects/others/Particle-Incremental",
+            "3100"
           ]
         },
         "production": {
