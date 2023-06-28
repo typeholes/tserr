@@ -74,8 +74,10 @@ export function mkProject(
 
 export function findConfigs(
   dirPath: string,
+  rootPath?: string,
   resolved: ProjectConfigs = {}
 ): ProjectConfigs {
+  const root = rootPath ?? dirPath;
   const tsConfigs: string[] = [];
   const errConfigs: string[] = [];
   const dirs: string[] = [];
@@ -98,13 +100,13 @@ export function findConfigs(
     }
   });
 
-  Object.assign(resolved, resolveConfigs(tsConfigs, errConfigs));
-  dirs.forEach((p) => findConfigs(p, resolved));
+  Object.assign(resolved, resolveConfigs(root, tsConfigs, errConfigs));
+  dirs.forEach((p) => findConfigs(p, root, resolved));
 
   return resolved;
 }
 
-function resolveConfigs(ts: string[], err: string[]) {
+function resolveConfigs(rootPath: string, ts: string[], err: string[]) {
   const resolved: Record<
     string,
     {
@@ -114,8 +116,8 @@ function resolveConfigs(ts: string[], err: string[]) {
       config?: TsErrConfig;
     }
   > = {};
-  const tsPaths = ts.map(path2tuple).sort();
-  const errPaths = err.map(path2tuple).sort();
+  const tsPaths = ts.map((p) => path2tuple(rootPath, p)).sort();
+  const errPaths = err.map((p) => path2tuple(rootPath, p)).sort();
 
   for (const ts of tsPaths) {
     if (resolved[ts[0]]) {
@@ -126,7 +128,7 @@ function resolveConfigs(ts: string[], err: string[]) {
     }
   }
   for (const err of errPaths) {
-    const parentConfig = resolved[err[0]].config;
+    const parentConfig = resolved[err[0]]?.config;
     const config = mergeConfig(parentConfig, readConfig(err[0], err[1]));
 
     resolved[err[0]] = {
@@ -140,10 +142,15 @@ function resolveConfigs(ts: string[], err: string[]) {
   return resolved;
 }
 
-function path2tuple(pathStr: string) {
-  const p = parsePath(pathStr);
+function path2tuple(rootPath: string, pathStr: string) {
+  const relative = pathStr.replace(rootPath, '.');
+  const p = parsePath(relative);
   const dirs = p.dir.split(pathSep);
-  return [p.dir, p.base, joinPath(...dirs.slice(0, -2))] as const;
+  return [
+    p.dir + pathSep,
+    p.base,
+    joinPath(...dirs.slice(0, -2)) + pathSep,
+  ] as const;
 }
 
 function readConfig(dir: string, fileName: string): TsErrConfig {
