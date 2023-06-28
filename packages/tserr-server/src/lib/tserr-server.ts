@@ -141,10 +141,11 @@ export function startServer(
     }),
       socket.on('closeProject', (path) => {
         writeConfig('closeProject', path);
+        const files = projects[path]?.project.close();
         for (const pluginKey of pluginOrder) {
           plugins[pluginKey]?.on.closeProject(path);
+          plugins[pluginKey]?.api.send.resetResolvedErrors(files);
         }
-        projects[path]?.project.close();
       }),
       socket.on(
         'gotoDefinition',
@@ -306,8 +307,8 @@ export function startServer(
       projects[projectPath].project.close();
       sendCloseProject(projectPath);
     },
-    resetResolvedErrors: (pluginKey: string) => () => {
-      emit('resetResolvedErrors', pluginKey);
+    resetResolvedErrors: (pluginKey: string) => (filenames?: string[]) => {
+      emit('resetResolvedErrors', pluginKey, filenames);
       fixFunctions = {};
     },
     resolvedErrors:

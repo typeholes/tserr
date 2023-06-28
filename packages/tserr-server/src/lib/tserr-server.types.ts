@@ -3,7 +3,7 @@ import { ProjectEvent } from './project';
 
 export type TserrPluginEvents = {
   resolvedErrors: (fileName: string, resolvedError: FlatErr[]) => void;
-  resetResolvedErrors: () => void;
+  resetResolvedErrors: (filenames?: string[]) => void;
 
   supplement: (id: number, supplement: string) => void;
 

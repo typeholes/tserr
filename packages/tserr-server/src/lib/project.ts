@@ -1,6 +1,6 @@
-import { watch } from 'chokidar';
+import { watch, FSWatcher } from 'chokidar';
 import { PluginState } from './tserr-server.types';
-import { FSWatcher, readdirSync, statSync, readFileSync } from 'fs';
+import { readdirSync, statSync, readFileSync } from 'fs';
 import { join as joinPath, parse as parsePath, sep as pathSep } from 'path';
 import {
   ProjectConfigs,
@@ -67,10 +67,18 @@ export function mkProject(
     isOpen = true;
   }
 
-  function close() {
+  function close() : string[] {
     clearInterval(eventInterval);
+    const watched =  watcher?.getWatched() ?? {};
+
+    const paths = Object.entries(watched).map ( ([dir, files]) => files.map( f => joinPath(dir,f))).flat();
+
+
+  
     watcher?.close();
     isOpen = false;
+
+    return paths;
   }
 
   return { close, open, isOpen: () => isOpen };

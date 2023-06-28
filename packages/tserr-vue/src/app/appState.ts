@@ -107,13 +107,17 @@ function handleResolvedError(
   }
 }
 
-function handleResetResolvedErrors(pluginKey: string) {
-  for (const fileName in appState.resolvedErrors) {
+function handleResetResolvedErrors(pluginKey: string, fileNames?: string[]) {
+  const fileArr = fileNames ?? Object.keys(appState.resolvedErrors);
+  for (const fileName of fileArr) {
     const filePath = FileName.for(fileName);
+    if (!appState.resolvedErrors[filePath]) {
+      continue;
+    }
     appState.resolvedErrors[filePath][PluginName.for(pluginKey)] = [];
     if (
       Object.entries(appState.resolvedErrors[filePath]).every(
-        (e) => (e[1].length === 0)
+        (e) => e[1].length === 0
       )
     ) {
       delete appState.resolvedErrors[FileName.for(fileName)];

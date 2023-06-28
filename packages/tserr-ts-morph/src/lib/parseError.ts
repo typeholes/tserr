@@ -1,7 +1,6 @@
 import { ParsedError } from '@typeholes/tserr-common';
 
 export function parseError(err: string): ParsedError {
-  const rawParts = err.split("'");
 
   const parts: string[] = [''];
 
