@@ -53,8 +53,8 @@ function relativePath(name: string) {
           <q-expansion-item :label="relativePath(fileName)">
           <!-- <q-expansion-item :label="fileName"> -->
             <q-list dense>
-              <template v-for="(errors, pluginName) in map" :key="pluginName">
-                <q-expansion-item :label="pluginName" dense >
+              <template v-for="(errors, _pluginName) in map" :key="_pluginName">
+                <!-- <q-expansion-item :label="pluginName" dense > -->
                   <q-list dense>
                     <template
                       v-for="(errs, _idx) of groupErrors(errors)"
@@ -86,7 +86,7 @@ function relativePath(name: string) {
               <ResolvedError :error="(error as unknown as AliasSelfReferenceResult)" />
             </div>
           </div> -->
-                </q-expansion-item>
+                <!-- </q-expansion-item> -->
               </template>
             </q-list>
           </q-expansion-item>
