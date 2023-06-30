@@ -1,5 +1,13 @@
 {
   "openProjects": [
+    "./packages/tserr-vscode/tsconfig.lib.json",
+    "./packages/tserr-vscode-app/tsconfig.app.json",
+    "./packages/tserr-ts-morph/tsconfig.lib.json",
+    "./packages/tserr-standalone/tsconfig.app.json",
+    "./packages/tserr-server/tsconfig.lib.json",
+    "./packages/tserr-common/tsconfig.lib.json",
+    "./packages/tserr-arktype/tsconfig.lib.json",
+    "./packages/tserr-vue/tsconfig.app.json"
   ],
   "ignoreErrCodes": [
     "tsc2742"

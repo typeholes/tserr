@@ -55,14 +55,16 @@ export function activate(context: ExtensionContext) {
 
   const tsmorph = server.mkPluginInterface(tsmorphPlugin);
 
-  const viewProvider = new ProblemViewProvider(context.extensionUri);
+  const viewProvider = new ProblemViewProvider(
+    context.extensionUri,
+    server.getPort()
+  );
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
       ProblemViewProvider.viewType,
       viewProvider
     )
   );
-
 
   const configs = tserr.getConfigs();
 
@@ -77,11 +79,10 @@ export function activate(context: ExtensionContext) {
   }
 
   commands.registerCommand('tserr-problems-view.openExternal', () => {
-    env.openExternal(Uri.parse('http://localhost:3000/'));
+    env.openExternal(Uri.parse(`http://localhost:${server.getPort()}/`));
   });
 
   // context.subscriptions.push(disposable);
-
 
   if (server.onGotoDefinition instanceof Function) {
     server.onGotoDefinition(handleGotoDefinition);

@@ -95,32 +95,34 @@ let gotoDefinition = (
 };
 
 export type ErrorServer = ReturnType<typeof startServer>;
-export function startServer(
-  servePath: string,
-  projectRoot: string,
-  serverPort = 3000
-) {
+export function startServer(servePath: string, projectRoot: string, port = 0) {
   console.log('in start server');
 
   const configs = findConfigs(projectRoot);
   console.log(configs);
-
-  // hacky way to set the port in the vue app.  Really should find a better way
-  const indexFile = readFileSync(joinPath(servePath, 'index.html'))
-    .toString()
-    .replace("window.TsErrPort = '3100'", `window.TsErrPort = '${serverPort}'`);
-  writeFileSync(joinPath(servePath, 'index.fixed.html'), indexFile);
 
   const plugins: Record<string, PluginState> = {};
   const pluginOrder: string[] = [];
 
   app = express();
   ('openProject');
-  httpServer = http.createServer(app);
+  httpServer = app.listen(port);
+  const address = httpServer.address();
+  if (!address || typeof address === 'string') {
+    throw new Error('Did not get AddressInfo from httpServer.address()');
+  }
+  const serverPort = address.port;
+  console.log({serverPort});
+  const indexFileName = `index.${serverPort}.html`;
+  // hacky way to set the port in the vue app.  Really should find a better way
+  const indexFile = readFileSync(joinPath(servePath, 'index.html'))
+    .toString()
+    .replace("window.TsErrPort = '3100'", `window.TsErrPort = '${serverPort}'`);
+  writeFileSync(joinPath(servePath, indexFileName), indexFile);
+
   io = new Server(httpServer, { cors: { origin: '*' } });
-  //io = new Server(httpServer, { cors: { origin: 'http://localhost:4200' } });
   app.get('/', (req, res) => {
-    res.sendFile(path.join(servePath, 'index.fixed.html'));
+    res.sendFile(path.join(servePath, indexFileName));
   });
 
   app.use(express.static(servePath));
@@ -182,9 +184,6 @@ export function startServer(
     queuedEmits.length = 0;
   });
 
-  httpServer.listen(serverPort, () => {
-    console.log(`listening on *:${serverPort}`);
-  });
 
   function emit(event: string, ...args: any[]) {
     if (hasConnection) {
@@ -418,7 +417,9 @@ export function startServer(
     const parsed = parsePath(atPath);
     const fileName = parsed.base;
     let configPath = relPath(projectRoot, parsed.dir, pathSep);
-    if (!configPath.endsWith(pathSep)) { configPath += pathSep; }
+    if (!configPath.endsWith(pathSep)) {
+      configPath += pathSep;
+    }
     const path = configPath + fileName;
     let config = configs[configPath];
 
@@ -456,6 +457,7 @@ export function startServer(
     onGotoDefinition,
     shutdownServer,
     mkPluginInterface,
+    getPort: () => serverPort,
   };
 
   sendProjectRoot();

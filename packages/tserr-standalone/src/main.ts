@@ -4,7 +4,7 @@ import { join as joinPath, resolve as resolvePath } from 'path';
 import { cpSync, readdirSync, statSync } from 'fs';
 import { version as nodeVersion } from 'process';
 
-let port = 3000;
+let port = 0;
 const { projectPath } = processArgs();
 
 function processArgs(): { projectPath: string } {
@@ -15,10 +15,7 @@ function processArgs(): { projectPath: string } {
   }
 
   const arg = process.argv[2];
-  port = parseInt(process.argv[3] ?? '3000');
-  if (port < 1000 || port > 9999) {
-    port = 3000;
-  }
+  port = parseInt(process.argv[3] ?? '3000') ?? 0;
 
   if (arg === '--builtin-examples') {
     if (nodeVersion !== 'v18.15.0') {

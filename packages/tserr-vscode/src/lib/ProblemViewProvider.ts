@@ -8,8 +8,10 @@ export class ProblemViewProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView;
   private _currentCacheKey: CacheKey = cacheKeyNone;
   private _loading?: { cts: vscode.CancellationTokenSource };
+  private _serverPort: number;
 
-  constructor(private readonly _extensionUri: vscode.Uri) {
+  constructor(private readonly _extensionUri: vscode.Uri, serverPort: number) {
+    this._serverPort = serverPort
     vscode.workspace.onDidChangeConfiguration(
       () => {
         this.updateConfiguration();
@@ -63,7 +65,7 @@ export class ProblemViewProvider implements vscode.WebviewViewProvider {
                 </head>
 
                 <body>
-     <iframe src="http://localhost:3000/" style="position:fixed; top:0; left:0; bottom:0; right:0; width:100%; height:100%; border:none; margin:0; padding:0; overflow:hidden; z-index:999999;">></iframe>
+     <iframe src="http://localhost:${this._serverPort}/" style="position:fixed; top:0; left:0; bottom:0; right:0; width:100%; height:100%; border:none; margin:0; padding:0; overflow:hidden; z-index:999999;">></iframe>
 			</body>
 			</html>`;
   }
