@@ -15,6 +15,9 @@ export function tupleToObject<T>(keys: U2T<keyof T>) {
 
 export function relPath(root: string, path: string, sep: string) {
   const double = new RegExp(`\\${sep}\\${sep}`);
+  if (path.startsWith(`.${sep}`)) {
+    path = path.slice(2);
+  }
   const p = '.' + sep + (path.startsWith(root) ? path.replace(root, '') : path);
   const ret = p.replace(double, sep).replace(/\.$/, '');
   console.log('relPath', ret);
@@ -24,3 +27,4 @@ export function relPath(root: string, path: string, sep: string) {
 export function absPath(root: string, path: string, sep: string) {
   return path.startsWith(root) ? path : root + sep + path.replace(root, '');
 }
+

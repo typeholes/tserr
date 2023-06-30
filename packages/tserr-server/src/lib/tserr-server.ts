@@ -418,6 +418,7 @@ export function startServer(
     const parsed = parsePath(atPath);
     const fileName = parsed.base;
     let configPath = relPath(projectRoot, parsed.dir, pathSep);
+    if (!configPath.endsWith(pathSep)) { configPath += pathSep; }
     const path = configPath + fileName;
     let config = configs[configPath];
 
