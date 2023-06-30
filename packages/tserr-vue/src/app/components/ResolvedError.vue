@@ -13,7 +13,13 @@ const props = defineProps<{
 
 const emitters = inject<Emitters>('emitters');
 
-function unknownPartsToBlock(parts: string[]) {
+function unknownPartsToBlock(parts: string[]): [string, string][] {
+  if (parts[0] === '') {
+    parts.shift();
+  }
+  if (parts.length === 2) {
+    return [[parts[1], parts[0]]];
+  }
   const evens = parts.filter((_, i) => i % 2 === 0);
   const blocks = evens.map((k, i) => {
     const entry = [k, parts[i * 2 + 1]] as [string, string];
@@ -49,40 +55,38 @@ function problemClick(e: MouseEvent) {
     v-for="(parsed, idx) of props.err.parsed"
     :key="idx"
   >
-    <div :style="{ minWidth: 'contents'}" >{{ parsed[2].type }}</div>
+    <div :style="{ minWidth: 'contents' }">{{ parsed[2].type }}</div>
     <!-- <div :style="{ minWidth: `${parsed[1] ?? 0}rem` }"></div> -->
     <!-- <span v-if="props.parsed[2].type === 'unknownError'">
       {{ props.parsed[2].parts }}
     </span> -->
     <div cols="">
-        <CodeGrid
-          :blocks="Object.entries(parsed[2])"
-          header-key="type"
-          v-if="['notAssignable', 'excessProperty'].includes(parsed[2].type)"
-        />
-        <CodeGrid
-          :blocks="unknownPartsToBlock(parsed[2].parts)"
-          header-key=""
-          v-if="parsed[2].type === 'unknownError'"
-        />
+      <CodeGrid
+        :blocks="Object.entries(parsed[2])"
+        header-key="type"
+        v-if="['notAssignable', 'excessProperty'].includes(parsed[2].type)"
+      />
+      <CodeGrid
+        :blocks="unknownPartsToBlock(parsed[2].parts)"
+        header-key=""
+        v-if="parsed[2].type === 'unknownError'"
+      />
     </div>
     <div
-    cols=""
+      cols=""
       class="supplements"
       v-for="text in appState.supplements[parsed[0]]"
       :key="text"
     >
       <DisplaySupplement :text="text" />
     </div>
-    <div
-      >
-        <div v-for="fix of appState.fixes[parsed[0]]" :key="fix[0]">
-          <button @click="emitters?.applyFix(fix[0])">
-            {{ fix[1] }}
-          </button>
-        </div>
-      </div
-    >
+    <div>
+      <div v-for="fix of appState.fixes[parsed[0]]" :key="fix[0]">
+        <button @click="emitters?.applyFix(fix[0])">
+          {{ fix[1] }}
+        </button>
+      </div>
+    </div>
     <!-- </div> -->
   </div>
 </template>
