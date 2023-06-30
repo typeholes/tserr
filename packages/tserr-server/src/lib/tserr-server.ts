@@ -142,7 +142,7 @@ export function startServer(
       projects[relative as ProjectPath]?.project.open();
     }),
       socket.on('closeProject', (path) => {
-      const relative = relPath(projectRoot, path, pathSep);
+        const relative = relPath(projectRoot, path, pathSep);
         writeConfig('closeProject', relative);
         const files = projects[relative as ProjectPath]?.project.close();
         for (const pluginKey of pluginOrder) {
@@ -273,39 +273,43 @@ export function startServer(
         emit('fixes', fixesRec);
       },
     hasProject: (pluginKey: string) => (path: string) => {
-      const relative = relPath(projectRoot,path, pathSep);
+      const relative = relPath(projectRoot, path, pathSep);
       if (relative in projects) {
         return;
       }
       const projectPath = ProjectPath(relative);
-
 
       projects[projectPath] = {
         project: mkProject(projectRoot, relative, plugins),
         openedBy: PluginName.for(pluginKey),
       };
+      console.log('finished hasProject', projectPath, projects);
       sendHasProject(projectPath);
     },
     openProject: (pluginKey: string) => (path: string) => {
-      const relative = relPath(projectRoot,path, pathSep);
-      if (relative in projects) {
-        return;
-      }
+      const relative = relPath(projectRoot, path, pathSep);
       const projectPath = ProjectPath(relative);
 
+      if (relative in projects && projects[projectPath].project.isOpen()) {
+        return;
+      }
       if (!(projectPath in projects)) {
+        console.log('opening new project', projectPath, projects);
         projects[projectPath] = {
           project: mkProject(projectRoot, relative, plugins),
           openedBy: PluginName.for(pluginKey),
         };
         sendHasProject(projectPath);
+      } else {
+        console.log('opening existing project');
       }
 
       projects[projectPath].project.open();
       sendOpenProject(projectPath);
     },
     closeProject: (_pluginKey: string) => (path: string) => {
-      const relative = relPath(projectRoot,path, pathSep);
+      const relative = relPath(projectRoot, path, pathSep);
+      console.log('closeProject check', relative, projects);
       if (!(relative in projects)) {
         return;
       }
@@ -413,7 +417,7 @@ export function startServer(
   function writeConfig(event: string, atPath: string) {
     const parsed = parsePath(atPath);
     const fileName = parsed.base;
-    let configPath = relPath(projectRoot, parsed.dir,  pathSep);
+    let configPath = relPath(projectRoot, parsed.dir, pathSep);
     const path = configPath + fileName;
     let config = configs[configPath];
 

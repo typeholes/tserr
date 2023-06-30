@@ -13,6 +13,7 @@ import { ProblemViewProvider } from './ProblemViewProvider';
 import { startServer } from '@typeholes/tserr-server';
 import { FlatErr } from '@typeholes/tserr-common';
 import { plugin as tsmorphPlugin } from '@typeholes/tserr-ts-morph';
+import { join as joinPath } from 'path';
 
 // let server: ReturnType<typeof startServer> | undefined = undefined;
 
@@ -32,11 +33,11 @@ export function activate(context: ExtensionContext) {
   const extPath =
     vscode.extensions.getExtension('typeholes.tserr-vscode')?.extensionPath ??
     __dirname + '../../../../tserr-vue/';
+
+  const projectPath =
+    (workspace.workspaceFolders ?? [])[0]?.uri?.fsPath ?? __dirname;
   window.showInformationMessage('activating tserr');
-  const server = startServer(
-    extPath,
-    (workspace.workspaceFolders ?? [])[0]?.uri?.fsPath ?? __dirname
-  );
+  const server = startServer(extPath, projectPath);
   const tserr = server.mkPluginInterface({
     key: 'vscode',
     displayName: 'vscode',
@@ -52,13 +53,7 @@ export function activate(context: ExtensionContext) {
     errors[fileName].push(...resolvedErrors);
   });
 
-  server.mkPluginInterface(tsmorphPlugin);
-
-  commands.registerCommand('tserr-problems-view.openExternal', () => {
-    env.openExternal(Uri.parse('http://localhost:3000/'));
-  });
-
-  // context.subscriptions.push(disposable);
+  const tsmorph = server.mkPluginInterface(tsmorphPlugin);
 
   const viewProvider = new ProblemViewProvider(context.extensionUri);
   context.subscriptions.push(
@@ -67,6 +62,26 @@ export function activate(context: ExtensionContext) {
       viewProvider
     )
   );
+
+
+  const configs = tserr.getConfigs();
+
+  for (const path in configs) {
+    const config = configs[path];
+    config.config?.openProjects.forEach((projectFile) => {
+      tserr.send.openProject(joinPath(projectPath, projectFile));
+    });
+    config.tsconfig?.forEach((fileName) => {
+      tserr.send.hasProject(joinPath(path, fileName));
+    });
+  }
+
+  commands.registerCommand('tserr-problems-view.openExternal', () => {
+    env.openExternal(Uri.parse('http://localhost:3000/'));
+  });
+
+  // context.subscriptions.push(disposable);
+
 
   if (server.onGotoDefinition instanceof Function) {
     server.onGotoDefinition(handleGotoDefinition);

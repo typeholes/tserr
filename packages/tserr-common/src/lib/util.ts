@@ -15,10 +15,10 @@ export function tupleToObject<T>(keys: U2T<keyof T>) {
 
 export function relPath(root: string, path: string, sep: string) {
   const double = new RegExp(`\\${sep}\\${sep}`);
-  const p =  ('.' + sep + (path.startsWith(root) ? path.replace(root, '') : path
-  ));
-  console.log('relPath', p);
-  return p.replace(double, '').replace(/\.$/,'');
+  const p = '.' + sep + (path.startsWith(root) ? path.replace(root, '') : path);
+  const ret = p.replace(double, sep).replace(/\.$/, '');
+  console.log('relPath', ret);
+  return ret;
 }
 
 export function absPath(root: string, path: string, sep: string) {
