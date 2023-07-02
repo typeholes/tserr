@@ -10,7 +10,6 @@ import {
   TypeNode,
   SyntaxKind,
 } from 'ts-morph';
-import { parseError } from './parseError';
 import { FunctionDeclaration, TypeAliasDeclaration } from 'ts-morph';
 import { MethodDeclaration } from 'ts-morph';
 import { ClassDeclaration } from 'ts-morph';
@@ -20,7 +19,7 @@ import {
   semanticErrorIdentifiers,
 } from '@typeholes/tserr-server';
 import { group } from './util.js';
-import { Err, FlatErr, flattenErr } from '@typeholes/tserr-common';
+import { Err, FlatErr, flattenErr, parseError } from '@typeholes/tserr-common';
 import { join as joinPath } from 'path';
 
 type Declaration =

@@ -10,9 +10,8 @@ import * as vscode from 'vscode';
 
 import { ProblemViewProvider } from './ProblemViewProvider';
 
-import { startServer } from '@typeholes/tserr-server';
-import { FlatErr } from '@typeholes/tserr-common';
-import { plugin as tsmorphPlugin } from '@typeholes/tserr-ts-morph';
+import { startServer, TserrPluginApi } from '@typeholes/tserr-server';
+import { FlatErr, parseError } from '@typeholes/tserr-common';
 import { join as joinPath } from 'path';
 
 // let server: ReturnType<typeof startServer> | undefined = undefined;
@@ -27,6 +26,8 @@ import { join as joinPath } from 'path';
 
 let errors: Record<string, FlatErr[]> = {};
 
+let server: ReturnType<typeof startServer> = undefined as never;
+
 export function activate(context: ExtensionContext) {
   console.log(vscode.extensions.all.map((e) => e.id));
 
@@ -37,7 +38,7 @@ export function activate(context: ExtensionContext) {
   const projectPath =
     (workspace.workspaceFolders ?? [])[0]?.uri?.fsPath ?? __dirname;
   window.showInformationMessage('activating tserr');
-  const server = startServer(extPath, projectPath);
+  server = startServer(extPath, projectPath);
   const tserr = server.mkPluginInterface({
     key: 'vscode',
     displayName: 'vscode',
@@ -53,7 +54,7 @@ export function activate(context: ExtensionContext) {
     errors[fileName].push(...resolvedErrors);
   });
 
-  const tsmorph = server.mkPluginInterface(tsmorphPlugin);
+  // const tsmorph = server.mkPluginInterface(tsmorphPlugin);
 
   const viewProvider = new ProblemViewProvider(
     context.extensionUri,
@@ -110,6 +111,8 @@ export function activate(context: ExtensionContext) {
       }
     )
   );
+
+  registerDiagnosticChangeHandler(tserr);
 }
 
 async function handleGotoDefinition(
@@ -194,6 +197,34 @@ function getHoverMarkDown(uri: vscode.Uri, range: vscode.Range) {
   return hoverInfoToMarkdown(info);
 }
 
+function registerDiagnosticChangeHandler(plugin: TserrPluginApi) {
+  let id = 0;
+  vscode.languages.onDidChangeDiagnostics((event) => {
+    event.uris.forEach((uri) => {
+      plugin.send.resetResolvedErrors([uri.fsPath]);
+      const diagnostics = vscode.languages.getDiagnostics(uri);
+      diagnostics.forEach((diag) => {
+        const err: FlatErr = {
+          code: `${diag.code}`,
+          start: diag.range.start.line,
+          line: diag.range.start.line,
+          endLine: diag.range.end.line,
+          codes: [typeof diag.code === 'number' ? diag.code : 0],
+          lines: [diag.message],
+          parsed: diag.message.split('\n').map( (text, depth) =>
+            [
+              id++,
+              depth,
+              parseError(text)
+            ]),
+        };
+
+        plugin.send.resolvedErrors(uri.fsPath, [err]);
+      });
+    });
+  });
+}
+
 function getErrorHoverInfo(err: FlatErr): HoverInfo {
   const hoverInfo: HoverInfo = [];
   //   [
@@ -217,10 +248,10 @@ function getErrorHoverInfo(err: FlatErr): HoverInfo {
   // ];
 
   err.parsed.forEach((p) => {
-    const [_id, depth, parsed] = p;
+    const [_id, _depth, parsed] = p;
     if (parsed.type === 'unknownError') {
       const keys = parsed.parts.filter((_, idx) => idx % 2 === 0);
-      const values = parsed.parts.filter((_, idx) => idx % 2 === 1);
+      // const values = parsed.parts.filter((_, idx) => idx % 2 === 1);
       const keyCells = keys.map((x) => ({ type: 'text', body: x } as const));
       const valueCells = keys.map((x) => ({ type: 'code', body: x } as const));
       hoverInfo.push(keyCells, valueCells);
@@ -280,4 +311,8 @@ function hoverInfoToMarkdown(hoverInfo: HoverInfo) {
   md.appendMarkdown('</table>');
 
   return md;
+}
+
+export function deactivate() {
+  server?.shutdownServer();
 }

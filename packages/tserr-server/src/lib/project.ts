@@ -6,6 +6,7 @@ import {
   ProjectConfigs,
   TsErrConfig,
   absPath,
+  relPath,
   tsErrConfig,
 } from '@typeholes/tserr-common';
 
@@ -58,8 +59,8 @@ export function mkProject(
   let eventInterval: NodeJS.Timer | undefined = undefined;
 
   function open() {
-    const fullPath = absPath(projectRoot,projectPath, '/');
-    const dir = fullPath.replace(/\/[^/]*\.json$/, '').replace(/\/$/,'');
+    const fullPath = absPath(projectRoot, projectPath);
+    const dir = fullPath.replace(/\/[^/]*\.json$/, '').replace(/\/$/, '');
     watcher = watch(dir + '/**/*.ts', {
       awaitWriteFinish: { pollInterval: 100, stabilityThreshold: 100 }, // need to play with these values
       atomic: true,
@@ -70,13 +71,13 @@ export function mkProject(
     isOpen = true;
   }
 
-  function close() : string[] {
+  function close(): string[] {
     clearInterval(eventInterval);
-    const watched =  watcher?.getWatched() ?? {};
+    const watched = watcher?.getWatched() ?? {};
 
-    const paths = Object.entries(watched).map ( ([dir, files]) => files.map( f => joinPath(dir,f))).flat();
-
-
+    const paths = Object.entries(watched)
+      .map(([dir, files]) => files.map((f) => joinPath(dir, f)))
+      .flat();
 
     watcher?.close();
     isOpen = false;
@@ -144,7 +145,10 @@ function resolveConfigs(rootPath: string, ts: string[], err: string[]) {
   }
   for (const err of errPaths) {
     const parentConfig = resolved[err[0]]?.config;
-    const config = mergeConfig(parentConfig, readConfig(rootPath, err[0], err[1]));
+    const config = mergeConfig(
+      parentConfig,
+      readConfig(rootPath, err[0], err[1])
+    );
 
     resolved[err[0]] = {
       tsconfig: resolved[err[0]]?.tsconfig,
@@ -158,17 +162,22 @@ function resolveConfigs(rootPath: string, ts: string[], err: string[]) {
 }
 
 function path2tuple(rootPath: string, pathStr: string) {
-  const relative = pathStr.replace(rootPath, '.');
-  const p = parsePath(relative);
-  const dirs = p.dir.split(pathSep);
+  const relative = relPath(rootPath, pathStr);
+  const dirs = relative.split('/');
+  const fileName = dirs.pop();
+  const parentPath = dirs.slice(0, -1).join('/') + '/';
   return [
-    p.dir + pathSep,
-    p.base,
-    joinPath(...dirs.slice(0, -2)) + pathSep,
+    dirs.join('/') + '/',
+    fileName ?? '',
+    parentPath === "/" ? "" : parentPath,
   ] as const;
 }
 
-function readConfig(rootPath: string, dir: string, fileName: string): TsErrConfig {
+function readConfig(
+  rootPath: string,
+  dir: string,
+  fileName: string
+): TsErrConfig {
   const file = readFileSync(joinPath(rootPath, dir, fileName));
   const json = JSON.parse(file.toString());
   const { data, problems } = tsErrConfig(json);

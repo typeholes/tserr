@@ -1,4 +1,4 @@
-import { scope, Scope } from 'arktype';
+import { scope, } from 'arktype';
 import { makeArkComponent } from './arkVue';
 
 export const _supplement = scope({

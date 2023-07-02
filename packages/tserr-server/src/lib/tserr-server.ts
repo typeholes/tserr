@@ -22,7 +22,7 @@ import {
 } from './tserr-server.types';
 import { Project, findConfigs, mkProject } from './project';
 import { readFileSync, writeFileSync } from 'fs';
-import { parse as parsePath, join as joinPath, sep as pathSep } from 'path';
+import { parse as parsePath, join as joinPath, } from 'path';
 
 export { TserrPluginApi, TserrPlugin } from './tserr-server.types';
 
@@ -136,7 +136,7 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
       next();
     });
     socket.on('openProject', (path) => {
-      const relative = relPath(projectRoot, path, pathSep);
+      const relative = relPath(projectRoot, path );
       writeConfig('openProject', relative);
       for (const pluginKey of pluginOrder) {
         plugins[pluginKey]?.on.openProject(relative);
@@ -144,7 +144,7 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
       projects[relative as ProjectPath]?.project.open();
     }),
       socket.on('closeProject', (path) => {
-        const relative = relPath(projectRoot, path, pathSep);
+        const relative = relPath(projectRoot, path );
         writeConfig('closeProject', relative);
         const files = projects[relative as ProjectPath]?.project.close();
         for (const pluginKey of pluginOrder) {
@@ -272,7 +272,7 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
         emit('fixes', fixesRec);
       },
     hasProject: (pluginKey: string) => (path: string) => {
-      const relative = relPath(projectRoot, path, pathSep);
+      const relative = relPath(projectRoot, path );
       if (relative in projects) {
         return;
       }
@@ -286,7 +286,7 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
       sendHasProject(projectPath);
     },
     openProject: (pluginKey: string) => (path: string) => {
-      const relative = relPath(projectRoot, path, pathSep);
+      const relative = relPath(projectRoot, path );
       const projectPath = ProjectPath(relative);
 
       if (relative in projects && projects[projectPath].project.isOpen()) {
@@ -307,7 +307,7 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
       sendOpenProject(projectPath);
     },
     closeProject: (_pluginKey: string) => (path: string) => {
-      const relative = relPath(projectRoot, path, pathSep);
+      const relative = relPath(projectRoot, path, );
       console.log('closeProject check', relative, projects);
       if (!(relative in projects)) {
         return;
@@ -416,9 +416,9 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
   function writeConfig(event: string, atPath: string) {
     const parsed = parsePath(atPath);
     const fileName = parsed.base;
-    let configPath = relPath(projectRoot, parsed.dir, pathSep);
-    if (!configPath.endsWith(pathSep)) {
-      configPath += pathSep;
+    let configPath = relPath(projectRoot, parsed.dir, );
+    if (!configPath.endsWith('/')) {
+      configPath += '/';
     }
     const path = configPath + fileName;
     let config = configs[configPath];

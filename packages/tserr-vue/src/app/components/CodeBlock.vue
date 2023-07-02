@@ -4,6 +4,9 @@ import parserTS from 'prettier/parser-typescript';
 import type { Highlighter } from 'shiki';
 import { inject } from 'vue';
 
+// const stub = 'declare const __TSE_STUB__:';
+const stub = 'type __TSE_STUB__ =';
+
 const props = defineProps<{
   code: string | undefined;
   registerHtml: (x: string | undefined) => void;
@@ -11,12 +14,18 @@ const props = defineProps<{
 
 const highlighter = inject<Highlighter>('highlighter');
 
-const highlighted = highlight(formatCode(props.code));
+const highlighted = highlight(formatCode(`${stub} ${props.code}`))
+  ?.replace(/ *type */, '')
+  .replace(/ *__TSE_STUB__ */, '')
+  .replace('= ', '')
+  .replace(/(<span[^>]*>\s*<\/span>)+/,'')
 
 props.registerHtml(highlighted);
 
 function highlight(code: string | undefined) {
-  if ( code === undefined) { return undefined; }
+  if (code === undefined) {
+    return undefined;
+  }
   if (highlighter) {
     return highlighter.codeToHtml(code, { lang: 'ts' });
   }
@@ -24,12 +33,14 @@ function highlight(code: string | undefined) {
 }
 
 function formatCode(code: string | undefined) {
-  if ( code === undefined) { return undefined; }
+  if (code === undefined) {
+    return undefined;
+  }
   try {
-    return format(`declare const __TSE_STUB__: ${code}`, {
+    return format(code, {
       parser: 'typescript',
       plugins: [parserTS],
-    }).replace(/declare const __TSE_STUB__:\s+/, '');
+    });
   } catch (e) {
     return code;
     // return `${e}\n${code}`;
@@ -38,13 +49,12 @@ function formatCode(code: string | undefined) {
 </script>
 
 <template>
-    <code>
-      <div v-html="highlighted" />
-    </code>
+  <code>
+    <div v-html="highlighted" />
+  </code>
 </template>
 
 <style scoped>
-
 code {
   white-space: pre-wrap;
   text-align: left;

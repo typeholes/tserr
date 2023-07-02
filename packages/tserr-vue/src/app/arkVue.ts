@@ -1,4 +1,4 @@
-import { SlotsType, defineComponent, compile } from 'vue';
+import { SlotsType, defineComponent, } from 'vue';
 import { Space } from 'arktype';
 
 export function makeArkComponent<T>(space: Space<T>) {

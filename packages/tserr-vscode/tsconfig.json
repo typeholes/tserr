@@ -2,9 +2,6 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "module": "commonjs",
-    "paths": {
-      "hack/*": ["../../../dist/packages/"]
-    }
   },
   "files": [],
   "include": [],

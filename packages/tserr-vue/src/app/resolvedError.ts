@@ -1,4 +1,4 @@
-import { arrayOf, scope, type } from 'arktype';
+import { arrayOf, scope, } from 'arktype';
 import { arkSplitter } from './arkUtil';
 
 const _resolvedError = scope({
@@ -67,58 +67,3 @@ export type FlatErr = typeof flatErr.err.infer;
 
 
 
-const example = [
-  {
-    line: 10,
-    start: 343,
-    lines: ["Type alias 'RangeNode' circularly references itself."],
-    parsed: [
-      [
-        0,
-        {
-          type: 'aliasSelfReference',
-          from: 'RangeNode',
-        },
-      ],
-    ],
-    children: [],
-  },
-  {
-    line: 15,
-    start: 446,
-    lines: [
-      "'l' is referenced directly or indirectly in its own type annotation.",
-    ],
-    parsed: [
-      [
-        0,
-        {
-          type: 'unknownError',
-          parts: [
-            '',
-            'l',
-            'is referenced directly or indirectly in its own type annotation.',
-          ],
-        },
-      ],
-    ],
-    children: [],
-  },
-  {
-    line: 21,
-    start: 515,
-    lines: [
-      "'RangeNode' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.",
-    ],
-    parsed: [
-      [
-        0,
-        {
-          type: 'selfReference',
-          from: 'RangeNode',
-        },
-      ],
-    ],
-    children: [],
-  },
-];
