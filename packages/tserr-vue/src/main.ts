@@ -14,9 +14,11 @@ import * as shiki from 'shiki';
 
 // import './assets/main.css'
 
+
 shiki
   .getHighlighter({
-    theme: 'dark-plus',
+    theme: 'dracula',
+    themes: shiki.BUNDLED_THEMES,
   })
   .then((highlighter) => {
     const app = createApp(App);

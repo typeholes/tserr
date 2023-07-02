@@ -2,7 +2,8 @@
 import { format } from 'prettier';
 import parserTS from 'prettier/parser-typescript';
 import type { Highlighter } from 'shiki';
-import { inject } from 'vue';
+import { computed, inject } from 'vue';
+import { appState } from '../appState';
 
 // const stub = 'declare const __TSE_STUB__:';
 const stub = 'type __TSE_STUB__ =';
@@ -14,20 +15,21 @@ const props = defineProps<{
 
 const highlighter = inject<Highlighter>('highlighter');
 
-const highlighted = highlight(formatCode(`${stub} ${props.code}`))
+const highlighted = computed( () => highlight(formatCode(`${stub} ${props.code}`))
   ?.replace(/ *type */, '')
   .replace(/ *__TSE_STUB__ */, '')
-  .replace('= ', '')
+  .replace('>=', '>')
   .replace(/(<span[^>]*>\s*<\/span>)+/,'')
+);
 
-props.registerHtml(highlighted);
+props.registerHtml(highlighted.value);
 
 function highlight(code: string | undefined) {
   if (code === undefined) {
     return undefined;
   }
   if (highlighter) {
-    return highlighter.codeToHtml(code, { lang: 'ts' });
+    return highlighter.codeToHtml(code, { lang: 'ts', theme: appState.shikiTheme });
   }
   return code;
 }

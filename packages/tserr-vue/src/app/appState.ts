@@ -55,6 +55,7 @@ export const appState = reactive({
   projects: {} as Record<ProjectPath, undefined | boolean>,
   configs: {} as ProjectConfigs,
   projectRoot: '',
+  shikiTheme: 'dracula' as string,
 });
 
 function handleAddPlugin(key: string, active: boolean, displayName: string) {
