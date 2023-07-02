@@ -27,6 +27,7 @@ const obj = getObj();
           :blocks="[[
             `Overload ${overloadPiece.idx} of ${overloadPiece.length}`,
             `${overloadPiece.functionName}${overloadPiece.signature}`,
+            'signature'
           ]]"
         />
       </template>

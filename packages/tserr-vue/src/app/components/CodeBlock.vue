@@ -5,22 +5,35 @@ import type { Highlighter } from 'shiki';
 import { computed, inject } from 'vue';
 import { appState } from '../appState';
 
-// const stub = 'declare const __TSE_STUB__:';
-const stub = 'type __TSE_STUB__ =';
+
+const codeTypes = {
+  type: {
+    stub: 'type __TSE_STUB__ =',
+    cleanup: (s: string | undefined) =>
+      s
+        ?.replace(/ *type */, '')
+        .replace(/ *__TSE_STUB__ */, '')
+        .replace('>=', '>')
+        .replace(/(<span[^>]*>\s*<\/span>)+/, ''),
+  },
+  signature: {
+    stub: 'function ',
+    cleanup: (s: string | undefined) => s?.replace(/function */, ''),
+  },
+} as const;
 
 const props = defineProps<{
   code: string | undefined;
   registerHtml: (x: string | undefined) => void;
+  codeType?: keyof typeof codeTypes;
 }>();
 
 const highlighter = inject<Highlighter>('highlighter');
 
-const highlighted = computed( () => highlight(formatCode(`${stub} ${props.code}`))
-  ?.replace(/ *type */, '')
-  .replace(/ *__TSE_STUB__ */, '')
-  .replace('>=', '>')
-  .replace(/(<span[^>]*>\s*<\/span>)+/,'')
-);
+const highlighted = computed(() => {
+  const {stub, cleanup} = codeTypes[props.codeType??'type'];
+  return cleanup(highlight(formatCode(`${stub} ${props.code}`)));
+});
 
 props.registerHtml(highlighted.value);
 
@@ -29,7 +42,10 @@ function highlight(code: string | undefined) {
     return undefined;
   }
   if (highlighter) {
-    return highlighter.codeToHtml(code, { lang: 'ts', theme: appState.shikiTheme });
+    return highlighter.codeToHtml(code, {
+      lang: 'ts',
+      theme: appState.shikiTheme,
+    });
   }
   return code;
 }
@@ -44,6 +60,17 @@ function formatCode(code: string | undefined) {
       plugins: [parserTS],
     });
   } catch (e) {
+    try {
+      let fixed = code.replaceAll('...', 'ⵈ');
+
+      return format(fixed, {
+        parser: 'typescript',
+        plugins: [parserTS],
+      });
+    } catch (e) {
+      return code;
+      // return `${e}\n${code}`;
+    }
     return code;
     // return `${e}\n${code}`;
   }

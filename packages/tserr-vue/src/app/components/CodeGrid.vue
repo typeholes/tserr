@@ -3,8 +3,10 @@ import { reactive } from 'vue';
 import CodeBlock from './CodeBlock.vue';
 import diff from 'html-diff-ts';
 
+
+
 const props = defineProps<{
-  blocks: [label: string, code: string][];
+  blocks: [label: string, code: string, codeType?: 'type'|'signature'|undefined][];
   headerKey?: string;
 }>();
 
@@ -30,7 +32,7 @@ function setCompare(x: string | undefined) {
     <template v-for="entry of props.blocks" :key="entryObject">
       <div class="codeColumn" v-if="entry[0] !== props.headerKey">
         <div>{{ entry[0] }}</div>
-        <CodeBlock :code="entry[1]" :registerHtml="['from','to'].includes(entry[0]) ? setCompare : ()=>{}" />
+        <CodeBlock :code="entry[1]" :registerHtml="['from','to'].includes(entry[0]) ? setCompare : ()=>{}" :codeType="entry[2]" />
       </div>
     </template>
     <div class="diff">
