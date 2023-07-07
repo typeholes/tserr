@@ -211,12 +211,9 @@ function registerDiagnosticChangeHandler(plugin: TserrPluginApi) {
           endLine: diag.range.end.line,
           codes: [typeof diag.code === 'number' ? diag.code : 0],
           lines: [diag.message],
-          parsed: diag.message.split('\n').map( (text, depth) =>
-            [
-              id++,
-              depth,
-              parseError(text)
-            ]),
+          parsed: diag.message
+            .split('\n')
+            .map((text, depth) => [id++, depth, parseError(text)]),
         };
 
         plugin.send.resolvedErrors(uri.fsPath, [err]);
