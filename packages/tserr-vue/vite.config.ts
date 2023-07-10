@@ -29,6 +29,7 @@ export default defineConfig({
   plugins: [
     viteTsConfigPaths({
       root: '../../',
+      loose: true,
     }),
     vue({
       template: { transformAssetUrls },

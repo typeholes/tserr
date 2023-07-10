@@ -33,7 +33,7 @@ export function activate(context: ExtensionContext) {
 
   const extPath =
     vscode.extensions.getExtension('typeholes.tserr-vscode')?.extensionPath ??
-    __dirname + '../../../../tserr-vue/';
+    __dirname + '../../../tserr-vue/dist';
 
   const projectPath =
     (workspace.workspaceFolders ?? [])[0]?.uri?.fsPath ?? __dirname;
