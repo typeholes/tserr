@@ -1,0 +1,10 @@
+{
+  "extends": "../../../tsconfig.test.json",
+  "compilerOptions": {
+    "resolveJsonModule": true,
+    "module": "commonjs",
+    "outDir": "../../dist/out-tsc",
+    "declaration": true
+  },
+  "include": ["jest.config.ts", "**/*.test.ts"]
+}

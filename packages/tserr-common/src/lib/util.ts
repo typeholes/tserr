@@ -28,3 +28,7 @@ export function relPath(rootRaw: string, pathRaw: string) {
 export function absPath(root: string, path: string ) {
   return path.startsWith(root) ? path : root + '/' + path.replace(root, '');
 }
+
+export function pair<T, U>(t: T, u: U): [T, U] {
+  return [t, u];
+}

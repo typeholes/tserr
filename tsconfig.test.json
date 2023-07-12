@@ -2,6 +2,8 @@
   "compileOnSave": false,
   "compilerOptions": {
     "resolveJsonModule": true,
+    "types": ["jest", "node"],
+    "esModuleInterop": true,
     "strict": true,
     "rootDir": ".",
     "sourceMap": true,
@@ -28,6 +30,7 @@
     "noErrorTruncation": true
   },
   "exclude": ["node_modules", "tmp"],
+  "include": ["packages/**/test/**/*"],
   "ts-node": {
     "esm": true,
     "swc": true,

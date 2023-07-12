@@ -4,6 +4,7 @@ https://github.com/microsoft/TypeScript/blob/main/src/compiler/diagnosticMessage
 
 check out:
 https://gist.github.com/orta/f80db73c6e8211211e3d224a5ab47624
-https://discord.com/channels/508357248330760243/640177429775777792/1124071031632560219
+https://github.com/microsoft/TypeScript/pull/31384
+
 
 
