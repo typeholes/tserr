@@ -1,88 +1,116 @@
-import { FlatErr, PluginName, pair } from '@typeholes/tserr-common';
+import {
+  FlatErr,
+  FlatErrKey,
+  FlatErrValue,
+  PluginName,
+  ValueMap,
+  eq,
+  errMap,
+  mergeSources,
+  pair,
+  uniqObjects,
+} from '@typeholes/tserr-common';
+import e from 'express';
 
-type SnappedError = FlatErr & {
-  snapId: number;
-  firstSnapId: number;
-  errId: number;
-  fileName: string;
+export const liveErrors = errMap([]);
+
+export const __onUpdate = {
+  fixed: (() => {}) as (keys: FlatErrKey[]) => void,
+  changed: (() => {}) as (errors: typeof liveErrors) => void,
+  new: (() => {}) as (errors: typeof liveErrors) => void,
 };
 
-let errId = 0;
-export const fileErrors: Record<string, ReturnType<typeof mkSnapshot>> = {};
-
-export function addFile(fileName: string) {
-  if (fileName in fileErrors) {
-    return fileErrors[fileName];
-  }
-
-  fileErrors[fileName] = mkSnapshot(fileName);
-  return fileErrors[fileName];
+export function setOnUpdate(handlers: Partial<typeof __onUpdate>) {
+  Object.assign(__onUpdate, handlers);
 }
 
-function mkSnapshot(fileName: string) {
-  let state = {
-    snapId: 0,
-    errors: [] as SnappedError[],
-    fixed: [] as SnappedError[],
-  };
+let errId = 0;
 
-  function snapshot() {
-    const snapId = state.snapId + 1;
+function dedupErrors(errors: FlatErr[]): typeof liveErrors {
+  const ret = errMap(errors, mergeSources);
+  return ret;
+}
 
-    state = {
-      snapId,
-      ...splitBy(state.errors, (e) =>
-        pair(e.snapId === snapId ? 'errors' : 'fixed', e),
-      ),
-    };
+export function updateErrors(
+  errors: FlatErr[],
+  scope: 'global' | { plugin: PluginName; file?: string },
+) {
+  const uniqErrors = dedupErrors(errors);
+  console.log(errors);
 
-    return state;
+  if (scope !== 'global') {
+    const pluginName = scope.plugin as PluginName;
+    if (
+      Array.from(uniqErrors.values()).some((v) => {
+        for (const key in v.sources) {
+          if (key !== pluginName) {
+            return true;
+          }
+          if (scope.file !== undefined) {
+            const files = Object.keys(v.sources[pluginName]);
+            if (files.length > 1 || files[0] !== scope.file) {
+              return true;
+            }
+          }
+        }
+        return false;
+      })
+    ) {
+      throw new Error('out of scope errors in update');
+    }
   }
 
-  function updateErrors(fromPlugin: PluginName, newErrors: FlatErr[]) {
-    const diff = splitBy(newErrors, (err) => {
-      const ret = pair('new', { ...err, updateIdx: -1 });
-      for (let i = 0; i < state.errors.length; i++) {
-        const old = state.errors[i];
-        const check = eq(err, old);
-        if (check(['span','parsed'])) {
-          ret[0] = 'exact';
-          ret[1].updateIdx = i;
-          break;
-        }
-      }
-      return ret;
-    });
+  const updatedIds: number[] = [];
 
-    for (const diffType in diff) {
-      if (diffType === 'new') {
+  // this version of fixedKeys only works for global scope
+  if (scope === 'global') {
+    const fixedKeys = Array.from(liveErrors.keys()).filter(
+      (k) => !uniqErrors.has(k),
+    );
+    if (fixedKeys && fixedKeys.length > 0) {
+      fixedKeys.forEach((key) => liveErrors.delete(key));
+      __onUpdate.fixed(fixedKeys);
+    }
+  }
+
+  const { newKeys, updKeys } = splitBy(Array.from(uniqErrors.keys()), (k) =>
+    !liveErrors.has(k) ? ['newKeys', k] : ['updKeys', k],
+  );
+
+  if (newKeys && newKeys.length > 0) {
+    const newErrors = errMap([]);
+    for (const key of newKeys) {
+      const value = uniqErrors.get(key)!;
+      newErrors.set(key, value);
+      liveErrors.set(key, value);
+    }
+    __onUpdate.new(newErrors);
+  }
+
+  if (updKeys && updKeys.length > 0) {
+    const updErrors = errMap([]);
+    for (const key of updKeys) {
+      const oldValue = liveErrors.get(key)!;
+      const newValue = mergeSources(oldValue, uniqErrors.get(key)!);
+
+      if (eq(oldValue, newValue)) {
         continue;
       }
-      for (const err of diff[diffType]) {
-        state.errors[err.updateIdx] = {
-          ...err,
-          snapId: state.snapId,
-          firstSnapId: state.errors[err.updateIdx].firstSnapId,
-          errId: state.errors[err.updateIdx].errId,
-          fileName,
-          sources: { ...err.sources, ...state.errors[err.updateIdx].sources}
-        };
-      }
-    }
 
-    for (const err of diff.new ?? []) {
-      state.errors.push({
-        ...err,
-        snapId: state.snapId,
-        firstSnapId: state.snapId,
-        errId: errId++,
-        fileName,
-        sources: err.sources,
-      });
+      updErrors.set(key, newValue);
+      liveErrors.set(key, newValue);
+    }
+    if (updErrors.size > 0) {
+      __onUpdate.changed(updErrors);
     }
   }
 
-  return { getState: () => state, updateErrors, snapshot };
+  if (scope != 'global') {
+    const fixedKeys: FlatErrKey[] = [];
+    for (const [key, value] of liveErrors.rawEntries()) {
+      // TODO
+    }
+  }
 }
 
 function splitBy<T, U, K extends string>(arr: T[], by: (t: T) => [K, U]) {
@@ -96,14 +124,3 @@ function splitBy<T, U, K extends string>(arr: T[], by: (t: T) => [K, U]) {
 
   return ret;
 }
-
-function eq<KA extends KB, KB extends string, VA extends VB, VB>(
-  a: Record<KA, VA>,
-  b: Record<KB, VB>,
-): (keys: KA[]) => boolean {
-  return (keys: KA[]) => keys.every((k) => a[k] === b[k]);
-}
-
-type ex<A, B> = A extends B ? 1 : 0;
-
-type A = ex<{ a: 1; b: 1 }, { b: 1 }>;

@@ -20,7 +20,7 @@ function processArgs(): { projectPath: string } {
   if (arg === '--builtin-examples') {
     if (nodeVersion !== 'v18.15.0') {
       console.error(
-        'Needs node v18.15.0 - cpSync is experimental and I do not want to code up something or pull in  a dependency just for this'
+        'Needs node v18.15.0 - cpSync is experimental and I do not want to code up something or pull in  a dependency just for this',
       );
       throw new Error('invalid node version');
     }
@@ -33,7 +33,7 @@ function processArgs(): { projectPath: string } {
       '..',
       '..',
       '..',
-      'error_samples'
+      'error_samples',
     );
 
     console.log('from path', resolvePath(samplePath), projectPath);
@@ -54,9 +54,9 @@ function processArgs(): { projectPath: string } {
 import { plugin as tsmorphPlugin } from '@typeholes/tserr-ts-morph';
 
 const server = startServer(
-  __dirname + '../../../../../tserr-vue/',
+  __dirname + '../../../tserr-vue/dist/',
   projectPath,
-  port
+  port,
 );
 
 const tserr = server.mkPluginInterface({

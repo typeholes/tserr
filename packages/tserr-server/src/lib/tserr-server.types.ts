@@ -1,9 +1,13 @@
-import { FlatErr, ProjectPath, ProjectConfigs } from '@typeholes/tserr-common';
+import { FlatErr, ProjectPath, ProjectConfigs, PluginName } from '@typeholes/tserr-common';
 import { ProjectEvent } from './project';
 
 export type TserrPluginEvents = {
   resolvedErrors: (fileName: string, resolvedError: FlatErr[]) => void;
   resetResolvedErrors: (filenames?: string[]) => void;
+
+  newErrors: (errors: FlatErr[]) => void;
+  changedErrors: (errors: FlatErr[]) => void;
+  fixedErrors: (errIds: number[]) => void;
 
   supplement: (id: number, supplement: string) => void;
 
@@ -11,7 +15,7 @@ export type TserrPluginEvents = {
     fixesRec: Record<
       number,
       [fixId: number, fixDescription: string, fn: () => void][]
-    >
+    >,
   ) => void;
 
   hasProject: (projectPath: string) => void;
@@ -20,6 +24,7 @@ export type TserrPluginEvents = {
 };
 
 export type TserrPluginApi = {
+  pluginName: PluginName,
   // addSemanticErrorIdentifiers: (...identifiers: typeof semanticErrorIdentifiers) => void;
   getProjectRoot: () => string;
   getConfigs: () => ProjectConfigs;

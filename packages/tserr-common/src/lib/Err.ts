@@ -1,34 +1,73 @@
 import { ParsedError } from './ParsedError';
+import { ValueMap } from './ValueMap';
 import { PluginName } from './brands';
+import { uniqObjects } from './util';
+
+export type FlatErrKey = FlatErr['parsed'];
+export type FlatErrValue = Omit<FlatErr, 'parsed'>;
+export type FlatErrMap = ValueMap<FlatErrKey, FlatErrValue, string>;
+
+export function errMap(
+  errs: FlatErr[],
+  monoid?: (a: FlatErrValue, b: FlatErrValue) => FlatErrValue,
+): ValueMap<FlatErrKey, FlatErrValue, string> {
+  const ret = new ValueMap<FlatErrKey, FlatErrValue, string>(
+    JSON.stringify,
+    monoid,
+  );
+  for (const err of errs) {
+    ret.set(err.parsed, { sources: err.sources });
+  }
+
+  return ret;
+}
+
+export type Span = {
+  start: { line: number; char: number };
+  end: { line: number; char: number };
+};
 
 export type Err = {
+  fileName: string;
   code: string;
-  span: {
-    start: { line: number; char: number };
-    end: { line: number; char: number };
-  };
+  span: Span;
   lines: string[];
   parsed: ParsedError[];
   children: Err;
 }[];
 
 export type FlatErr = {
-  span: {
-    start: { line: number; char: number };
-    end: { line: number; char: number };
-  };
-  parsed: [id: number, depth: number, parsed: ParsedError][];
-  sources: Record<PluginName, [code: string, raw: string[]][]>;
+  parsed: { depth: number; value: ParsedError }[];
+  sources: Record<
+    PluginName,
+    Record<string, { code: string; raw: string[]; span: Span }[]>
+  >;
 };
 
-let parsedId = 0;
 function _flattenErr(pluginName: PluginName, e: Err[0]): FlatErr {
-  const parsed: [id: number, depth: number, parsed: ParsedError][] = [];
-  const source: [code: string, raw: string[]][] = [];
+  const parsed: FlatErr['parsed'] = [];
+  let value: FlatErrValue = {
+    sources: {
+      [pluginName]: {
+        [e.fileName]: [{ code: e.code, raw: e.lines, span: e.span }],
+      },
+    },
+  };
   function go(e: Err[0], depth: number) {
-    source.push([e.code, e.lines]);
-    const add: [id: number, depth: number, parsed: ParsedError][] =
-      e.parsed.map((p) => [parsedId++, depth, p]);
+    value = mergeSources(
+      {
+        sources: {
+          [pluginName]: {
+            [e.fileName]: [{ code: e.code, raw: e.lines, span: e.span }],
+          },
+        },
+      },
+      value,
+    );
+    const add: FlatErr['parsed'] = e.parsed.map((value) => ({
+      depth,
+      value,
+    }));
     parsed.push(...add);
     e.children.forEach((c) => go(c, depth + 1));
   }
@@ -38,7 +77,7 @@ function _flattenErr(pluginName: PluginName, e: Err[0]): FlatErr {
   const ret: FlatErr = {
     ...e,
     parsed: parsed,
-    sources: { [pluginName]: source },
+    sources: value.sources,
   };
 
   return ret;
@@ -62,4 +101,33 @@ export function traverseErr<U>(on: (err: Err[0]) => U) {
       result: on(e),
       children: e.children.map(on),
     }));
+}
+
+export function mergeSources(a: FlatErrValue, b: FlatErrValue): FlatErrValue {
+  const ret: FlatErrValue['sources'] = {};
+
+  for (const _plugin in a.sources) {
+    const plugin = _plugin as PluginName;
+    ret[plugin] = { ...a.sources[plugin] };
+  }
+
+  for (const _plugin in b.sources) {
+    const plugin = _plugin as PluginName;
+    if (!(plugin in ret)) {
+      ret[plugin] = { ...b.sources[plugin] };
+      continue;
+    }
+
+    for (const file in b.sources[plugin]) {
+      if (!(file in ret[plugin])) {
+        ret[plugin][file] = [ ...b.sources[plugin][file] ];
+        continue;
+      }
+      ret[plugin][file] = uniqObjects(
+        ret[plugin][file],
+        b.sources[plugin][file],
+      );
+    }
+  }
+  return { sources: ret };
 }

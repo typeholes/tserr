@@ -130,7 +130,7 @@ function processFileEvents(events: { type: string; filePath: string }[]) {
 
 function handleError(diagnostic: Diagnostic, fileName: string): FlatErr[] {
   function fakeParsed(e: (typeof err)[0]['parsed'][0]): FlatErr['parsed'][0] {
-    return [0, 0, e];
+    return {depth: 0, value: e};
   }
 
   const sourceFile = diagnostic.getSourceFile();
@@ -139,13 +139,16 @@ function handleError(diagnostic: Diagnostic, fileName: string): FlatErr[] {
 
     return [
       {
+        sources: { [tserrApi!.pluginName]: { ['']: [{
         code: err[0].code.toString(),
-        line: err[0].line,
-        endLine: err[0].line,
-        codes: err.map((e) => e.code),
-        lines: err.map((e) => e.lines).flat(),
+        raw: err.map( e=> e.lines).flat(),
+        span: {
+          start: { line: 0, char: 0,},
+          end: { line: 0, char: 0,},
+         }
+
+        }]}},
         parsed: err.map((e) => e.parsed.map(fakeParsed)).flat(),
-        start: 0,
       },
     ];
   }
@@ -166,6 +169,7 @@ function handleError(diagnostic: Diagnostic, fileName: string): FlatErr[] {
 
   const resolved = resolveError(fromNode, err);
 
+/*
   resolved.forEach((err) =>
     err.parsed.forEach((parsed) =>
       semanticErrorIdentifiers.forEach((identifier) => {
@@ -177,6 +181,7 @@ function handleError(diagnostic: Diagnostic, fileName: string): FlatErr[] {
       })
     )
   );
+  */
 
   return resolved;
 
@@ -200,7 +205,7 @@ function handleError(diagnostic: Diagnostic, fileName: string): FlatErr[] {
 }
 
 function resolveError(fromNode: Node, err: Err): FlatErr[] {
-  const flattened = flattenErr(err, fromNode.getEndLineNumber());
+  const flattened = flattenErr(tserrApi!.pluginName, err, fromNode.getEndLineNumber());
   const refined = refineErrror(flattened, fromNode);
   refined.forEach((flat) =>
     flat.parsed.forEach((p) => {
@@ -219,6 +224,7 @@ function mkFix(
   return [maxFixId++, description, fn];
 }
 function createFixes(e: FlatErr['parsed'][number], fromNode: Node) {
+/*
   const fixes: [fixId: number, fixDescription: string, fixFn: () => void][] =
     [];
   const id = e[0];
@@ -260,9 +266,11 @@ function createFixes(e: FlatErr['parsed'][number], fromNode: Node) {
     }
   }
   tserrApi?.send.fixes({ [id]: fixes });
+  */
 }
 
 function createSupplement(e: FlatErr['parsed'][number], fromNode: Node) {
+  /*
   const id = e[0];
   const parsed = e[2];
   if (parsed.type === 'aliasSelfReference' || parsed.type === 'selfReference') {
@@ -374,25 +382,26 @@ function unaliasType(type: Type): Type | TypeNode {
 }
 
 function diagnosticToErr(diagnostic: Diagnostic): Err {
+  const fileName =diagnostic.getSourceFile()?.getFilePath().toString()??'unknown'
   const code = diagnostic.getCode();
   const line = diagnostic.getLineNumber() ?? 0;
-
   const start = diagnostic.getStart() ?? 0;
   const message = diagnostic.getMessageText();
 
   if (typeof message === 'string') {
     const lines = message.split('\n');
     const parsed = lines.map(parseError);
-    return [{ code, line, start, lines, parsed, children: [] }];
+    return [{ code: code.toString(), fileName, span: { start: { line, char: start}, end: {line, char:start}} , parsed,  lines, children: [] }];
   }
 
-  return DiagnosticMessageChainToErr(message, line, start);
+  return DiagnosticMessageChainToErr(message, line, start, fileName);
 }
 
 function DiagnosticMessageChainToErr(
   chain: DiagnosticMessageChain | undefined,
   line: number,
-  start: number
+  start: number,
+  fileName: string,
 ): Err {
   if (chain === undefined) {
     return [];
@@ -402,9 +411,9 @@ function DiagnosticMessageChainToErr(
   const parsed = lines.map(parseError);
   const next = chain.getNext() ?? [];
   const children = next
-    .map((c) => DiagnosticMessageChainToErr(c, line, start))
+    .map((c) => DiagnosticMessageChainToErr(c, line, start, fileName))
     .flat();
-  return [{ code, line, start, lines, parsed, children }];
+    return [{ code: code.toString(), fileName, span: {  start: { line, char: start}, end: {line, char:start}} , parsed,  lines, children}];
 }
 
 function getDeclarationAncestor(n: Node | undefined) {
@@ -535,7 +544,9 @@ function checkIgnoreTSC(project: Project) {
 }
 
 function refineErrror(err: FlatErr, fromNode: Node): FlatErr[] {
-  const ret: FlatErr[] = [{ ...err, lines: [], parsed: [], codes: [] }];
+  return [err];
+  /*
+  const ret: FlatErr[] = [{ ...err }];
   let supplement: string | undefined = undefined;
   while (err.parsed.length > 0) {
     const code = err.codes.shift() ?? 0;
@@ -547,9 +558,9 @@ function refineErrror(err: FlatErr, fromNode: Node): FlatErr[] {
       err.parsed.length > 0 &&
       err.parsed[0][2].type === 'excessProperty'
     ) {
-      /* prune the not assignable error */
+      // prune the not assignable error
     } else if (code === 2769) {
-      /* prune no overloads match error */
+      // prune no overloads match error
     } else if (code === 2772) {
       const call = Node.is(SyntaxKind.CallExpression)(fromNode)
         ? fromNode
@@ -577,4 +588,5 @@ function refineErrror(err: FlatErr, fromNode: Node): FlatErr[] {
   }
 
   return ret;
+  */
 }

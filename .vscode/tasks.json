@@ -1,0 +1,19 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "typescript",
+      "tsconfig": "packages/tserr-standalone/tsconfig.json",
+      "problemMatcher": ["$tsc"],
+      "group": "build",
+      "label": "tsc: build - packages/tserr-standalone/tsconfig.json"
+    },
+    {
+      "type": "typescript",
+      "tsconfig": "packages/tserr-vscode/tsconfig.json",
+      "problemMatcher": ["$tsc"],
+      "group": "build",
+      "label": "tsc: build - packages/tserr-vscode/tsconfig.json"
+    }
+  ]
+}

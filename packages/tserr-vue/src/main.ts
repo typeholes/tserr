@@ -11,22 +11,26 @@ import 'quasar/src/css/index.sass';
 import App from './App.vue';
 import { startSocket } from './app/socket';
 import * as shiki from 'shiki';
+import type { Highlighter } from 'shiki';
 
 // import './assets/main.css'
 
+export let highlighter: Highlighter | undefined = undefined;
 
 shiki
   .getHighlighter({
     theme: 'dracula',
     themes: shiki.BUNDLED_THEMES,
   })
-  .then((highlighter) => {
+  .then((_highlighter) => {
+    highlighter = _highlighter;
+
     const app = createApp(App);
 
     const emitters = startSocket();
     app.use({
       install: (app) => {
-        app.provide('highlighter', highlighter);
+        app.provide('highlighter', _highlighter);
         app.provide('emitters', emitters);
       },
     });

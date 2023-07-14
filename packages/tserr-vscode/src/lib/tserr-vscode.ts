@@ -11,7 +11,7 @@ import * as vscode from 'vscode';
 import { ProblemViewProvider } from './ProblemViewProvider';
 
 import { startServer, TserrPluginApi } from '@typeholes/tserr-server';
-import { FlatErr, parseError } from '@typeholes/tserr-common';
+import { FlatErr, pair, parseError } from '@typeholes/tserr-common';
 import { join as joinPath } from 'path';
 
 // let server: ReturnType<typeof startServer> | undefined = undefined;
@@ -32,8 +32,8 @@ export function activate(context: ExtensionContext) {
   console.log(vscode.extensions.all.map((e) => e.id));
 
   const extPath =
-    vscode.extensions.getExtension('typeholes.tserr-vscode')?.extensionPath ??
-    __dirname + '../../../tserr-vue/dist';
+    (vscode.extensions.getExtension('typeholes.tserr-vscode')?.extensionPath ??
+      __dirname + '../../../tserr-vue') + '/dist';
 
   const projectPath =
     (workspace.workspaceFolders ?? [])[0]?.uri?.fsPath ?? __dirname;
@@ -58,13 +58,13 @@ export function activate(context: ExtensionContext) {
 
   const viewProvider = new ProblemViewProvider(
     context.extensionUri,
-    server.getPort()
+    server.getPort(),
   );
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
       ProblemViewProvider.viewType,
-      viewProvider
-    )
+      viewProvider,
+    ),
   );
 
   const configs = tserr.getConfigs();
@@ -108,8 +108,8 @@ export function activate(context: ExtensionContext) {
           const content = getHoverMarkDown(document.uri, range);
           return { contents: [content] };
         },
-      }
-    )
+      },
+    ),
   );
 
   registerDiagnosticChangeHandler(tserr);
@@ -119,24 +119,24 @@ async function handleGotoDefinition(
   uriString: string,
   text: string,
   searchFromLine: number,
-  searchToLine: number
+  searchToLine: number,
 ) {
   const uri = vscode.Uri.parse(uriString);
   console.log('in vscode gotoDefinition');
   // eslint-disable-next-line no-debugger
   let editor = vscode.window.visibleTextEditors.find(
-    (editor) => editor.document.uri.toString() === uri.toString()
+    (editor) => editor.document.uri.toString() === uri.toString(),
   );
   if (!editor) {
     const document = vscode.workspace.textDocuments.find(
-      (document) => document.uri.toString() === uri.toString()
+      (document) => document.uri.toString() === uri.toString(),
     );
     if (document) {
       editor = await vscode.window.showTextDocument(document);
     } else {
       await vscode.commands.executeCommand('vscode.open', uri);
       const document = vscode.workspace.textDocuments.find(
-        (document) => document.uri.toString() === uri.toString()
+        (document) => document.uri.toString() === uri.toString(),
       );
       if (document) {
         editor = await vscode.window.showTextDocument(document);
@@ -157,7 +157,7 @@ async function handleGotoDefinition(
             // 'vscode.executeTypeDefinitionProvider',
             'vscode.executeDefinitionProvider',
             document.uri,
-            position
+            position,
           )
           .then((result) => {
             if (Array.isArray(result) && result.length > 0) {
@@ -167,7 +167,7 @@ async function handleGotoDefinition(
                 position,
                 result,
                 'goto',
-                'No Type Definition Found'
+                'No Type Definition Found',
               );
             }
             console.log('result', result);
@@ -187,12 +187,12 @@ type HoverInfo = {
 function getHoverMarkDown(uri: vscode.Uri, range: vscode.Range) {
   const fileName = uri.fsPath;
   const info: HoverInfo = [];
-  for (const err of errors[fileName] ?? []) {
-    //todo really should check position as well
-    if (range.start.line >= err.line - 1 && range.end.line <= err.endLine - 1) {
-      info.push(...getErrorHoverInfo(err), []);
-    }
-  }
+  // for (const err of errors[fileName] ?? []) {
+  //   //todo really should check position as well
+  //   if (range.start.line >= err.line - 1 && range.end.line <= err.endLine - 1) {
+  //     info.push(...getErrorHoverInfo(err), []);
+  //   }
+  // }
 
   return hoverInfoToMarkdown(info);
 }
@@ -201,23 +201,38 @@ function registerDiagnosticChangeHandler(plugin: TserrPluginApi) {
   let id = 0;
   vscode.languages.onDidChangeDiagnostics((event) => {
     event.uris.forEach((uri) => {
-      plugin.send.resetResolvedErrors([uri.fsPath]);
+      // plugin.send.resetResolvedErrors([uri.fsPath]);
       const diagnostics = vscode.languages.getDiagnostics(uri);
+      const errs : FlatErr[] = [];
       diagnostics.forEach((diag) => {
         const err: FlatErr = {
-          code: `${diag.code}`,
-          start: diag.range.start.line,
-          line: diag.range.start.line,
-          endLine: diag.range.end.line,
-          codes: [typeof diag.code === 'number' ? diag.code : 0],
-          lines: [diag.message],
+          sources: {
+            [plugin.pluginName]: {
+              [uri.fsPath]: [
+                {
+                  code: `${diag.code}`,
+                  raw: [diag.message],
+                  span: {
+                    start: {
+                      line: diag.range.start.line,
+                      char: diag.range.start.character,
+                    },
+                    end: {
+                      line: diag.range.end.line,
+                      char: diag.range.end.character,
+                    },
+                  },
+                },
+              ],
+            },
+          },
           parsed: diag.message
             .split('\n')
-            .map((text, depth) => [id++, depth, parseError(text)]),
+            .map((text, depth) => ({ depth, value: parseError(text) })),
         };
-
-        plugin.send.resolvedErrors(uri.fsPath, [err]);
+        errs.push(err);
       });
+        plugin.send.resolvedErrors(uri.fsPath, errs);
     });
   });
 }
@@ -244,35 +259,35 @@ function getErrorHoverInfo(err: FlatErr): HoverInfo {
   //   ],
   // ];
 
-  err.parsed.forEach((p) => {
-    const [_id, _depth, parsed] = p;
-    if (parsed.type === 'unknownError') {
-      const keys = parsed.parts.filter((_, idx) => idx % 2 === 0);
-      // const values = parsed.parts.filter((_, idx) => idx % 2 === 1);
-      const keyCells = keys.map((x) => ({ type: 'text', body: x } as const));
-      const valueCells = keys.map((x) => ({ type: 'code', body: x } as const));
-      hoverInfo.push(keyCells, valueCells);
-    } else {
-      const keys = [];
-      const values = [];
-      for (const key of ['type', 'key', 'from', 'to']) {
-        if (key in parsed) {
-          if (key === 'type') {
-            keys.push(parsed[key as never]);
-            values.push('');
-          } else {
-            keys.push(key);
-            values.push(parsed[key as never]);
-          }
-        }
-      }
-      const keyCells = keys.map((x) => ({ type: 'text', body: x } as const));
-      const valueCells = values.map(
-        (x) => ({ type: 'code', body: x } as const)
-      );
-      hoverInfo.push(keyCells, valueCells);
-    }
-  });
+  // err.parsed.forEach((p) => {
+  //   const [_id, _depth, parsed] = p;
+  //   if (parsed.type === 'unknownError') {
+  //     const keys = parsed.parts.filter((_, idx) => idx % 2 === 0);
+  //     // const values = parsed.parts.filter((_, idx) => idx % 2 === 1);
+  //     const keyCells = keys.map((x) => ({ type: 'text', body: x }) as const);
+  //     const valueCells = keys.map((x) => ({ type: 'code', body: x }) as const);
+  //     hoverInfo.push(keyCells, valueCells);
+  //   } else {
+  //     const keys = [];
+  //     const values = [];
+  //     for (const key of ['type', 'key', 'from', 'to']) {
+  //       if (key in parsed) {
+  //         if (key === 'type') {
+  //           keys.push(parsed[key as never]);
+  //           values.push('');
+  //         } else {
+  //           keys.push(key);
+  //           values.push(parsed[key as never]);
+  //         }
+  //       }
+  //     }
+  //     const keyCells = keys.map((x) => ({ type: 'text', body: x }) as const);
+  //     const valueCells = values.map(
+  //       (x) => ({ type: 'code', body: x }) as const,
+  //     );
+  //     hoverInfo.push(keyCells, valueCells);
+  //   }
+  // });
 
   return hoverInfo;
 }

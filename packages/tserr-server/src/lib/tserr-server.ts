@@ -9,6 +9,8 @@ import {
   ProjectPath,
   PluginName,
   relPath,
+  FlatErrKey,
+  FlatErrMap,
 } from '@typeholes/tserr-common';
 import * as http from 'http';
 import * as path from 'path';
@@ -22,13 +24,18 @@ import {
 } from './tserr-server.types';
 import { Project, findConfigs, mkProject } from './project';
 import { readFileSync, writeFileSync } from 'fs';
-import { parse as parsePath, join as joinPath, } from 'path';
+import { parse as parsePath, join as joinPath } from 'path';
 
 export { TserrPluginApi, TserrPlugin } from './tserr-server.types';
+
+import { setOnUpdate, updateErrors } from './errorBus';
 
 export const tserrPluginEvents: U2T<keyof TserrPluginEvents> = [
   'resolvedErrors',
   'resetResolvedErrors',
+  'newErrors',
+  'changedErrors',
+  'fixedErrors',
   'supplement',
   'fixes',
   'hasProject',
@@ -40,7 +47,7 @@ const doNothing = () => {
   /* */
 };
 const doNothingEvents = tupleToObject<TserrPluginEvents>(tserrPluginEvents)(
-  (_) => doNothing
+  (_) => doNothing,
 );
 
 //Object.fromEntries(tserrPluginEvents.map(event => [event, doNothing] as const)) as unknown as TserrPluginEvents
@@ -52,11 +59,14 @@ const _doNothingEvents: TserrPluginEvents = {
   resetResolvedErrors: doNothing,
   resolvedErrors: doNothing,
   supplement: doNothing,
+  newErrors: doNothing,
+  changedErrors: doNothing,
+  fixedErrors: doNothing,
 };
 
 export const semanticErrorIdentifiers: ((
   err: ParsedError,
-  fromNode: Node
+  fromNode: Node,
 ) => { isSemantic: boolean; fixes: { label: string; fn: () => void }[] })[] =
   [];
 
@@ -89,7 +99,7 @@ let gotoDefinition = (
   fileName: string,
   text: string,
   searchFromLine: number,
-  searchToLine: number
+  searchToLine: number,
 ) => {
   /* todo */ console.log({ fileName, text, searchFromLine, searchToLine });
 };
@@ -112,7 +122,7 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
     throw new Error('Did not get AddressInfo from httpServer.address()');
   }
   const serverPort = address.port;
-  console.log({serverPort});
+  console.log({ serverPort });
   const indexFileName = `index.${serverPort}.html`;
   // hacky way to set the port in the vue app.  Really should find a better way
   const indexFile = readFileSync(joinPath(servePath, 'index.html'))
@@ -136,7 +146,7 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
       next();
     });
     socket.on('openProject', (path) => {
-      const relative = relPath(projectRoot, path );
+      const relative = relPath(projectRoot, path);
       writeConfig('openProject', relative);
       for (const pluginKey of pluginOrder) {
         plugins[pluginKey]?.on.openProject(relative);
@@ -144,7 +154,7 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
       projects[relative as ProjectPath]?.project.open();
     }),
       socket.on('closeProject', (path) => {
-        const relative = relPath(projectRoot, path );
+        const relative = relPath(projectRoot, path);
         writeConfig('closeProject', relative);
         const files = projects[relative as ProjectPath]?.project.close();
         for (const pluginKey of pluginOrder) {
@@ -156,13 +166,13 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
         'gotoDefinition',
         (filename, text, searchFromLine, searchToLine) => {
           gotoDefinition(filename, text, searchFromLine, searchToLine);
-        }
+        },
       );
     socket.on('applyFix', (fixId: number) => fixFunctions[fixId]());
     socket.on(
       'setPlugin',
       (pluginKey: string, active: boolean) =>
-        (plugins[pluginKey].active = active)
+        (plugins[pluginKey].active = active),
     );
 
     socket.on('refreshFrontend', () => {
@@ -184,9 +194,9 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
     queuedEmits.length = 0;
   });
 
-
   function emit(event: string, ...args: any[]) {
     if (hasConnection) {
+      console.log(event, ...args);
       io.emit(event, ...args);
     } else {
       queuedEmits.push([event, args]);
@@ -223,8 +233,8 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
       fileName: string,
       text: string,
       searchFromLine: number,
-      searchToLine: number
-    ) => void
+      searchToLine: number,
+    ) => void,
   ) {
     gotoDefinition = callback;
   }
@@ -262,7 +272,7 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
         fixesRec: Record<
           number,
           [fixId: number, fixDescription: string, fn: () => void][]
-        >
+        >,
       ) => {
         for (const fixes of Object.values(fixesRec)) {
           for (const fix of fixes) {
@@ -272,7 +282,7 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
         emit('fixes', fixesRec);
       },
     hasProject: (pluginKey: string) => (path: string) => {
-      const relative = relPath(projectRoot, path );
+      const relative = relPath(projectRoot, path);
       if (relative in projects) {
         return;
       }
@@ -286,7 +296,7 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
       sendHasProject(projectPath);
     },
     openProject: (pluginKey: string) => (path: string) => {
-      const relative = relPath(projectRoot, path );
+      const relative = relPath(projectRoot, path);
       const projectPath = ProjectPath(relative);
 
       if (relative in projects && projects[projectPath].project.isOpen()) {
@@ -307,7 +317,7 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
       sendOpenProject(projectPath);
     },
     closeProject: (_pluginKey: string) => (path: string) => {
-      const relative = relPath(projectRoot, path, );
+      const relative = relPath(projectRoot, path);
       console.log('closeProject check', relative, projects);
       if (!(relative in projects)) {
         return;
@@ -318,15 +328,31 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
       sendCloseProject(projectPath);
     },
     resetResolvedErrors: (pluginKey: string) => (filenames?: string[]) => {
-      emit('resetResolvedErrors', pluginKey, filenames);
+      // emit('resetResolvedErrors', pluginKey, filenames);
       fixFunctions = {};
     },
     resolvedErrors:
       (pluginKey: string) => (fileName: string, resolvedError: FlatErr[]) => {
-        emit('resolvedError', pluginKey, fileName, resolvedError);
+        updateErrors(resolvedError, {
+          plugin: pluginKey as PluginName,
+          file: fileName,
+        });
+        // emit('resolvedError', pluginKey, fileName, resolvedError);
       },
     supplement: (_pluginKey: string) => (id: number, supplement: string) => {
       emit('supplement', id, supplement);
+    },
+
+    newErrors: (_pluginKey: string) => (errors: FlatErrMap) => {
+      emit('newErrors', Array.from(errors.rawEntries()));
+    },
+
+    changedErrors: (_pluginKey: string) => (errors: FlatErrMap) => {
+      emit('changedErrors', Array.from(errors.rawEntries()));
+    },
+
+    fixedErrors: (_pluginKey: string) => (errIds: FlatErrKey[]) => {
+      emit('fixedErrors', errIds);
     },
   } as const;
 
@@ -336,17 +362,21 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
     }
 
     const api = {
+      pluginName: PluginName(plugin.key),
       send: tupleToObject<TserrPluginEvents>(tserrPluginEvents)((event) => {
         return app(event);
       }),
       on: tupleToObject<TserrPluginEvents>(tserrPluginEvents)((event) =>
-        store(event)
+        store(event),
       ),
       // addSemanticErrorIdentifiers,
       getProjectRoot: () => projectRoot,
       getConfigs: () => configs,
       getProjectPaths,
       addProjectEventHandlers: addProjectEventHandlers(plugin.key),
+      newErrors: (errors: FlatErr[]) => {},
+      changed: (errors: FlatErr[]) => {},
+      fixedErrors: (errIds: number[]) => {},
       // sendOpenProject: app(openProject),
     };
 
@@ -370,7 +400,7 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
       return (...args: any[]) => {
         fn(plugin.key)(
           // @ts-expect-error let me spread
-          ...args
+          ...args,
         );
 
         // propogate to other plugins in order of registration
@@ -378,7 +408,7 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
           if (plugins[toPlugin].active && plugin.key !== toPlugin) {
             plugins[toPlugin].on[sendKey](
               // @ts-expect-error let me spread
-              ...args
+              ...args,
             );
           }
         }
@@ -416,7 +446,7 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
   function writeConfig(event: string, atPath: string) {
     const parsed = parsePath(atPath);
     const fileName = parsed.base;
-    let configPath = relPath(projectRoot, parsed.dir, );
+    let configPath = relPath(projectRoot, parsed.dir);
     if (!configPath.endsWith('/')) {
       configPath += '/';
     }
@@ -440,7 +470,7 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
       case 'closeProject': {
         if (config.config) {
           config.config.openProjects = config.config?.openProjects.filter(
-            (p) => p !== path
+            (p) => p !== path,
           );
         }
         break;
@@ -451,6 +481,18 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
     const tgtPath = joinPath(projectRoot, configPath, 'tserr.json');
     writeFileSync(tgtPath, config.tserr);
   }
+
+  setOnUpdate({
+    new: (errors: FlatErrMap) => {
+      senders.newErrors('')(errors);
+    },
+    changed: (errors: FlatErrMap) => {
+      senders.changedErrors('')(errors);
+    },
+    fixed: (errIds: FlatErrKey[]) => {
+      senders.fixedErrors('')(errIds);
+    },
+  });
 
   const ret = {
     importPlugin,

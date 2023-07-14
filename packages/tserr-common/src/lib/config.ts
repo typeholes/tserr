@@ -24,3 +24,4 @@ export type ProjectConfigs = {
       | undefined;
   };
 };
+
