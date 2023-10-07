@@ -1,3 +1,3 @@
-cd packages/tserr-vscode-app
+cd packages/tserr-vscode
 ./build_vsix.sh
 
