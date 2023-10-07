@@ -79,7 +79,7 @@ function openProject(path: string) {
   });
   console.log(
     'ts-morph opened project',
-    projects[tsConfigFilePath].getCompilerOptions()
+    projects[tsConfigFilePath].getCompilerOptions(),
   );
 }
 
@@ -96,7 +96,7 @@ function processFileEvents(events: { type: string; filePath: string }[]) {
     const promises = events.map(
       (e) =>
         project?.getSourceFile(e.filePath)?.refreshFromFileSystem() ??
-        Promise.resolve(undefined)
+        Promise.resolve(undefined),
     );
     Promise.all(promises).then(() => {
       if (!project) {
@@ -105,13 +105,18 @@ function processFileEvents(events: { type: string; filePath: string }[]) {
       const diagnostics = group(
         project.getPreEmitDiagnostics(),
         (diagnostic) =>
-          diagnostic.getSourceFile()?.getFilePath() ?? tsConfigFilePath
+          diagnostic.getSourceFile()?.getFilePath() ?? tsConfigFilePath,
       );
+
+      if ('' in diagnostics) {
+        diagnostics[tsConfigFilePath] = diagnostics[''];
+        delete diagnostics[''];
+      }
 
       for (const fileName in diagnostics) {
         const payload: FlatErr[] = [];
         for (const diagnostic of diagnostics[fileName]) {
-          const resolved = handleError(diagnostic, fileName);
+          const resolved = handleError(diagnostic, fileName, tsConfigFilePath);
           if (resolved) {
             // console.log(resolved);
 
@@ -128,9 +133,13 @@ function processFileEvents(events: { type: string; filePath: string }[]) {
   }
 }
 
-function handleError(diagnostic: Diagnostic, fileName: string): FlatErr[] {
+function handleError(
+  diagnostic: Diagnostic,
+  fileName: string,
+  tsConfigFilePath: string,
+): FlatErr[] {
   function fakeParsed(e: (typeof err)[0]['parsed'][0]): FlatErr['parsed'][0] {
-    return {depth: 0, value: e};
+    return { depth: 0, value: e };
   }
 
   const sourceFile = diagnostic.getSourceFile();
@@ -139,15 +148,20 @@ function handleError(diagnostic: Diagnostic, fileName: string): FlatErr[] {
 
     return [
       {
-        sources: { [tserrApi!.pluginName]: { ['']: [{
-        code: err[0].code.toString(),
-        raw: err.map( e=> e.lines).flat(),
-        span: {
-          start: { line: 0, char: 0,},
-          end: { line: 0, char: 0,},
-         }
-
-        }]}},
+        sources: {
+          [tserrApi!.pluginName]: {
+            [tsConfigFilePath]: [
+              {
+                code: err[0].code.toString(),
+                raw: err.map((e) => e.lines).flat(),
+                span: {
+                  start: { line: 0, char: 0 },
+                  end: { line: 0, char: 0 },
+                },
+              },
+            ],
+          },
+        },
         parsed: err.map((e) => e.parsed.map(fakeParsed)).flat(),
       },
     ];
@@ -169,7 +183,7 @@ function handleError(diagnostic: Diagnostic, fileName: string): FlatErr[] {
 
   const resolved = resolveError(fromNode, err);
 
-/*
+  /*
   resolved.forEach((err) =>
     err.parsed.forEach((parsed) =>
       semanticErrorIdentifiers.forEach((identifier) => {
@@ -205,13 +219,17 @@ function handleError(diagnostic: Diagnostic, fileName: string): FlatErr[] {
 }
 
 function resolveError(fromNode: Node, err: Err): FlatErr[] {
-  const flattened = flattenErr(tserrApi!.pluginName, err, fromNode.getEndLineNumber());
+  const flattened = flattenErr(
+    tserrApi!.pluginName,
+    err,
+    fromNode.getEndLineNumber(),
+  );
   const refined = refineErrror(flattened, fromNode);
   refined.forEach((flat) =>
     flat.parsed.forEach((p) => {
       createSupplement(p, fromNode);
       createFixes(p, fromNode);
-    })
+    }),
   );
   return refined;
 }
@@ -219,12 +237,12 @@ function resolveError(fromNode: Node, err: Err): FlatErr[] {
 let maxFixId = 0;
 function mkFix(
   description: string,
-  fn: () => void
+  fn: () => void,
 ): [fixId: number, fixDescription: string, fixFn: () => void] {
   return [maxFixId++, description, fn];
 }
 function createFixes(e: FlatErr['parsed'][number], fromNode: Node) {
-/*
+  /*
   const fixes: [fixId: number, fixDescription: string, fixFn: () => void][] =
     [];
   const id = e[0];
@@ -382,7 +400,8 @@ function unaliasType(type: Type): Type | TypeNode {
 }
 
 function diagnosticToErr(diagnostic: Diagnostic): Err {
-  const fileName =diagnostic.getSourceFile()?.getFilePath().toString()??'unknown'
+  const fileName =
+    diagnostic.getSourceFile()?.getFilePath().toString() ?? 'unknown';
   const code = diagnostic.getCode();
   const line = diagnostic.getLineNumber() ?? 0;
   const start = diagnostic.getStart() ?? 0;
@@ -391,7 +410,16 @@ function diagnosticToErr(diagnostic: Diagnostic): Err {
   if (typeof message === 'string') {
     const lines = message.split('\n');
     const parsed = lines.map(parseError);
-    return [{ code: code.toString(), fileName, span: { start: { line, char: start}, end: {line, char:start}} , parsed,  lines, children: [] }];
+    return [
+      {
+        code: code.toString(),
+        fileName,
+        span: { start: { line, char: start }, end: { line, char: start } },
+        parsed,
+        lines,
+        children: [],
+      },
+    ];
   }
 
   return DiagnosticMessageChainToErr(message, line, start, fileName);
@@ -413,7 +441,16 @@ function DiagnosticMessageChainToErr(
   const children = next
     .map((c) => DiagnosticMessageChainToErr(c, line, start, fileName))
     .flat();
-    return [{ code: code.toString(), fileName, span: {  start: { line, char: start}, end: {line, char:start}} , parsed,  lines, children}];
+  return [
+    {
+      code: code.toString(),
+      fileName,
+      span: { start: { line, char: start }, end: { line, char: start } },
+      parsed,
+      lines,
+      children,
+    },
+  ];
 }
 
 function getDeclarationAncestor(n: Node | undefined) {
@@ -431,7 +468,7 @@ function getDeclarationAncestor(n: Node | undefined) {
 
 function IndirectReferencePath(
   target: Node,
-  check: (readonly [Node, Declaration | undefined])[]
+  check: (readonly [Node, Declaration | undefined])[],
 ): undefined | [Node, Declaration][] {
   const top = check[check.length - 1];
   const decl = top[1];
@@ -448,7 +485,7 @@ function IndirectReferencePath(
   for (const ref of backRefs) {
     const path: undefined | [Node, Declaration][] = IndirectReferencePath(
       target,
-      [...check, [ref, getDeclarationAncestor(ref)]]
+      [...check, [ref, getDeclarationAncestor(ref)]],
     );
     if (path !== undefined) {
       return path;
@@ -521,7 +558,7 @@ function checkIgnoreTSC(project: Project) {
       if (castText.match(/^ignore_TSC[0-9]+$/)) {
         const code = castText.slice(10);
         const replacedWith = expr.replaceWithText(
-          `${exprText} /*${castText}*/`
+          `${exprText} /*${castText}*/`,
         );
 
         const err = file
@@ -533,7 +570,7 @@ function checkIgnoreTSC(project: Project) {
           const errCode = err.getCode().toString();
           if (errCode !== code) {
             console.log(
-              `Incorrect error ${errCode} vs ${code} at line: ${exprLineNumber} ${castText})`
+              `Incorrect error ${errCode} vs ${code} at line: ${exprLineNumber} ${castText})`,
             );
           }
         }

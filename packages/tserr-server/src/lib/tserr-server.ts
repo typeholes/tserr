@@ -85,6 +85,7 @@ export type Diagnostic = {
 process.on('uncaughtException', function (err) {
   // Handle the error safely
   console.log(err);
+  debugger;
 });
 
 // Do not use these until startServer is called
