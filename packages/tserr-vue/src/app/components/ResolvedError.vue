@@ -2,6 +2,14 @@
 import { computed } from 'vue';
 import CodeGrid from './CodeGrid.vue';
 import { FlatErrKey, FlatErrValue, uniqObjects } from '@typeholes/tserr-common';
+
+import { emitters } from '../socket';
+
+function gotoLine(fileName: string, line: number) {
+  emitters?.gotoFileLine(fileName, line);
+}
+
+import CodeBlock from './CodeBlock.vue';
 // import { appState } from '../appState';
 // import { inject } from 'vue';
 // import { Emitters } from '../socket';
@@ -14,12 +22,12 @@ const props = defineProps<{
 
 // const emitters = inject<Emitters>('emitters');
 const counts = computed(() => {
-  const ret = Object.values(props.errValue.sources)
-    .map((x) => Object.values(x))
-    .flat()
-    .map((x) => Object.values(x))
-    .flat()
-    .length / props.errKey.length;
+  const ret =
+    Object.values(props.errValue.sources)
+      .map((x) => Object.values(x))
+      .flat()
+      .map((x) => Object.values(x))
+      .flat().length / props.errKey.length;
 
   return ret;
 });
@@ -85,33 +93,33 @@ function problemClick(e: MouseEvent) {
   <div class="row">
     <q-expansion-item :label="`cnt: ${counts} - ${summary}`">
       <div class="column reverse">
-      <div
-        class="row"
-        @click="problemClick"
-        v-for="(parsed, idx) of props.errKey"
-        :key="idx"
-      >
-        <div :style="{ minWidth: 'contents' }">{{ parsed.value.type }}</div>
-        <!-- <div :style="{ minWidth: `${parsed[1] ?? 0}rem` }"></div> -->
-        <!-- <span v-if="props.parsed[2].type === 'unknownError'">
+        <div
+          class="row"
+          @click="problemClick"
+          v-for="(parsed, idx) of props.errKey"
+          :key="idx"
+        >
+          <div :style="{ minWidth: 'contents' }">{{ parsed.value.type }}</div>
+          <!-- <div :style="{ minWidth: `${parsed[1] ?? 0}rem` }"></div> -->
+          <!-- <span v-if="props.parsed[2].type === 'unknownError'">
       {{ props.parsed[2].parts }}
     </span> -->
-        <div cols="">
-          <CodeGrid
-            :blocks="Object.entries(parsed.value)"
-            header-key="type"
-            v-if="
-              ['notAssignable', 'excessProperty'].includes(parsed.value.type)
-            "
-          />
-          <CodeGrid
-            :blocks="unknownPartsToBlock(parsed.value.parts)"
-            header-key=""
-            v-if="parsed.value.type === 'unknownError'"
-          />
-        </div>
+          <div cols="">
+            <CodeGrid
+              :blocks="Object.entries(parsed.value)"
+              header-key="type"
+              v-if="
+                ['notAssignable', 'excessProperty'].includes(parsed.value.type)
+              "
+            />
+            <CodeGrid
+              :blocks="unknownPartsToBlock(parsed.value.parts)"
+              header-key=""
+              v-if="parsed.value.type === 'unknownError'"
+            />
+          </div>
 
-        <!-- <div
+          <!-- <div
       cols=""
       class="supplements"
       v-for="text in appState.supplements[parsed[0]]"
@@ -119,23 +127,58 @@ function problemClick(e: MouseEvent) {
     >
       <DisplaySupplement :text="text" />
     </div> -->
-        <!-- <div>
+          <!-- <div>
       <div v-for="fix of appState.fixes[parsed[0]]" :key="fix[0]">
         <button @click="emitters?.applyFix(fix[0])">
           {{ fix[1] }}
         </button>
       </div>
     </div> -->
-        <!-- </div> -->
-      </div>
+          <!-- </div> -->
+        </div>
       </div>
       <template v-for="(files, _plugin) in errValue.sources">
         <q-list v-for="(items, file) in files">
           <q-item>
-            <q-expansion-item :label="`${file} (${items.length / props.errKey.length})`">
-              <q-list v-for="span of uniqObjects(items.map((x) => x.span))">
-                <q-item v-if="span.start.line = span.end.line"> Line: {{span.start.line}} char: {{ span.start.char }} </q-item>
-                <q-item v-else> Line: {{ span.start.line }} -> {{ span.end.line }} </q-item>
+            <q-expansion-item
+              dense
+              expand-icon-toggle
+              :label="`${file} (${items.length / props.errKey.length})`"
+            >
+              <template #header>
+                <q-toolbar dense>
+                  <q-btn
+                    dense
+                    icon="map"
+                    size="xs"
+                    @click="gotoLine(file, 1)"
+                  />
+                  <q-space />
+                  <span>
+                    {{ file }} ({{ items.length / props.errKey.length }})
+                  </span>
+                </q-toolbar>
+              </template>
+              <q-list
+                v-for="[span, src] of uniqObjects(
+                  items.map((x) => [x.span, x.src ?? ''] as const),
+                )"
+              >
+                <q-item v-if="(span.start.line = span.end.line)">
+                  <q-toolbar dense>
+                    <q-btn
+                      dense
+                      icon="map"
+                      size="xs"
+                      @click="gotoLine(file, span.start.line)"
+                    />
+                    Line: {{ span.start.line }} char: {{ span.start.char }}
+                    <CodeBlock :code="src" :register-html="() => {}" />
+                  </q-toolbar>
+                </q-item>
+                <q-item v-else>
+                  Line: {{ span.start.line }} -> {{ span.end.line }}
+                </q-item>
               </q-list>
             </q-expansion-item>
           </q-item>

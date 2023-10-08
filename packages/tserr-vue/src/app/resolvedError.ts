@@ -45,11 +45,15 @@ export const flatErr = scope({
     sources: PartialRecord(
       type('string'),
       arrayOf(
-        type({ code: "string", raw: "string[]", span: {
-          fileName: 'string',
-          start: { line: 'number', char: 'number' },
-          end: { line: 'number', char: 'number' },
-        }
+        type({
+          code: 'string',
+          raw: 'string[]',
+          span: {
+            fileName: 'string',
+            start: { line: 'number', char: 'number' },
+            end: { line: 'number', char: 'number' },
+            src: 'string|undefined',
+          },
         }),
       ),
     ),

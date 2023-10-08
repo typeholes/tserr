@@ -177,9 +177,23 @@ function handleError(
     return [];
   }
 
+  let lineNode = fromNode;
+  while (!lineNode.isFirstNodeOnLine()) {
+    const parent = lineNode.getParent();
+    if (!parent) break;
+    lineNode = parent;
+  }
+
+  const lineNodeSrc = lineNode.getFullText();
+
   const fromType = unaliasType(fromNode.getType());
 
   const err = diagnosticToErr(diagnostic);
+
+  err.forEach((e) => {
+    sourceFile.isFirstNodeOnLine;
+    e.src = lineNodeSrc;
+  });
 
   const resolved = resolveError(fromNode, err);
 
@@ -225,12 +239,12 @@ function resolveError(fromNode: Node, err: Err): FlatErr[] {
     fromNode.getEndLineNumber(),
   );
   const refined = refineErrror(flattened, fromNode);
-  refined.forEach((flat) =>
+  refined.forEach((flat) => {
     flat.parsed.forEach((p) => {
       createSupplement(p, fromNode);
       createFixes(p, fromNode);
-    }),
-  );
+    });
+  });
   return refined;
 }
 

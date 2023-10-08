@@ -93,6 +93,14 @@ export function activate(context: ExtensionContext) {
     debugger;
   }
 
+  if (server.onGotoFileLine instanceof Function) {
+    server.onGotoFileLine(handleGotoFileLine);
+  } else {
+    console.log('server.onGotoDefinition not a function', server);
+    // eslint-disable-next-line no-debugger
+    debugger;
+  }
+
   context.subscriptions.push(
     vscode.languages.registerHoverProvider(
       { language: 'typescript', pattern: '**/*.ts' },
@@ -115,34 +123,26 @@ export function activate(context: ExtensionContext) {
   registerDiagnosticChangeHandler(tserr);
 }
 
+async function handleGotoFileLine(uriString: string, line: number) {
+  const editor = await openEditor(uriString);
+  if (editor) {
+    const position = new vscode.Position(line - 1, 1);
+    editor.revealRange(
+      new vscode.Range(position, position),
+      vscode.TextEditorRevealType.AtTop,
+    );
+  }
+}
+
 async function handleGotoDefinition(
   uriString: string,
   text: string,
   searchFromLine: number,
   searchToLine: number,
 ) {
-  const uri = vscode.Uri.parse(uriString);
   console.log('in vscode gotoDefinition');
   // eslint-disable-next-line no-debugger
-  let editor = vscode.window.visibleTextEditors.find(
-    (editor) => editor.document.uri.toString() === uri.toString(),
-  );
-  if (!editor) {
-    const document = vscode.workspace.textDocuments.find(
-      (document) => document.uri.toString() === uri.toString(),
-    );
-    if (document) {
-      editor = await vscode.window.showTextDocument(document);
-    } else {
-      await vscode.commands.executeCommand('vscode.open', uri);
-      const document = vscode.workspace.textDocuments.find(
-        (document) => document.uri.toString() === uri.toString(),
-      );
-      if (document) {
-        editor = await vscode.window.showTextDocument(document);
-      }
-    }
-  }
+  const editor = await openEditor(uriString);
   if (editor) {
     const document = editor.document;
     for (let line = searchFromLine - 1; line < searchToLine; line++) {
@@ -184,6 +184,30 @@ type HoverInfo = {
   backgroundColor?: string | undefined;
 }[][];
 
+async function openEditor(uriString: string) {
+  const uri = vscode.Uri.parse(uriString);
+  let editor = vscode.window.visibleTextEditors.find(
+    (editor) => editor.document.uri.toString() === uri.toString(),
+  );
+  if (!editor) {
+    const document = vscode.workspace.textDocuments.find(
+      (document) => document.uri.toString() === uri.toString(),
+    );
+    if (document) {
+      editor = await vscode.window.showTextDocument(document);
+    } else {
+      await vscode.commands.executeCommand('vscode.open', uri);
+      const document = vscode.workspace.textDocuments.find(
+        (document) => document.uri.toString() === uri.toString(),
+      );
+      if (document) {
+        editor = await vscode.window.showTextDocument(document);
+      }
+    }
+  }
+  return editor;
+}
+
 function getHoverMarkDown(uri: vscode.Uri, range: vscode.Range) {
   const fileName = uri.fsPath;
   const info: HoverInfo = [];
@@ -203,7 +227,7 @@ function registerDiagnosticChangeHandler(plugin: TserrPluginApi) {
     event.uris.forEach((uri) => {
       // plugin.send.resetResolvedErrors([uri.fsPath]);
       const diagnostics = vscode.languages.getDiagnostics(uri);
-      const errs : FlatErr[] = [];
+      const errs: FlatErr[] = [];
       diagnostics.forEach((diag) => {
         const err: FlatErr = {
           sources: {
@@ -232,7 +256,7 @@ function registerDiagnosticChangeHandler(plugin: TserrPluginApi) {
         };
         errs.push(err);
       });
-        plugin.send.resolvedErrors(uri.fsPath, errs);
+      plugin.send.resolvedErrors(uri.fsPath, errs);
     });
   });
 }

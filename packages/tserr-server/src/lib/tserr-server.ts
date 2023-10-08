@@ -105,6 +105,8 @@ let gotoDefinition = (
   /* todo */ console.log({ fileName, text, searchFromLine, searchToLine });
 };
 
+let gotoFileLine = (fileName: string, line: number) => {};
+
 export type ErrorServer = ReturnType<typeof startServer>;
 export function startServer(servePath: string, projectRoot: string, port = 0) {
   console.log('in start server');
@@ -169,6 +171,9 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
           gotoDefinition(filename, text, searchFromLine, searchToLine);
         },
       );
+
+    socket.on('gotoFileLine', (fileName, line) => gotoFileLine(fileName, line));
+
     socket.on('applyFix', (fixId: number) => fixFunctions[fixId]());
     socket.on(
       'setPlugin',
@@ -238,6 +243,10 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
     ) => void,
   ) {
     gotoDefinition = callback;
+  }
+
+  function onGotoFileLine(callback: (fileName: string, line: number) => void) {
+    gotoFileLine = callback;
   }
 
   let fixFunctions: Record<number, () => void> = {};
@@ -498,6 +507,7 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
   const ret = {
     importPlugin,
     onGotoDefinition,
+    onGotoFileLine,
     shutdownServer,
     mkPluginInterface,
     getPort: () => serverPort,

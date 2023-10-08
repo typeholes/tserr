@@ -7,7 +7,8 @@
     "./packages/tserr-server/tsconfig.lib.json",
     "./packages/tserr-common/tsconfig.lib.json",
     "./packages/tserr-arktype/tsconfig.lib.json",
-    "./packages/tserr-vue/tsconfig.app.json"
+    "./packages/tserr-vue/tsconfig.app.json",
+    "./error_samples/tsconfig.json"
   ],
   "ignoreErrCodes": [
     "tsc2742"

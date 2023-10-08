@@ -34,13 +34,17 @@ export type Err = {
   lines: string[];
   parsed: ParsedError[];
   children: Err;
+  src?: string | undefined;
 }[];
 
 export type FlatErr = {
   parsed: { depth: number; value: ParsedError }[];
   sources: Record<
     PluginName,
-    Record<string, { code: string; raw: string[]; span: Span }[]>
+    Record<
+      string,
+      { code: string; raw: string[]; span: Span; src?: string | undefined }[]
+    >
   >;
 };
 
@@ -49,7 +53,9 @@ function _flattenErr(pluginName: PluginName, e: Err[0]): FlatErr {
   let value: FlatErrValue = {
     sources: {
       [pluginName]: {
-        [e.fileName]: [{ code: e.code, raw: e.lines, span: e.span }],
+        [e.fileName]: [
+          { code: e.code, raw: e.lines, span: e.span, src: e.src },
+        ],
       },
     },
   };
@@ -58,7 +64,9 @@ function _flattenErr(pluginName: PluginName, e: Err[0]): FlatErr {
       {
         sources: {
           [pluginName]: {
-            [e.fileName]: [{ code: e.code, raw: e.lines, span: e.span }],
+            [e.fileName]: [
+              { code: e.code, raw: e.lines, span: e.span, src: e.src },
+            ],
           },
         },
       },
@@ -120,7 +128,7 @@ export function mergeSources(a: FlatErrValue, b: FlatErrValue): FlatErrValue {
 
     for (const file in b.sources[plugin]) {
       if (!(file in ret[plugin])) {
-        ret[plugin][file] = [ ...b.sources[plugin][file] ];
+        ret[plugin][file] = [...b.sources[plugin][file]];
         continue;
       }
       ret[plugin][file] = uniqObjects(

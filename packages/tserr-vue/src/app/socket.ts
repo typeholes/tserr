@@ -10,6 +10,7 @@ export type Emitters = {
     applyFix: (fixId: number) => void;
     setPlugin: (pluginKey: string, active: boolean) => void;
     gotoDefinition: (filename: string, textContent: string, fromLine: number, toLine: number) => void;
+    gotoFileLine: (filename: string, line: number) => void;
 }
 
 export let emitters : Emitters | undefined = undefined;
@@ -65,6 +66,8 @@ export function startSocket() : Emitters {
       );
       socket.emit('gotoDefinition', filename, textContent, fromLine, toLine);
     },
+
+    gotoFileLine: ( fileName:string, line: number) =>  socket.emit('gotoFileLine', fileName, line),
   });
 }
 
