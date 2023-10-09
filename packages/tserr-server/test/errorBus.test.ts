@@ -22,18 +22,19 @@ const err1 = (pluginName = plugin1, endLind = 1) =>
   ({
     parsed: [{ depth: 0, value: { type: 'unknownError', parts: [''] } }],
     sources: {
-      [pluginName]: { file1: [
-        {
-          code: '123',
-          raw: ['abc'],
-          span: {
-            start: { line: 1, char: 3 },
-            end: { line: endLind, char: 10 },
+      [pluginName]: {
+        file1: [
+          {
+            code: '123',
+            raw: ['abc'],
+            span: {
+              start: { line: 1, char: 3 },
+              end: { line: endLind, char: 10 },
+            },
           },
-        },
-      ],
+        ],
+      },
     },
-  }
   }) satisfies FlatErr;
 
 const err2 = () => {
@@ -42,24 +43,23 @@ const err2 = () => {
   return e;
 };
 
-
-describe( 'mergeSources', () => {
-  it( 'should merge', () => {
+describe('mergeSources', () => {
+  it('should merge', () => {
     const merged = mergeSources(err1(plugin1), err1(plugin1, 10));
     expect(merged.sources[plugin1]['file1'].length).toBe(2);
   });
 });
 
 // prettier-ignore
-for ( const scope of [
+const scopes = [
   'global',
  { plugin: plugin1},
  { plugin: plugin1, file: 'file1' },
-] as const) {
-  const type =JSON.stringify(scope);
+] as const;
 
-describe(`liveErrors (simple) - ${type}`, () => {
-  it(`should add errors -${type}`, () => {
+describe.each(scopes)(`liveErrors (simple) - {type}`, (scope) => {
+  const type = JSON.stringify(scope);
+  it(`should add errors - ${type}`, () => {
     for (let i = 0; i < 3; i++) {
       updateErrors([err1()], scope);
       expect(liveErrors.size).toBe(1);
@@ -92,13 +92,13 @@ describe(`liveErrors (simple) - ${type}`, () => {
 
   it(`should handle fixed errors - ${type}`, () => {
     updateErrors([err1(), err2()], scope);
-    expect(liveErrors.size).toBe(2)
+    expect(liveErrors.size).toBe(2);
     expect(__onUpdate.new).toBeCalledTimes(1);
     expect(__onUpdate.changed).toBeCalledTimes(0);
 
     updateErrors([err2()], scope);
 
-    expect(liveErrors.size).toBe(1)
+    expect(liveErrors.size).toBe(1);
     expect(__onUpdate.new).toBeCalledTimes(1);
     expect(__onUpdate.changed).toBeCalledTimes(0);
     expect(__onUpdate.fixed).toBeCalledTimes(1);
@@ -109,67 +109,56 @@ describe(`liveErrors (simple) - ${type}`, () => {
     expect(__onUpdate.new).toBeCalledTimes(1);
     expect(__onUpdate.changed).toBeCalledTimes(0);
     expect(__onUpdate.fixed).toBeCalledTimes(2);
-
   });
 });
-}
 
-
-/*
-for (const scope of [
-  { plugin: plugin1 },
-  { plugin: plugin1, file: 'file1' },
-]) {
+describe.each(scopes)(`liveErrors (2 plugins)`, (scope) => {
   const type = JSON.stringify(scope);
+  it(`should add errors - ${type}`, () => {
+    updateErrors([err1()], 'global');
+    expect(liveErrors.size).toBe(1);
+    expect(__onUpdate.new).toBeCalledTimes(1);
 
-  describe(`liveErrors (2 plugins) - ${type}`, () => {
-    it(`should add errors -${type}`, () => {
-        updateErrors([err1()], 'global');
-        expect(liveErrors).toHaveLength(1);
-      expect(__onError.new).toBeCalledTimes(1);
-
-      for (let i = 0; i < 3; i++) {
-        updateErrors([err1(), err2()], 'global');
-        expect(liveErrors).toHaveLength(2);
-      }
-      expect(__onError.new).toBeCalledTimes(2);
-
+    for (let i = 0; i < 3; i++) {
       updateErrors([err1(), err2()], 'global');
-      expect(liveErrors).toHaveLength(2);
-      expect(__onError.new).toBeCalledTimes(2);
-    });
+      expect(liveErrors.size).toBe(2);
+    }
+    expect(__onUpdate.new).toBeCalledTimes(2);
 
-    it(`should change errors - ${type}`, () => {
-      updateErrors([err1()], 'global');
-
-      updateErrors([err1(plugin2)], 'global');
-      expect(liveErrors).toHaveLength(1);
-
-      expect(__onError.new).toBeCalledTimes(1);
-      expect(__onError.changed).toBeCalledTimes(1);
-      expect(__onError.fixed).toBeCalledTimes(0);
-
-      expect(liveErrors[0].sources).toHaveProperty(plugin1);
-      expect(liveErrors[0].sources).toHaveProperty(plugin2);
-    });
-
-    it(`should handle fixed errors - ${type}`, () => {
-      updateErrors([err1(), err2()], 'global');
-      updateErrors([err2()], 'global');
-
-      expect(liveErrors).toHaveLength(1);
-      expect(__onError.new).toBeCalledTimes(1);
-      expect(__onError.changed).toBeCalledTimes(0);
-      expect(__onError.fixed).toBeCalledTimes(1);
-
-      updateErrors([], 'global');
-
-      expect(liveErrors).toHaveLength(0);
-      expect(__onError.new).toBeCalledTimes(1);
-      expect(__onError.changed).toBeCalledTimes(0);
-      expect(__onError.fixed).toBeCalledTimes(2);
-    });
+    updateErrors([err1(), err2()], 'global');
+    expect(liveErrors.size).toBe(2);
+    expect(__onUpdate.new).toBeCalledTimes(2);
   });
-}
 
-*/
+  it(`should change errors -  ${type}`, () => {
+    updateErrors([err1()], 'global');
+
+    updateErrors([err1(plugin2)], 'global');
+    expect(liveErrors.size).toBe(1);
+
+    expect(__onUpdate.new).toBeCalledTimes(1);
+    expect(__onUpdate.changed).toBeCalledTimes(1);
+    expect(__onUpdate.fixed).toBeCalledTimes(0);
+
+    // todo
+    // expect(liveErrors[0].sources).toHaveProperty(plugin1);
+    // expect(liveErrors[0].sources).toHaveProperty(plugin2);
+  });
+
+  it(`should handle fixed errors -  ${type}`, () => {
+    updateErrors([err1(), err2()], 'global');
+    updateErrors([err2()], 'global');
+
+    expect(liveErrors.size).toBe(1);
+    expect(__onUpdate.new).toBeCalledTimes(1);
+    expect(__onUpdate.changed).toBeCalledTimes(0);
+    expect(__onUpdate.fixed).toBeCalledTimes(1);
+
+    updateErrors([], 'global');
+
+    expect(liveErrors.size).toBe(0);
+    expect(__onUpdate.new).toBeCalledTimes(1);
+    expect(__onUpdate.changed).toBeCalledTimes(0);
+    expect(__onUpdate.fixed).toBeCalledTimes(2);
+  });
+});

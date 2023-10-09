@@ -63,14 +63,21 @@ export function updateErrors(
   const updatedIds: number[] = [];
 
   // this version of fixedKeys only works for global scope
-  if (scope === 'global') {
-    const fixedKeys = Array.from(liveErrors.keys()).filter(
-      (k) => !uniqErrors.has(k),
+  const fixedKeys = Array.from(liveErrors.keys()).filter((k) => {
+    if (uniqErrors.has(k)) return false;
+    if (scope === 'global') return true;
+    const plugins = Object.keys(liveErrors.get(k)!.sources);
+    if (plugins.length > 1) return false;
+    if (!(plugins[0] === scope.plugin)) return false;
+    if (scope.file === undefined) return true;
+    const files = Object.keys(
+      liveErrors.get(k)!.sources[PluginName.for(plugins[0])]
     );
-    if (fixedKeys && fixedKeys.length > 0) {
-      fixedKeys.forEach((key) => liveErrors.delete(key));
-      __onUpdate.fixed(fixedKeys);
-    }
+    return files.length === 1 && files[0] === scope.file;
+  });
+  if (fixedKeys && fixedKeys.length > 0) {
+    fixedKeys.forEach((key) => liveErrors.delete(key));
+    __onUpdate.fixed(fixedKeys);
   }
 
   const { newKeys, updKeys } = splitBy(Array.from(uniqErrors.keys()), (k) =>
@@ -106,8 +113,12 @@ export function updateErrors(
   }
 
   if (scope != 'global') {
+    const live = liveErrors;
+
     const fixedKeys: FlatErrKey[] = [];
     for (const [key, value] of liveErrors.rawEntries()) {
+      console.log(key, value);
+
       // TODO
     }
   }
