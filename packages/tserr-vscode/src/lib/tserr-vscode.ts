@@ -238,12 +238,12 @@ function registerDiagnosticChangeHandler(plugin: TserrPluginApi) {
                   raw: [diag.message],
                   span: {
                     start: {
-                      line: diag.range.start.line,
-                      char: diag.range.start.character,
+                      line: diag.range.start.line + 1,
+                      char: diag.range.start.character + 1,
                     },
                     end: {
-                      line: diag.range.end.line,
-                      char: diag.range.end.character,
+                      line: diag.range.end.line + 1,
+                      char: diag.range.end.character + 1,
                     },
                   },
                 },
