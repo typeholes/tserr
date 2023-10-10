@@ -11,7 +11,7 @@ import * as vscode from 'vscode';
 import { ProblemViewProvider } from './ProblemViewProvider';
 
 import { startServer, TserrPluginApi } from '@typeholes/tserr-server';
-import { FlatErr, pair, parseError } from '@typeholes/tserr-common';
+import { FlatErr, pair, parseError, PluginName } from '@typeholes/tserr-common';
 import { join as joinPath } from 'path';
 
 // let server: ReturnType<typeof startServer> | undefined = undefined;
@@ -211,12 +211,23 @@ async function openEditor(uriString: string) {
 function getHoverMarkDown(uri: vscode.Uri, range: vscode.Range) {
   const fileName = uri.fsPath;
   const info: HoverInfo = [];
-  // for (const err of errors[fileName] ?? []) {
-  //   //todo really should check position as well
-  //   if (range.start.line >= err.line - 1 && range.end.line <= err.endLine - 1) {
-  //     info.push(...getErrorHoverInfo(err), []);
-  //   }
-  // }
+  for (const err of errors[fileName] ?? []) {
+    //todo really should check position as well
+    for (const _plugin in err.sources) {
+      const plugin = PluginName.for(_plugin);
+      for (const detail of err.sources[plugin][fileName]) {
+        const detailRange = new vscode.Range(
+          detail.span.start.line - 1,
+          detail.span.start.char - 1,
+          detail.span.end.line - 1,
+          detail.span.end.char - 1,
+        );
+        if (detailRange.contains(range)) {
+          info.push(...getErrorHoverInfo(err), []);
+        }
+      }
+    }
+  }
 
   return hoverInfoToMarkdown(info);
 }
@@ -226,6 +237,7 @@ function registerDiagnosticChangeHandler(plugin: TserrPluginApi) {
   vscode.languages.onDidChangeDiagnostics((event) => {
     event.uris.forEach((uri) => {
       // plugin.send.resetResolvedErrors([uri.fsPath]);
+      const fileName = uri.fsPath;
       const diagnostics = vscode.languages.getDiagnostics(uri);
       const errs: FlatErr[] = [];
       diagnostics.forEach((diag) => {
@@ -254,6 +266,8 @@ function registerDiagnosticChangeHandler(plugin: TserrPluginApi) {
             .split('\n')
             .map((text, depth) => ({ depth, value: parseError(text) })),
         };
+        errors[fileName] ??= [];
+        errors[fileName].push(err);
         errs.push(err);
       });
       plugin.send.resolvedErrors(uri.fsPath, errs);
@@ -263,55 +277,37 @@ function registerDiagnosticChangeHandler(plugin: TserrPluginApi) {
 
 function getErrorHoverInfo(err: FlatErr): HoverInfo {
   const hoverInfo: HoverInfo = [];
-  //   [
-  //     { type: 'text', body: 'from', color: '#f00', backgroundColor: '#00f' },
-  //     { type: 'text', body: 'to', color: '#f00', backgroundColor: '#00f' },
-  //   ],
-  //   [
-  //     {
-  //       type: 'code',
-  //       body: '{a: 1}',
-  //       color: '#f00',
-  //       backgroundColor: '#00f',
-  //     },
-  //     {
-  //       type: 'code',
-  //       body: 'ZipTied',
-  //       color: '#f00',
-  //       backgroundColor: '#00f',
-  //     },
-  //   ],
-  // ];
 
-  // err.parsed.forEach((p) => {
-  //   const [_id, _depth, parsed] = p;
-  //   if (parsed.type === 'unknownError') {
-  //     const keys = parsed.parts.filter((_, idx) => idx % 2 === 0);
-  //     // const values = parsed.parts.filter((_, idx) => idx % 2 === 1);
-  //     const keyCells = keys.map((x) => ({ type: 'text', body: x }) as const);
-  //     const valueCells = keys.map((x) => ({ type: 'code', body: x }) as const);
-  //     hoverInfo.push(keyCells, valueCells);
-  //   } else {
-  //     const keys = [];
-  //     const values = [];
-  //     for (const key of ['type', 'key', 'from', 'to']) {
-  //       if (key in parsed) {
-  //         if (key === 'type') {
-  //           keys.push(parsed[key as never]);
-  //           values.push('');
-  //         } else {
-  //           keys.push(key);
-  //           values.push(parsed[key as never]);
-  //         }
-  //       }
-  //     }
-  //     const keyCells = keys.map((x) => ({ type: 'text', body: x }) as const);
-  //     const valueCells = values.map(
-  //       (x) => ({ type: 'code', body: x }) as const,
-  //     );
-  //     hoverInfo.push(keyCells, valueCells);
-  //   }
-  // });
+  err.parsed.forEach((p) => {
+    const { value } = p;
+    if (value.type === 'unknownError') {
+      const keys = value.parts.filter((_, idx) => idx % 2 === 0);
+      // const values = parsed.parts.filter((_, idx) => idx % 2 === 1);
+      const keyCells = keys.map((x) => ({ type: 'text', body: x }) as const);
+      const values = value.parts.filter((_, idx) => idx % 2 === 1);
+      const valueCells = values.map((x) => ({ type: 'code', body: x }) as const);
+      hoverInfo.push(keyCells, valueCells);
+    } else {
+      const keys = [];
+      const values = [];
+      for (const key of ['type', 'key', 'from', 'to']) {
+        if (key in value) {
+          if (key === 'type') {
+            keys.push(value[key as never]);
+            values.push('');
+          } else {
+            keys.push(key);
+            values.push(value[key as never]);
+          }
+        }
+      }
+      const keyCells = keys.map((x) => ({ type: 'text', body: x }) as const);
+      const valueCells = values.map(
+        (x) => ({ type: 'code', body: x }) as const,
+      );
+      hoverInfo.push(keyCells, valueCells);
+    }
+  });
 
   return hoverInfo;
 }
