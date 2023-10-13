@@ -1,3 +1,4 @@
+import { reactive } from 'vue';
 import { ParsedError } from './ParsedError';
 import { ValueMap } from './ValueMap';
 import { PluginName } from './brands';
@@ -14,6 +15,8 @@ export function errMap(
   const ret = new ValueMap<FlatErrKey, FlatErrValue, string>(
     JSON.stringify,
     monoid,
+    undefined,
+    reactive as never
   );
   for (const err of errs) {
     ret.set(err.parsed, { sources: err.sources });
@@ -132,6 +135,7 @@ export function mergeSources(a: FlatErrValue, b: FlatErrValue): FlatErrValue {
         continue;
       }
       ret[plugin][file] = uniqObjects(
+        JSON.stringify,
         ret[plugin][file],
         b.sources[plugin][file],
       );

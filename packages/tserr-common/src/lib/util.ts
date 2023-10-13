@@ -1,7 +1,10 @@
 import { ValueMap } from './ValueMap';
 
-export function uniqObjects<T extends object>(...objects: T[][]): T[] {
-  const map = new ValueMap<T, undefined, string>(JSON.stringify);
+export function uniqObjects<T extends object>(
+  by: (t: T) => string ,
+  ...objects: T[][]
+): T[] {
+  const map = new ValueMap<T, undefined, string>(by);
   for (const obj of objects) {
     for (const entry of obj) {
       map.set(entry, undefined);

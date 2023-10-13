@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { CodeType, formatCode, highlight, prettyCode } from '../prettyCode';
+import { CodeType,  prettyCode } from '../prettyCode';
 
 const props = defineProps<{
   code: string | undefined;

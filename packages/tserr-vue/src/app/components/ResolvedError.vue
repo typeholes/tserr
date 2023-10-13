@@ -20,7 +20,6 @@ const props = defineProps<{
   errValue: FlatErrValue;
 }>();
 
-// const emitters = inject<Emitters>('emitters');
 const counts = computed(() => {
   const ret =
     Object.values(props.errValue.sources)
@@ -100,10 +99,6 @@ function problemClick(e: MouseEvent) {
           :key="idx"
         >
           <div :style="{ minWidth: 'contents' }">{{ parsed.value.type }}</div>
-          <!-- <div :style="{ minWidth: `${parsed[1] ?? 0}rem` }"></div> -->
-          <!-- <span v-if="props.parsed[2].type === 'unknownError'">
-      {{ props.parsed[2].parts }}
-    </span> -->
           <div cols="">
             <CodeGrid
               :blocks="Object.entries(parsed.value)"
@@ -134,7 +129,6 @@ function problemClick(e: MouseEvent) {
         </button>
       </div>
     </div> -->
-          <!-- </div> -->
         </div>
       </div>
       <template v-for="(files, _plugin) in errValue.sources">
@@ -161,10 +155,15 @@ function problemClick(e: MouseEvent) {
               </template>
               <q-list
                 v-for="[span, src] of uniqObjects(
+                  ([x])=>JSON.stringify(x),
                   items.map((x) => [x.span, x.src ?? ''] as const),
                 )"
               >
-                <q-item v-if="(span.start.line = span.end.line)">
+              <!-- <q-list
+                v-for="[span, src] of items.map((x) => [x.span, x.src ?? ''] as const)
+                "
+              > -->
+                 <q-item v-if="(span.start.line = span.end.line)">
                   <q-toolbar dense>
                     <q-btn
                       dense

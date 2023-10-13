@@ -40,6 +40,8 @@ export type Diagnostic = {
   };
 };
 
+export const resolvedErrors = errMap([], mergeSources);
+
 export const appState = reactive({
   connected: false,
   currentMsgType: '',
@@ -53,7 +55,7 @@ export const appState = reactive({
     { resolve: (...args: any[]) => void; reject: (...args: any[]) => void }
   >(),
   diagnostics: new Map<FileName, Diagnostic[]>(),
-  resolvedErrors: errMap([], mergeSources),
+  // resolvedErrors: errMap([], mergeSources),
   supplements: {} as Record<number, string[]>,
   fixes: {} as Record<number, [fixId: number, fixDescription: string][]>,
   projects: {} as Record<ProjectPath, undefined | boolean>,
@@ -97,13 +99,13 @@ function handleDiagnostic(fileName: FileName, diagnostics: Diagnostic[]) {
 
 function handleNewErrors(entries: [FlatErrKey, FlatErrValue][]) {
   for (const entry of entries) {
-    appState.resolvedErrors.set(entry[0], entry[1]);
+    resolvedErrors.set(entry[0], entry[1]);
   }
 }
 
 function handleFixedErrors(keys: FlatErrKey[]) {
   for (const key of keys) {
-    appState.resolvedErrors.delete(key);
+    resolvedErrors.delete(key);
   }
 }
 

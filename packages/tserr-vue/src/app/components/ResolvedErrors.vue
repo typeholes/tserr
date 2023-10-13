@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { appState } from '../appState';
+import { resolvedErrors } from '../appState';
 import ResolvedError from './ResolvedError.vue';
-
 
 // function getParsed(e: ResolvedErrorType, key: string) {
 //   return e[key as keyof typeof e]
@@ -12,18 +11,13 @@ import ResolvedError from './ResolvedError.vue';
 <template>
   <div>
     <div class="files">
-          <q-expansion-item label="---">
-                  <q-list dense>
-                    <template
-                      v-for="(err, _idx) of appState.resolvedErrors"
-                      :key="_idx"
-                    >
-                        <div>
-                            <ResolvedError :errKey="err[0]" :errValue="err[1]" />
-                        </div>
-                    </template>
-                  </q-list>
-          </q-expansion-item>
+      <q-list dense>
+        <template v-for="(err, _idx) of resolvedErrors" :key="err">
+          <div>
+            <ResolvedError :errKey="err[0]" :errValue="err[1]" />
+          </div>
+        </template>
+      </q-list>
     </div>
   </div>
 </template>

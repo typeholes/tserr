@@ -1,3 +1,5 @@
+import {reactive} from 'vue';
+
 export function valueMap<K extends object, V>(k: K, v: V) {
   return new ValueMap<K, V, string>(JSON.stringify).set(k, v);
 }
@@ -13,15 +15,18 @@ export class ValueMap<K extends object, V, S extends PropertyKey = never>
     surrogate: (key: K) => S,
     monoid?: (a: V, b: V) => V,
     iterable?: Iterable<readonly [K, V]> | null | undefined,
+    wrapper: <T>(t: T) => T = (x) => x,
   ) {
-    this.internal = new Map(
-      !iterable
-        ? undefined
-        : (function* () {
-            for (const [key, value] of iterable!) {
-              yield [surrogate(key), [key, value]];
-            }
-          })(),
+    this.internal = wrapper(
+      new Map(
+        !iterable
+          ? undefined
+          : (function* () {
+              for (const [key, value] of iterable!) {
+                yield [surrogate(key), [key, value]];
+              }
+            })(),
+      ),
     );
     this.surrogate = surrogate;
     this.monoid = monoid ?? ((_, b) => b);
@@ -99,12 +104,11 @@ export class ValueMap<K extends object, V, S extends PropertyKey = never>
     }
   }
 
-  *rawEntries(): IterableIterator<[K,V]> {
+  *rawEntries(): IterableIterator<[K, V]> {
     for (const [, e] of this.internal) {
       yield e;
     }
   }
-
 
   get [Symbol.toStringTag]() {
     return 'ValueMap';
