@@ -178,20 +178,19 @@ function handleError(
   }
 
   let lineNode = fromNode;
-  while (!lineNode.isFirstNodeOnLine()) {
+  while (!lineNode.isFirstNodeOnLine() || lineNode.getChildCount() === 0) {
     const parent = lineNode.getParent();
     if (!parent) break;
     lineNode = parent;
   }
 
-  const lineNodeSrc = lineNode.getFullText();
+  const lineNodeSrc = lineNode.getText().trim();
 
   const fromType = unaliasType(fromNode.getType());
 
   const err = diagnosticToErr(diagnostic);
 
   err.forEach((e) => {
-    sourceFile.isFirstNodeOnLine;
     e.src = lineNodeSrc;
   });
 
@@ -233,11 +232,7 @@ function handleError(
 }
 
 function resolveError(fromNode: Node, err: Err): FlatErr[] {
-  const flattened = flattenErr(
-    tserrApi!.pluginName,
-    err,
-    fromNode.getEndLineNumber(),
-  );
+  const flattened = flattenErr(tserrApi!.pluginName, err);
   const refined = refineErrror(flattened, fromNode);
   refined.forEach((flat) => {
     flat.parsed.forEach((p) => {
@@ -417,9 +412,21 @@ function diagnosticToErr(diagnostic: Diagnostic): Err {
   const fileName =
     diagnostic.getSourceFile()?.getFilePath().toString() ?? 'unknown';
   const code = diagnostic.getCode();
-  const line = diagnostic.getLineNumber() ?? 0;
-  const start = diagnostic.getStart() ?? 0;
+  let line = diagnostic.getLineNumber() ?? 0;
+  let endLine = line;
+  let start = diagnostic.getStart() ?? 0;
+  let end = start + (diagnostic.getLength() ?? 0);
   const message = diagnostic.getMessageText();
+
+  const sourceFile = diagnostic.getSourceFile();
+  if (sourceFile) {
+    const _start = sourceFile.getLineAndColumnAtPos(start);
+    const _end = sourceFile.getLineAndColumnAtPos(end);
+    line = _start.line;
+    start = _start.column;
+    endLine = _end.line;
+    end = _end.column;
+  }
 
   if (typeof message === 'string') {
     const lines = message.split('\n');
@@ -428,7 +435,10 @@ function diagnosticToErr(diagnostic: Diagnostic): Err {
       {
         code: code.toString(),
         fileName,
-        span: { start: { line, char: start }, end: { line, char: start } },
+        span: {
+          start: { line: line, char: start },
+          end: { line: endLine, char: end },
+        },
         parsed,
         lines,
         children: [],
@@ -436,13 +446,22 @@ function diagnosticToErr(diagnostic: Diagnostic): Err {
     ];
   }
 
-  return DiagnosticMessageChainToErr(message, line, start, fileName);
+  return DiagnosticMessageChainToErr(
+    message,
+    line,
+    endLine,
+    start,
+    end,
+    fileName,
+  );
 }
 
 function DiagnosticMessageChainToErr(
   chain: DiagnosticMessageChain | undefined,
   line: number,
+  endLine: number,
   start: number,
+  end: number,
   fileName: string,
 ): Err {
   if (chain === undefined) {
@@ -453,13 +472,18 @@ function DiagnosticMessageChainToErr(
   const parsed = lines.map(parseError);
   const next = chain.getNext() ?? [];
   const children = next
-    .map((c) => DiagnosticMessageChainToErr(c, line, start, fileName))
+    .map((c) =>
+      DiagnosticMessageChainToErr(c, line, endLine, start, end, fileName),
+    )
     .flat();
   return [
     {
       code: code.toString(),
       fileName,
-      span: { start: { line, char: start }, end: { line, char: start } },
+      span: {
+        start: { line: line, char: start },
+        end: { line: endLine, char: end },
+      },
       parsed,
       lines,
       children,

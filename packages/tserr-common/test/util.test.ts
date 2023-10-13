@@ -6,9 +6,9 @@ describe('merge', () => {
     const a2 = { a: 2 };
     const b1 = { b: 1 };
     const b2 = { b: 2 };
-    expect(eq(uniqObjects([a1], [a1]), [a1])).toBeTruthy();
-    expect(uniqObjects([a1], [a1]).length).toBe(1);
-    expect(eq(uniqObjects([a1], [a2]), [a1, a2])).toBeTruthy();
+    expect(eq(uniqObjects(JSON.stringify, [a1], [a1]), [a1])).toBeTruthy();
+    expect(uniqObjects(JSON.stringify, [a1], [a1]).length).toBe(1);
+    expect(eq(uniqObjects(JSON.stringify, [a1], [a2]), [a1, a2])).toBeTruthy();
   });
 });
 
@@ -34,7 +34,7 @@ describe('eq', () => {
   it('objects', () => {
     expect(eq({ a: 1 }, { a: 1 })).toBeTruthy();
     expect(eq({ a: 1 }, { a: 2 })).toBeFalsy();
-    expect(eq({ a: 1 }, { a: 1, b: 1 })).toBeTruthy();
+    expect(eq({ a: 1 }, { a: 1, b: 1 })).toBeFalsy();
 
     //@ts-expect-error
     expect(eq({ a: 1, b: 1 }, { a: 1 })).toBeFalsy();

@@ -16,7 +16,7 @@ export function errMap(
     JSON.stringify,
     monoid,
     undefined,
-    reactive as never
+    reactive as never,
   );
   for (const err of errs) {
     ret.set(err.parsed, { sources: err.sources });
@@ -94,11 +94,7 @@ function _flattenErr(pluginName: PluginName, e: Err[0]): FlatErr {
   return ret;
 }
 
-export function flattenErr(
-  pluginName: PluginName,
-  e: Err,
-  endLine: number,
-): FlatErr {
+export function flattenErr(pluginName: PluginName, e: Err): FlatErr {
   const flatArr = e.map((x) => _flattenErr(pluginName, x));
   for (let i = 1; i < flatArr.length; i++) {
     flatArr[0].parsed.push(...flatArr[i].parsed);

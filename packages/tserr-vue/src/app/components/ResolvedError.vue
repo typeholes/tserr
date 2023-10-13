@@ -155,15 +155,15 @@ function problemClick(e: MouseEvent) {
               </template>
               <q-list
                 v-for="[span, src] of uniqObjects(
-                  ([x])=>JSON.stringify(x),
+                  ([x]) => JSON.stringify(x),
                   items.map((x) => [x.span, x.src ?? ''] as const),
                 )"
               >
-              <!-- <q-list
+                <!-- <q-list
                 v-for="[span, src] of items.map((x) => [x.span, x.src ?? ''] as const)
                 "
               > -->
-                 <q-item v-if="(span.start.line = span.end.line)">
+                <q-item v-if="span.start.line == span.end.line">
                   <q-toolbar dense>
                     <q-btn
                       dense
@@ -172,11 +172,15 @@ function problemClick(e: MouseEvent) {
                       @click="gotoLine(file, span.start.line)"
                     />
                     Line: {{ span.start.line }} char: {{ span.start.char }}
+                    <span v-if="span.start.char !== span.end.char">
+                      -> {{ span.end.char }}
+                    </span>
                     <CodeBlock :code="src" :register-html="() => {}" />
                   </q-toolbar>
                 </q-item>
                 <q-item v-else>
                   Line: {{ span.start.line }} -> {{ span.end.line }}
+                  <CodeBlock :code="src" :register-html="() => {}" />
                 </q-item>
               </q-list>
             </q-expansion-item>
