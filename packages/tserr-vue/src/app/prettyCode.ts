@@ -21,9 +21,17 @@ const codeTypes = {
 
 export type CodeType = keyof typeof codeTypes;
 
-export function prettyCode(code: string, codeType: CodeType = 'type') {
+export function prettyCode(
+  code: string,
+  codeType: CodeType = 'type',
+  pretty: boolean = true,
+) {
   const { stub, cleanup } = codeTypes[codeType ?? 'type'];
-  return cleanup(highlight(formatCode(`${stub} ${code}`)));
+  if (pretty) {
+    return cleanup(highlight(formatCode(`${stub} ${code}`)));
+  } else {
+    return highlight(code);
+  }
 }
 
 export function highlight(code: string | undefined) {

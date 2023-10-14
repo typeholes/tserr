@@ -6,10 +6,11 @@ const props = defineProps<{
   code: string | undefined;
   registerHtml: (x: string | undefined) => void;
   codeType?: CodeType;
+  pretty?: boolean
 }>();
 
 const highlighted = computed(() =>
-  prettyCode(props.code ?? '', props.codeType),
+  prettyCode(props.code ?? '', props.codeType, props.pretty ?? true),
 );
 
 props.registerHtml(highlighted.value);
