@@ -13,8 +13,6 @@ import { startSocket } from './app/socket';
 import * as shiki from 'shiki';
 import type { Highlighter } from 'shiki';
 
-// import './assets/main.css'
-
 export let highlighter: Highlighter | undefined = undefined;
 
 shiki

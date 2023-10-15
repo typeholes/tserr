@@ -1,6 +1,5 @@
 import { reactive } from 'vue';
 import {
-  FileName,
   PluginName,
   ProjectPath,
   ProjectConfigs,
@@ -15,7 +14,6 @@ export const socketHandlers = {
   connect: () => (appState.connected = true),
   error: handleRequestError,
   success: handleRequestSuccess,
-  diagnostics: handleDiagnostic,
   supplement: handleSupplement,
   fixes: handleFixes,
   configs: handleConfigs,
@@ -26,18 +24,6 @@ export const socketHandlers = {
   newErrors: handleNewErrors,
   changedErrors: handleNewErrors,
   fixedErrors: handleFixedErrors,
-};
-
-export type Diagnostic = {
-  message: string;
-  start: {
-    line: number;
-    character: number;
-  };
-  end: {
-    line: number;
-    character: number;
-  };
 };
 
 export const resolvedErrors = errMap([], mergeSources);
@@ -54,8 +40,6 @@ export const appState = reactive({
     number,
     { resolve: (...args: any[]) => void; reject: (...args: any[]) => void }
   >(),
-  diagnostics: new Map<FileName, Diagnostic[]>(),
-  // resolvedErrors: errMap([], mergeSources),
   supplements: {} as Record<number, string[]>,
   fixes: {} as Record<number, [fixId: number, fixDescription: string][]>,
   projects: {} as Record<ProjectPath, undefined | boolean>,
@@ -92,10 +76,6 @@ function handleRequestSuccess(requestId: number, ...args: any[]) {
 
 export const unknownRequest = (requestId: any) =>
   (appState.error = `request id not found ${requestId}`);
-
-function handleDiagnostic(fileName: FileName, diagnostics: Diagnostic[]) {
-  appState.diagnostics.set(fileName, diagnostics);
-}
 
 function handleNewErrors(entries: [FlatErrKey, FlatErrValue][]) {
   for (const entry of entries) {
@@ -158,23 +138,6 @@ export function toggleProject(path: string) {
   }
 }
 
-// const ignoredCommands = [
-//   'quickinfo',
-//   'encodedSemanticClassifications-full',
-//   'getApplicableRefactors',
-//   'documentHighlights',
-//   'updateOpen',
-//   'provideInlayHints',
-//   'getOutliningSpans'
-// ]
-
-// const ignoredEvents = [
-//   'requestCompleted',
-//   'suggestionDiag',
-//   // 'semanticDiag'
-//   'syntaxDiag'
-// ]
-
 function relativeProjectPath(path: string) {
   return ProjectPath.for(
     (path.startsWith(appState.projectRoot)
@@ -183,5 +146,3 @@ function relativeProjectPath(path: string) {
     ).replace(/^\.?\/?/, ''),
   );
 }
-
-

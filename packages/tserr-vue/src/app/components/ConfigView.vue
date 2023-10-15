@@ -45,13 +45,10 @@ function asTree(): ConfigTreeItem[] {
   return tree;
 }
 
-// const tree = computed( () => asTree() )
 </script>
 
 <template>
   <div>
-    <!-- foo: {{ JSON.stringify(appState.configs, null, 2) }} -->
-    <!-- foo: {{ JSON.stringify(asTree(), null, 2) }} -->
     <q-tree dense :nodes="asTree()" node-key="label">
       <template #default-body="{ node }">
         {{ node.title }}

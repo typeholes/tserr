@@ -22,9 +22,6 @@ const _resolvedError = scope({
     type: "'unknownError'",
     parts: 'string[]',
   },
-  // unparsable: {0
-  //     type: 'string'
-  // }
 });
 export const resolvedError = _resolvedError.compile();
 export const unionedResolvedError = _resolvedError.type(

@@ -6,10 +6,7 @@ import ResolvedErrors from './ResolvedErrors.vue';
 <template>
   <div class="appstate">
 
-    <!-- <span> error: {{ appState.error }} </span> -->
-    <!-- <ProblemsView /> -->
     <ResolvedErrors />
-    <!-- <pre> resolved: {{ JSON.stringify(Array.from(appState.resolvedErrors.values()), null, 2) }}  </pre> -->
   </div>
 </template>
 

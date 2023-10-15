@@ -66,9 +66,6 @@ export function formatCode(code: string | undefined) {
       });
     } catch (e) {
       return code;
-      // return `${e}\n${code}`;
     }
-    return code;
-    // return `${e}\n${code}`;
   }
 }

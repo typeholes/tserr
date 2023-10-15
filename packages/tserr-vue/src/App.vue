@@ -4,7 +4,7 @@ import ServerState from './app/components/ServerState.vue';
 import AppState from './app/components/AppState.vue';
 import { appState } from './app/appState';
 import { Emitters } from './app/socket';
-import { BUNDLED_THEMES } from 'shiki'
+import { BUNDLED_THEMES } from 'shiki';
 
 const emitters = inject<Emitters>('emitters');
 
@@ -40,16 +40,10 @@ function refresh() {
         <q-btn dense flat round icon="refresh" @click="refresh" />
         <q-btn dense flat round icon="menu" @click="toggleRightDrawer" />
       </q-toolbar>
-
-      <!-- <q-tabs align="left">
-        <q-route-tab to="/page1" label="Page One" />
-        <q-route-tab to="/page2" label="Page Two" />
-        <q-route-tab to="/page3" label="Page Three" />
-      </q-tabs> -->
     </q-header>
 
     <q-drawer show-if-above v-model="leftDrawerOpen" side="left" bordered>
-      <q-select v-model="appState.shikiTheme" :options="BUNDLED_THEMES"/>
+      <q-select v-model="appState.shikiTheme" :options="BUNDLED_THEMES" />
       <!-- drawer content -->
     </q-drawer>
 
@@ -66,17 +60,6 @@ function refresh() {
     <q-page-container>
       <AppState />
     </q-page-container>
-
-    <!-- <q-footer elevated class="bg-grey-8 text-white">
-      <q-toolbar>
-        <q-toolbar-title>
-          <q-avatar>
-            <img src="https://cdn.quasar.dev/logo-v2/svg/logo-mono-white.svg" />
-          </q-avatar>
-          <div>TsErr Problems View</div>
-        </q-toolbar-title>
-      </q-toolbar>
-    </q-footer> -->
   </q-layout>
 </template>
 
