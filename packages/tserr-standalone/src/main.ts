@@ -1,7 +1,7 @@
 import { startServer } from '@typeholes/tserr-server';
 import { tmpdir } from 'os';
 import { join as joinPath, resolve as resolvePath } from 'path';
-import { cpSync, readdirSync, statSync } from 'fs';
+import { cpSync } from 'fs';
 import { version as nodeVersion } from 'process';
 
 let port = 0;

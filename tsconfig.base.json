@@ -25,7 +25,9 @@
       "@typeholes/tserr-vscode": ["packages/tserr-vscode/src/index.ts"],
       "tserr-arktype-plugin": ["packages/tserr-arktype-plugin/src/index.ts"]
     },
-    "noErrorTruncation": true
+    "noErrorTruncation": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
   },
   "exclude": ["node_modules", "tmp"],
   "ts-node": {

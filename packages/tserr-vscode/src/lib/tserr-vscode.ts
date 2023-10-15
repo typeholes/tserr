@@ -11,18 +11,8 @@ import * as vscode from 'vscode';
 import { ProblemViewProvider } from './ProblemViewProvider';
 
 import { startServer, TserrPluginApi } from '@typeholes/tserr-server';
-import { FlatErr, pair, parseError, PluginName } from '@typeholes/tserr-common';
+import { FlatErr, parseError, PluginName } from '@typeholes/tserr-common';
 import { join as joinPath } from 'path';
-
-// let server: ReturnType<typeof startServer> | undefined = undefined;
-
-// export function deactivate() {
-//   console.log('tserr-vscode deactivate');
-//   if (server) {
-//     server.shutdownServer();
-//   }
-//   server = undefined;
-// }
 
 let errors: Record<string, FlatErr[]> = {};
 
@@ -233,10 +223,8 @@ function getHoverMarkDown(uri: vscode.Uri, range: vscode.Range) {
 }
 
 function registerDiagnosticChangeHandler(plugin: TserrPluginApi) {
-  let id = 0;
   vscode.languages.onDidChangeDiagnostics((event) => {
     event.uris.forEach((uri) => {
-      // plugin.send.resetResolvedErrors([uri.fsPath]);
       const fileName = uri.fsPath;
       const diagnostics = vscode.languages.getDiagnostics(uri);
       const errs: FlatErr[] = [];

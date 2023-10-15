@@ -1,7 +1,7 @@
 import { watch, FSWatcher } from 'chokidar';
 import { PluginState } from './tserr-server.types';
 import { readdirSync, statSync, readFileSync } from 'fs';
-import { join as joinPath, parse as parsePath, sep as pathSep } from 'path';
+import { join as joinPath } from 'path';
 import {
   ProjectConfigs,
   TsErrConfig,
@@ -23,7 +23,7 @@ export type Project = ReturnType<typeof mkProject>;
 export function mkProject(
   projectRoot: string,
   projectPath: string,
-  plugins: Record<string, PluginState>
+  plugins: Record<string, PluginState>,
 ) {
   let waiting = true;
   let events: ProjectEvent[] = [];
@@ -45,7 +45,7 @@ export function mkProject(
       for (const pluginKey in plugins) {
         if (plugins[pluginKey].active) {
           plugins[pluginKey].projectEventHandlers.forEach((handler) =>
-            handler(events)
+            handler(events),
           );
         }
       }
@@ -91,7 +91,7 @@ export function mkProject(
 export function findConfigs(
   dirPath: string,
   rootPath?: string,
-  resolved: ProjectConfigs = {}
+  resolved: ProjectConfigs = {},
 ): ProjectConfigs {
   const root = rootPath ?? dirPath;
   const tsConfigs: string[] = [];
@@ -147,7 +147,7 @@ function resolveConfigs(rootPath: string, ts: string[], err: string[]) {
     const parentConfig = resolved[err[0]]?.config;
     const config = mergeConfig(
       parentConfig,
-      readConfig(rootPath, err[0], err[1])
+      readConfig(rootPath, err[0], err[1]),
     );
 
     resolved[err[0]] = {
@@ -169,14 +169,14 @@ function path2tuple(rootPath: string, pathStr: string) {
   return [
     dirs.join('/') + '/',
     fileName ?? '',
-    parentPath === "/" ? "" : parentPath,
+    parentPath === '/' ? '' : parentPath,
   ] as const;
 }
 
 function readConfig(
   rootPath: string,
   dir: string,
-  fileName: string
+  fileName: string,
 ): TsErrConfig {
   const file = readFileSync(joinPath(rootPath, dir, fileName));
   const json = JSON.parse(file.toString());
@@ -189,7 +189,7 @@ function readConfig(
 
 function mergeConfig(
   parentConfig: TsErrConfig | undefined,
-  config: TsErrConfig
+  config: TsErrConfig,
 ): TsErrConfig {
   if (parentConfig === undefined) {
     return config;

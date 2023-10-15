@@ -1,5 +1,3 @@
-import {reactive} from 'vue';
-
 export function valueMap<K extends object, V>(k: K, v: V) {
   return new ValueMap<K, V, string>(JSON.stringify).set(k, v);
 }
@@ -42,7 +40,6 @@ export class ValueMap<K extends object, V, S extends PropertyKey = never>
 
   forEach(
     callbackfn: (value: V, key: K, map: ValueMap<K, V, S>) => void,
-    thisArg?: any,
   ): void {
     this.internal.forEach(([key, value]) => callbackfn(value, key, this));
   }
@@ -78,7 +75,7 @@ export class ValueMap<K extends object, V, S extends PropertyKey = never>
   }
 
   *[Symbol.iterator](): IterableIterator<[K, V]> {
-    for (const [surrogate, pair] of this.internal) {
+    for (const [_, pair] of this.internal) {
       yield pair;
     }
   }

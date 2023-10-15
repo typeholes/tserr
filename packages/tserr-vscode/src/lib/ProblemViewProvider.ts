@@ -6,18 +6,19 @@ export class ProblemViewProvider implements vscode.WebviewViewProvider {
   private readonly _disposables: vscode.Disposable[] = [];
 
   private _view?: vscode.WebviewView;
-  private _currentCacheKey: CacheKey = cacheKeyNone;
-  private _loading?: { cts: vscode.CancellationTokenSource };
   private _serverPort: number;
 
-  constructor(private readonly _extensionUri: vscode.Uri, serverPort: number) {
-    this._serverPort = serverPort
+  constructor(
+    private readonly _extensionUri: vscode.Uri,
+    serverPort: number,
+  ) {
+    this._serverPort = serverPort;
     vscode.workspace.onDidChangeConfiguration(
       () => {
         this.updateConfiguration();
       },
       null,
-      this._disposables
+      this._disposables,
     );
 
     this.updateConfiguration();
@@ -33,7 +34,7 @@ export class ProblemViewProvider implements vscode.WebviewViewProvider {
   public resolveWebviewView(
     webviewView: vscode.WebviewView,
     _context: vscode.WebviewViewResolveContext,
-    _token: vscode.CancellationToken
+    _token: vscode.CancellationToken,
   ) {
     this._view = webviewView;
 
@@ -44,7 +45,6 @@ export class ProblemViewProvider implements vscode.WebviewViewProvider {
 
     webviewView.onDidChangeVisibility(() => {
       if (this._view?.visible) {
-        // this.update(/* force */ true);
       }
     });
 
@@ -52,12 +52,10 @@ export class ProblemViewProvider implements vscode.WebviewViewProvider {
       this._view = undefined;
     });
 
-    webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
+    webviewView.webview.html = this._getHtmlForWebview();
   }
 
-  private _getHtmlForWebview(webview: vscode.Webview) {
-    const nonce = getNonce();
-
+  private _getHtmlForWebview() {
     return /* html */ `<!DOCTYPE html>
 			<html lang="en">
 			<head>
@@ -70,79 +68,5 @@ export class ProblemViewProvider implements vscode.WebviewViewProvider {
 			</html>`;
   }
 
-  private updateConfiguration() {
-    //   const config = vscode.workspace.getConfiguration('docsView');
-  }
-}
-
-function getNonce() {
-  let text = '';
-  const possible =
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  for (let i = 0; i < 32; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
-  }
-  return text;
-}
-
-type CacheKey = typeof cacheKeyNone | DocumentCacheKey;
-
-const cacheKeyNone = { type: 'none' } as const;
-
-class DocumentCacheKey {
-  readonly type = 'document';
-
-  constructor(
-    public readonly url: vscode.Uri,
-    public readonly version: number,
-    public readonly wordRange: vscode.Range | undefined
-  ) {}
-
-  public equals(other: DocumentCacheKey): boolean {
-    if (this.url.toString() !== other.url.toString()) {
-      return false;
-    }
-
-    if (this.version !== other.version) {
-      return false;
-    }
-
-    if (other.wordRange === this.wordRange) {
-      return true;
-    }
-
-    if (!other.wordRange || !this.wordRange) {
-      return false;
-    }
-
-    return this.wordRange.isEqual(other.wordRange);
-  }
-}
-
-function cacheKeyEquals(a: CacheKey, b: CacheKey): boolean {
-  if (a === b) {
-    return true;
-  }
-
-  if (a.type !== b.type) {
-    return false;
-  }
-
-  if (a.type === 'none' || b.type === 'none') {
-    return false;
-  }
-
-  return a.equals(b);
-}
-
-function createCacheKey(editor: vscode.TextEditor | undefined): CacheKey {
-  if (!editor) {
-    return cacheKeyNone;
-  }
-
-  return new DocumentCacheKey(
-    editor.document.uri,
-    editor.document.version,
-    editor.document.getWordRangeAtPosition(editor.selection.active)
-  );
+  private updateConfiguration() {}
 }

@@ -1,16 +1,11 @@
 import {
   FlatErr,
   FlatErrKey,
-  FlatErrValue,
   PluginName,
-  ValueMap,
   eq,
   errMap,
   mergeSources,
-  pair,
-  uniqObjects,
 } from '@typeholes/tserr-common';
-import e from 'express';
 
 export const liveErrors = errMap([]);
 
@@ -24,7 +19,6 @@ export function setOnUpdate(handlers: Partial<typeof __onUpdate>) {
   Object.assign(__onUpdate, handlers);
 }
 
-let errId = 0;
 
 function dedupErrors(errors: FlatErr[]): typeof liveErrors {
   const ret = errMap(errors, mergeSources);
@@ -59,8 +53,6 @@ export function updateErrors(
       throw new Error('out of scope errors in update');
     }
   }
-
-  const updatedIds: number[] = [];
 
   // this version of fixedKeys only works for global scope
   const fixedKeys = Array.from(liveErrors.keys()).filter((k) => {
@@ -113,9 +105,9 @@ export function updateErrors(
   }
 
   if (scope != 'global') {
-    const live = liveErrors;
+    // const live = liveErrors;
 
-    const fixedKeys: FlatErrKey[] = [];
+    // const fixedKeys: FlatErrKey[] = [];
     for (const [key, value] of liveErrors.rawEntries()) {
       console.log(key, value);
 

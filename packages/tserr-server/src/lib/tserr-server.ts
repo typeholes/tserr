@@ -30,7 +30,7 @@ export { TserrPluginApi, TserrPlugin } from './tserr-server.types';
 
 import { setOnUpdate, updateErrors } from './errorBus';
 
-export const tserrPluginEvents: U2T<keyof TserrPluginEvents> = [
+export const tserrPluginEvents = [
   'resolvedErrors',
   'resetResolvedErrors',
   'newErrors',
@@ -41,7 +41,7 @@ export const tserrPluginEvents: U2T<keyof TserrPluginEvents> = [
   'hasProject',
   'openProject',
   'closeProject',
-];
+] satisfies U2T<keyof TserrPluginEvents>;
 
 const doNothing = () => {
   /* */
@@ -50,37 +50,11 @@ const doNothingEvents = tupleToObject<TserrPluginEvents>(tserrPluginEvents)(
   (_) => doNothing,
 );
 
-//Object.fromEntries(tserrPluginEvents.map(event => [event, doNothing] as const)) as unknown as TserrPluginEvents
-const _doNothingEvents: TserrPluginEvents = {
-  fixes: doNothing,
-  hasProject: doNothing,
-  openProject: doNothing,
-  closeProject: doNothing,
-  resetResolvedErrors: doNothing,
-  resolvedErrors: doNothing,
-  supplement: doNothing,
-  newErrors: doNothing,
-  changedErrors: doNothing,
-  fixedErrors: doNothing,
-};
-
 export const semanticErrorIdentifiers: ((
   err: ParsedError,
   fromNode: Node,
 ) => { isSemantic: boolean; fixes: { label: string; fn: () => void }[] })[] =
   [];
-
-export type Diagnostic = {
-  message: string;
-  start: {
-    line: number;
-    character: number;
-  };
-  end: {
-    line: number;
-    character: number;
-  };
-};
 
 process.on('uncaughtException', function (err) {
   // Handle the error safely
@@ -90,10 +64,7 @@ process.on('uncaughtException', function (err) {
 
 // Do not use these until startServer is called
 let app: ReturnType<typeof express> = undefined as never;
-let httpServer: http.Server /*<
-   typeof http.IncomingMessage,
-   typeof http.ServerResponse
->*/ = undefined as never;
+let httpServer: http.Server = undefined as never;
 let io: Server = undefined as never;
 
 let gotoDefinition = (
@@ -105,7 +76,7 @@ let gotoDefinition = (
   /* todo */ console.log({ fileName, text, searchFromLine, searchToLine });
 };
 
-let gotoFileLine = (fileName: string, line: number) => {};
+let gotoFileLine = (_fileName: string, _line: number) => {};
 
 export type ErrorServer = ReturnType<typeof startServer>;
 export function startServer(servePath: string, projectRoot: string, port = 0) {
@@ -134,7 +105,7 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
   writeFileSync(joinPath(servePath, indexFileName), indexFile);
 
   io = new Server(httpServer, { cors: { origin: '*' } });
-  app.get('/', (req, res) => {
+  app.get('/', (_req, res) => {
     res.sendFile(path.join(servePath, indexFileName));
   });
 
@@ -253,12 +224,6 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
 
   console.log(semanticErrorIdentifiers);
 
-  function addSemanticErrorIdentifiers(
-    ...identifiers: typeof semanticErrorIdentifiers
-  ) {
-    semanticErrorIdentifiers.push(...identifiers);
-  }
-
   const projects: Record<
     ProjectPath,
     { project: Project; openedBy: PluginName }
@@ -277,7 +242,7 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
 
   const senders = {
     fixes:
-      (pluginKey: string) =>
+      (_pluginKey: string) =>
       (
         fixesRec: Record<
           number,
@@ -337,7 +302,7 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
       projects[projectPath].project.close();
       sendCloseProject(projectPath);
     },
-    resetResolvedErrors: (pluginKey: string) => (filenames?: string[]) => {
+    resetResolvedErrors: (_pluginKey: string) => (_filenames?: string[]) => {
       // emit('resetResolvedErrors', pluginKey, filenames);
       fixFunctions = {};
     },
@@ -384,9 +349,9 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
       getConfigs: () => configs,
       getProjectPaths,
       addProjectEventHandlers: addProjectEventHandlers(plugin.key),
-      newErrors: (errors: FlatErr[]) => {},
-      changed: (errors: FlatErr[]) => {},
-      fixedErrors: (errIds: number[]) => {},
+      newErrors: (_errors: FlatErr[]) => {},
+      changed: (_errors: FlatErr[]) => {},
+      fixedErrors: (_errIds: number[]) => {},
       // sendOpenProject: app(openProject),
     };
 
