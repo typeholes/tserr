@@ -10,7 +10,7 @@ import {
 
 type KindHandlers = {
   -readonly [K in keyof typeof SyntaxKind]: ((
-    node: KindToNodeMappings[(typeof SyntaxKind)[K]]
+    node: KindToNodeMappings[(typeof SyntaxKind)[K]],
   ) => void)[];
 };
 
@@ -25,7 +25,7 @@ export function onNodeKind(handlers: KindHandlers, node: Node) {
 }
 
 function checkEmptyObjectTypes(
-  node: VariableDeclaration | FunctionDeclaration | TypeAliasDeclaration
+  node: VariableDeclaration | FunctionDeclaration | TypeAliasDeclaration,
 ) {
   const type = Node.isFunctionDeclaration(node)
     ? node.getReturnType()
@@ -57,7 +57,7 @@ const checkTscIgnore = (expr: AsExpression) => {
       const errCode = err.getCode().toString();
       if (errCode !== code) {
         console.log(
-          `Incorrect error ${errCode} vs ${code} at line: ${exprLineNumber} ${castText})`
+          `Incorrect error ${errCode} vs ${code} at line: ${exprLineNumber} ${castText})`,
         );
       }
     }
@@ -66,7 +66,7 @@ const checkTscIgnore = (expr: AsExpression) => {
 };
 
 export const kindHandlers: KindHandlers = Object.fromEntries(
-  Object.keys(SyntaxKind).map((x) => [x, []])
+  Object.keys(SyntaxKind).map((x) => [x, []]),
 ) as never;
 
 kindHandlers.FunctionDeclaration.push(checkEmptyObjectTypes);

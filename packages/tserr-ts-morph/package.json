@@ -1,4 +1,29 @@
 {
   "name": "@typeholes/tserr-ts-morph",
-  "version": "0.0.1"
+  "version": "0.0.1",
+  "publisher": "typeholes",
+  "repository": "https://github.com/typeholes/tserr",
+  "license": "MIT",
+  "main": "./index.js",
+  "engines": {
+    "vscode": "^1.44.0"
+  },
+  "activationEvents": [
+    "*"
+  ],
+  "contributes": {
+    "configuration": {
+      "title": "tserr ts-morph dummy",
+      "properties": {
+        "TsErr-ts-morph.dummy": {
+          "default": true,
+          "type": "boolean",
+          "description": "dummy config item"
+        }
+      }
+    }
+  },
+  "extensionDependencies": [
+    "typeholes.tserr-vscode"
+  ]
 }

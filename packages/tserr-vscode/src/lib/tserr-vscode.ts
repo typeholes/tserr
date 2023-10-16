@@ -1,11 +1,4 @@
-import {
-  commands,
-  ExtensionContext,
-  window,
-  workspace,
-  env,
-  Uri,
-} from 'vscode';
+import { commands, ExtensionContext, workspace, env, Uri } from 'vscode';
 import * as vscode from 'vscode';
 
 import { ProblemViewProvider } from './ProblemViewProvider';
@@ -13,13 +6,16 @@ import { ProblemViewProvider } from './ProblemViewProvider';
 import { startServer, TserrPluginApi } from '@typeholes/tserr-server';
 import { FlatErr, parseError, PluginName } from '@typeholes/tserr-common';
 import { join as joinPath } from 'path';
+import { useVscodeDiagnostics } from '../config';
 
 let errors: Record<string, FlatErr[]> = {};
 
 let server: ReturnType<typeof startServer> = undefined as never;
 
+let TserrExtensionId: string | undefined;
+
 export function activate(context: ExtensionContext) {
-  console.log(vscode.extensions.all.map((e) => e.id));
+  TserrExtensionId = context.extension.id;
 
   const extPath =
     (vscode.extensions.getExtension('typeholes.tserr-vscode')?.extensionPath ??
@@ -27,7 +23,6 @@ export function activate(context: ExtensionContext) {
 
   const projectPath =
     (workspace.workspaceFolders ?? [])[0]?.uri?.fsPath ?? __dirname;
-  window.showInformationMessage('activating tserr');
   server = startServer(extPath, projectPath);
   const tserr = server.mkPluginInterface({
     key: 'vscode',
@@ -59,18 +54,12 @@ export function activate(context: ExtensionContext) {
 
   const configs = tserr.getConfigs();
 
-  for (const path in configs) {
-    const config = configs[path];
-    config.config?.openProjects.forEach((projectFile) => {
-      tserr.send.openProject(joinPath(projectPath, projectFile));
-    });
-    config.tsconfig?.forEach((fileName) => {
-      tserr.send.hasProject(joinPath(path, fileName));
-    });
-  }
-
   commands.registerCommand('tserr-problems-view.openExternal', () => {
     env.openExternal(Uri.parse(`http://localhost:${server.getPort()}/`));
+  });
+
+  commands.registerCommand('tserr-problems-view.loadPlugins', () => {
+    activatePlugins();
   });
 
   // context.subscriptions.push(disposable);
@@ -111,6 +100,18 @@ export function activate(context: ExtensionContext) {
   );
 
   registerDiagnosticChangeHandler(tserr);
+
+  activatePlugins();
+
+  for (const path in configs) {
+    const config = configs[path];
+    config.config?.openProjects.forEach((projectFile) => {
+      tserr.send.openProject(joinPath(projectPath, projectFile));
+    });
+    config.tsconfig?.forEach((fileName) => {
+      tserr.send.hasProject(joinPath(path, fileName));
+    });
+  }
 }
 
 async function handleGotoFileLine(uriString: string, line: number) {
@@ -222,45 +223,52 @@ function getHoverMarkDown(uri: vscode.Uri, range: vscode.Range) {
   return hoverInfoToMarkdown(info);
 }
 
+let disposeDiagnosticsChangeHandler: vscode.Disposable | undefined;
+
 function registerDiagnosticChangeHandler(plugin: TserrPluginApi) {
-  vscode.languages.onDidChangeDiagnostics((event) => {
-    event.uris.forEach((uri) => {
-      const fileName = uri.fsPath;
-      const diagnostics = vscode.languages.getDiagnostics(uri);
-      const errs: FlatErr[] = [];
-      diagnostics.forEach((diag) => {
-        const err: FlatErr = {
-          sources: {
-            [plugin.pluginName]: {
-              [uri.fsPath]: [
-                {
-                  code: `${diag.code}`,
-                  raw: [diag.message],
-                  span: {
-                    start: {
-                      line: diag.range.start.line + 1,
-                      char: diag.range.start.character + 1,
-                    },
-                    end: {
-                      line: diag.range.end.line + 1,
-                      char: diag.range.end.character + 1,
+  disposeDiagnosticsChangeHandler?.dispose();
+  if (!useVscodeDiagnostics) return;
+
+  disposeDiagnosticsChangeHandler = vscode.languages.onDidChangeDiagnostics(
+    (event) => {
+      event.uris.forEach((uri) => {
+        const fileName = uri.fsPath;
+        const diagnostics = vscode.languages.getDiagnostics(uri);
+        const errs: FlatErr[] = [];
+        diagnostics.forEach((diag) => {
+          const err: FlatErr = {
+            sources: {
+              [plugin.pluginName]: {
+                [uri.fsPath]: [
+                  {
+                    code: `${diag.code}`,
+                    raw: [diag.message],
+                    span: {
+                      start: {
+                        line: diag.range.start.line + 1,
+                        char: diag.range.start.character + 1,
+                      },
+                      end: {
+                        line: diag.range.end.line + 1,
+                        char: diag.range.end.character + 1,
+                      },
                     },
                   },
-                },
-              ],
+                ],
+              },
             },
-          },
-          parsed: diag.message
-            .split('\n')
-            .map((text, depth) => ({ depth, value: parseError(text) })),
-        };
-        errors[fileName] ??= [];
-        errors[fileName].push(err);
-        errs.push(err);
+            parsed: diag.message
+              .split('\n')
+              .map((text, depth) => ({ depth, value: parseError(text) })),
+          };
+          errors[fileName] ??= [];
+          errors[fileName].push(err);
+          errs.push(err);
+        });
+        plugin.send.resolvedErrors(uri.fsPath, errs);
       });
-      plugin.send.resolvedErrors(uri.fsPath, errs);
-    });
-  });
+    },
+  );
 }
 
 function getErrorHoverInfo(err: FlatErr): HoverInfo {
@@ -273,7 +281,9 @@ function getErrorHoverInfo(err: FlatErr): HoverInfo {
       // const values = parsed.parts.filter((_, idx) => idx % 2 === 1);
       const keyCells = keys.map((x) => ({ type: 'text', body: x }) as const);
       const values = value.parts.filter((_, idx) => idx % 2 === 1);
-      const valueCells = values.map((x) => ({ type: 'code', body: x }) as const);
+      const valueCells = values.map(
+        (x) => ({ type: 'code', body: x }) as const,
+      );
       hoverInfo.push(keyCells, valueCells);
     } else {
       const keys = [];
@@ -333,6 +343,38 @@ function hoverInfoToMarkdown(hoverInfo: HoverInfo) {
   return md;
 }
 
+const plugins: string[] = [];
+
 export function deactivate() {
   server?.shutdownServer();
 }
+async function activatePlugins() {
+  if (!server) return;
+  vscode.extensions.all.forEach(async (ext) => {
+    if (
+      !(
+        'extensionDependencies' in ext.packageJSON &&
+        Array.isArray(ext.packageJSON.extensionDependencies)
+      )
+    ) {
+      return;
+    }
+
+    if (!ext.packageJSON.extensionDependencies.includes(TserrExtensionId)) {
+      return;
+    }
+
+    if (!ext.isActive) {
+      await ext.activate();
+    }
+
+    if (('tserrPlugin' in ext.exports, 'tsErrPlugin')) {
+      const plugin = ext.exports.tsErrPlugin;
+      if ('key' in plugin && !plugins.includes(plugin.key)) {
+        await server.loadPlugin(plugin);
+      }
+    }
+  });
+}
+
+vscode.extensions.onDidChange(activatePlugins);

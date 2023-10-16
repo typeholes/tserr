@@ -394,21 +394,26 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
     }
   }
 
+  // TODO validate plugin
+  async function loadPlugin(plugin: Record<PropertyKey, unknown>) {
+    if (
+      !(
+        plugin.register instanceof Function &&
+        typeof plugin.key == 'string' &&
+        typeof plugin.displayName === 'string'
+      )
+    ) {
+      throw new Error('invalid plugin');
+    }
+
+    const api = mkPluginInterface(plugin as TserrPlugin);
+    return api;
+  }
+
   async function importPlugin(pluginPath: string) {
     await import(pluginPath).then((module) => {
       const plugin = module.plugin;
-      if (
-        !(
-          plugin.register instanceof Function &&
-          typeof plugin.key == 'string' &&
-          typeof plugin.displayName === 'string'
-        )
-      ) {
-        throw new Error('invalid plugin');
-      }
-
-      const api = mkPluginInterface(plugin);
-      return api;
+      return loadPlugin(plugin);
     });
   }
 
@@ -470,6 +475,7 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
   });
 
   const ret = {
+    loadPlugin,
     importPlugin,
     onGotoDefinition,
     onGotoFileLine,

@@ -12,10 +12,24 @@
     "*"
   ],
   "contributes": {
+    "configuration": {
+      "title": "Use Vscode Diagnostics",
+      "properties": {
+        "TsErr.useVscodeDiagnostics": {
+          "default": true,
+          "type": "boolean",
+          "description": "Report diagnostics from Vscode in the TsErr Problems View"
+        }
+      }
+    },
     "commands": [
       {
         "command": "tserr-problems-view.openExternal",
         "title": "TsErr open external"
+      },
+      {
+        "command": "tserr-problems-view.loadPlugins",
+        "title": "TsErr load plugins"
       }
     ],
     "views": {
