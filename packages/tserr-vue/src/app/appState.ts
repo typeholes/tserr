@@ -24,6 +24,7 @@ export const socketHandlers = {
   newErrors: handleNewErrors,
   changedErrors: handleNewErrors,
   fixedErrors: handleFixedErrors,
+  infoAtPosition,
 };
 
 export const resolvedErrors = errMap([], mergeSources);
@@ -47,6 +48,23 @@ export const appState = reactive({
   projectRoot: '',
   shikiTheme: 'dracula' as string,
 });
+
+export const positionInfo = reactive(
+  {} as Record<
+    PluginName,
+    { filename: string; line: number; char: number; info: string[] }
+  >,
+);
+
+function infoAtPosition(
+  pluginName: string,
+  filename: string,
+  line: number,
+  char: number,
+  info: string[],
+) {
+  positionInfo[PluginName.for(pluginName)] = { filename, line, char, info };
+}
 
 function handleAddPlugin(key: string, active: boolean, displayName: string) {
   const pName = PluginName(key);

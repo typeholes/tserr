@@ -2,7 +2,7 @@
 import { inject, ref } from 'vue';
 import ServerState from './app/components/ServerState.vue';
 import AppState from './app/components/AppState.vue';
-import { appState } from './app/appState';
+import { appState, positionInfo } from './app/appState';
 import { Emitters } from './app/socket';
 import { BUNDLED_THEMES } from 'shiki';
 
@@ -44,6 +44,7 @@ function refresh() {
 
     <q-drawer show-if-above v-model="leftDrawerOpen" side="left" bordered>
       <q-select v-model="appState.shikiTheme" :options="BUNDLED_THEMES" />
+      {{ positionInfo }}
       <!-- drawer content -->
     </q-drawer>
 

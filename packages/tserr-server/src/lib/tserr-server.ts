@@ -41,6 +41,7 @@ export const tserrPluginEvents = [
   'hasProject',
   'openProject',
   'closeProject',
+  'infoAtPosition',
 ] satisfies U2T<keyof TserrPluginEvents>;
 
 const doNothing = () => {
@@ -329,6 +330,12 @@ export function startServer(servePath: string, projectRoot: string, port = 0) {
     fixedErrors: (_pluginKey: string) => (errIds: FlatErrKey[]) => {
       emit('fixedErrors', errIds);
     },
+
+    infoAtPosition:
+      (_pluginKey: string) =>
+      (filename: string, line: number, char: number, info: string[]) => {
+        emit('infoAtPosition', _pluginKey, filename, line, char, info);
+      },
   } as const;
 
   function mkPluginInterface(plugin: TserrPlugin): TserrPluginApi {
