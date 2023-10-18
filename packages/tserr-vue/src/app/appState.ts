@@ -1,4 +1,4 @@
-import { reactive } from 'vue';
+import { nextTick, reactive } from 'vue';
 import {
   PluginName,
   ProjectPath,
@@ -56,6 +56,16 @@ export const positionInfo = reactive(
   >,
 );
 
+// uncomment when debugging with standalone
+// positionInfo['vscode' as PluginName] = {
+//     filename: '/home/hw/projects/others/Particle-Incremental/src/player.ts',
+//     line: 20,
+//     char: 7,
+//     info: [
+//       '\n<table><tr><td><span style=""></span></td><td><span style="">is declared but its value is never read.</span></td></tr><tr><td><span style="">\n\n\n```ts\nStr\n```\n\n\n</span></td></tr><tr></tr><tr><td><span style=""></span></td><td><span style="">is declared but its value is never read.</span></td></tr><tr><td><span style="">\n\n\n```ts\nStr\n```\n\n\n</span></td></tr><tr></tr><tr><td><span style=""></span></td><td><span style="">is declared but its value is never read.</span></td></tr><tr><td><span style="">\n\n\n```ts\nStr\n```\n\n\n</span></td></tr><tr></tr><tr><td><span style=""></span></td><td><span style="">is assigned a value but never used.</span></td></tr><tr><td><span style="">\n\n\n```ts\nStr\n```\n\n\n</span></td></tr><tr></tr><tr><td><span style=""></span></td><td><span style="">is declared but its value is never read.</span></td></tr><tr><td><span style="">\n\n\n```ts\nStr\n```\n\n\n</span></td></tr><tr></tr><tr><td><span style=""></span></td><td><span style="">is assigned a value but never used.</span></td></tr><tr><td><span style="">\n\n\n```ts\nStr\n```\n\n\n</span></td></tr><tr></tr></table>',
+//     ],
+// };
+
 function infoAtPosition(
   pluginName: string,
   filename: string,
@@ -63,7 +73,21 @@ function infoAtPosition(
   char: number,
   info: string[],
 ) {
-  positionInfo[PluginName.for(pluginName)] = { filename, line, char, info };
+  positionInfo[PluginName.for(pluginName)] = {
+    filename: '',
+    line: 0,
+    char: 0,
+    info: [],
+  };
+  nextTick(
+    () =>
+      (positionInfo[PluginName.for(pluginName)] = {
+        filename,
+        line,
+        char,
+        info,
+      }),
+  );
 }
 
 function handleAddPlugin(key: string, active: boolean, displayName: string) {

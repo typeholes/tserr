@@ -93,6 +93,7 @@ export function activate(context: ExtensionContext) {
           // const message = document.getText(editor.selection);
 
           const content = getHoverMarkDown(document.uri, range);
+
           return { contents: [content] };
         },
       },
@@ -100,6 +101,26 @@ export function activate(context: ExtensionContext) {
   );
 
   registerDiagnosticChangeHandler(tserr);
+
+  vscode.window.onDidChangeTextEditorSelection(async (editorEvent) => {
+    const { line, character } = editorEvent.selections[0].start;
+    const uri = editorEvent.textEditor.document.uri;
+    const fileName = editorEvent.textEditor.document.fileName;
+
+    const items = await vscode.commands.executeCommand<vscode.Hover[]>(
+      'vscode.executeHoverProvider',
+      uri,
+      editorEvent.selections[0].start,
+    );
+    const strings = items
+      .map((x) => x.contents)
+      .flat()
+      .map((x) =>
+        x instanceof vscode.MarkdownString ? x.value : x.toString(),
+      );
+
+    tserr?.send.infoAtPosition(fileName, line, character, strings);
+  });
 
   activatePlugins();
 
@@ -223,7 +244,7 @@ function getHoverMarkDown(uri: vscode.Uri, range: vscode.Range) {
   return hoverInfoToMarkdown(info);
 }
 
-let disposeDiagnosticsChangeHandler: vscode.Disposable | undefined;
+let disposeDiagnosticsChangeHandler: vscode.Disposable | undefined = {a: 1};
 
 function registerDiagnosticChangeHandler(plugin: TserrPluginApi) {
   disposeDiagnosticsChangeHandler?.dispose();
@@ -240,6 +261,7 @@ function registerDiagnosticChangeHandler(plugin: TserrPluginApi) {
             sources: {
               [plugin.pluginName]: {
                 [uri.fsPath]: [
+
                   {
                     code: `${diag.code}`,
                     raw: [diag.message],

@@ -27,7 +27,6 @@ export type TserrPluginEvents = {
   openProject: (projectPath: string) => void;
   closeProject: (projectPath: string) => void;
   infoAtPosition: (
-    PluginName: string,
     filename: string,
     line: number,
     char: number,

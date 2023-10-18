@@ -1,6 +1,7 @@
 
 <script setup lang="ts">
 import { appState } from '../appState';
+import TserrPlugin from './TserrPlugin.vue';
 </script>
 
 <template>

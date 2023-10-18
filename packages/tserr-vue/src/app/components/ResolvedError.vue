@@ -32,9 +32,14 @@ const counts = computed(() => {
 });
 
 const summary = computed(() => {
+  try {
   const files = Object.entries(props.errValue.sources)[0][1];
   const raw = Object.entries(files)[0][1][0].raw;
   return raw[raw.length - 1];
+  }
+  catch (_) {
+    return "";
+  }
 });
 
 // const spans = computed(() => {
@@ -98,7 +103,7 @@ function problemClick(e: MouseEvent) {
           v-for="(parsed, idx) of props.errKey"
           :key="idx"
         >
-          <div :style="{ minWidth: 'contents' }">{{ parsed.value.type }}</div>
+          <div :style="{ minWidth: 'contents' }">{{ parsed.value.type === 'unknownError' ? '&nbsp;' : parsed.value.type }}</div>
           <div cols="">
             <CodeGrid
               :blocks="Object.entries(parsed.value)"
