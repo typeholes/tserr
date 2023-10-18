@@ -21598,7 +21598,7 @@ const QLayout = createComponent({
     };
   }
 });
-const _imports_0 = "/assets/tsFire-c5db8e35.jpg";
+const _imports_0 = "/tserr/assets/tsFire-c5db8e35.jpg";
 function invertRecord(rec) {
   const ret = {};
   for (const k in rec) {
