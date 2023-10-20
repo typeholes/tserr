@@ -1,18 +1,22 @@
-import { computed, reactive } from 'vue';
+import { reactive } from 'vue';
 import { ErrParser, ErrDesc } from '../ErrDesc';
 import { assertEq } from '../utilts';
-import { State } from './state';
+import { State, mkState } from './state';
+
+const parsers = reactive(
+  new Map<string, Map<string, ErrParser<ErrDesc<string>>>>(),
+);
 
 export const ErrParserState: State<
   'ErrParser',
   [string, string],
   ErrParser<ErrDesc<string>>
-> = {
-  stateName: 'ErrParser',
-  get: getErrParser,
-  set: setErrParser,
-  keys: computed(() => [...parsers.keys()]),
-} as const;
+> = mkState(
+  'ErrParser',
+  parsers as unknown as Map<string, ErrParser<ErrDesc<string>>>,
+  getErrParser,
+  setErrParser,
+);
 
 function getErrParser<T extends string>(
   name: T,
@@ -42,7 +46,3 @@ function setErrParser<T extends string>(
   parsers.get(parser.name)!.set(parser.source, parser);
   return true;
 }
-
-const parsers = reactive(
-  new Map<string, Map<string, ErrParser<ErrDesc<string>>>>(),
-);

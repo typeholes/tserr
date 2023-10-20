@@ -19,7 +19,10 @@ import {
   ssrServeStaticContent,
 } from 'quasar/wrappers';
 import http from 'http';
-import {  Server } from 'socket.io';
+import { Server } from 'socket.io';
+
+import { serverStates, states } from '../src/app/state/states';
+import { initDummyStates } from 'src/app/state/dummyState';
 
 /**
  * Create your webserver and return its instance.
@@ -62,20 +65,22 @@ export const listen = ssrListen(async ({ app, port, isReady }) => {
 
   io.on('connection', (socket) => {
     socket.use((packet, next) => {
-      console.log(packet);
+      console.log('recieved', packet);
       next();
     });
+    socket.on('sendAllStates', () => {
+      console.log('got it');
+    });
+    serverStates(socket);
   });
-
-  io.on('greet', (name: string, fn: (s: string) => void) =>
-    fn(`${name} smells like cabbage`),
-  );
 
   const ret = server.listen(port, () => {
     if (process.env.PROD) {
       console.log('Server listening at port ' + port);
     }
   });
+
+  initDummyStates();
 
   return ret;
 });

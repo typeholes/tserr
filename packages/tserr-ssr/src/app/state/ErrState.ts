@@ -1,18 +1,15 @@
-import { computed, reactive } from 'vue';
+import { reactive } from 'vue';
 import { Err, ErrDesc } from '../ErrDesc';
-import { assertEq, shallowObjEq } from '../utilts';
-import { State } from './state';
+import { shallowObjEq } from '../utilts';
+import { State, mkState } from './state';
+
+const errors = reactive(new Map<string, Err<ErrDesc<string>>>());
 
 export const ErrState: State<
   'Err',
   [string, ...string[]],
   Err<ErrDesc<string>>
-> = {
-  stateName: 'Err',
-  get: getErr,
-  set: setErr,
-  keys: computed(() => [...errors.keys()]),
-} as const;
+> = mkState('Err', errors, getErr, setErr);
 
 function getErr<T extends string>(
   name: T,
@@ -46,7 +43,5 @@ function errKey(name: string, values: string[]) {
   }
   return name + nameSep + values.join(valueSep);
 }
-
-const errors = reactive(new Map<string, Err<ErrDesc<string>>>());
 
 export { errors as __private_errors };

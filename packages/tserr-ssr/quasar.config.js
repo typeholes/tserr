@@ -27,7 +27,7 @@ module.exports = configure(function (/* ctx */) {
     // app boot file (/src/boot)
     // --> boot files are part of "main.js"
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
-    boot: [],
+    boot: [{ path: 'clientSocket.ts', server: false }],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#css
     css: ['app.scss'],
@@ -73,8 +73,8 @@ module.exports = configure(function (/* ctx */) {
         viteConf.resolve.alias.vue = 'vue/dist/vue.esm-bundler.js';
       },
       viteVuePluginOptions: {
-         reactivityTransform: true,
-       },
+        reactivityTransform: true,
+      },
 
       // vitePlugins: [
       //   [ 'package-name', { ..options.. } ]
@@ -134,7 +134,7 @@ module.exports = configure(function (/* ctx */) {
       pwa: false,
 
       // manualStoreHydration: true,
-      // manualPostHydrationTrigger: true,
+      manualPostHydrationTrigger: true,
 
       prodPort: 3000, // The default port that the production server should use
       // (gets superseded if process.env.PORT is specified at runtime)

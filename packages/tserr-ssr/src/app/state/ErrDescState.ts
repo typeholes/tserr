@@ -1,14 +1,15 @@
-import { computed, reactive } from 'vue';
+import { reactive } from 'vue';
 import { ErrDesc } from '../ErrDesc';
 import { arrayEq, assertEq } from '../utilts';
-import { State } from './state';
+import { State, mkState } from './state';
 
-export const ErrDescState: State<'ErrDesc', [string], ErrDesc<string>> = {
-  stateName: 'ErrDesc',
-  get: getErrDesc,
-  set: setErrDesc,
-  keys: computed(() => [...descriptions.keys()]),
-} as const;
+const descriptions = reactive(new Map<string, ErrDesc>());
+
+export const ErrDescState: State<
+  'ErrDesc',
+  [string],
+  ErrDesc<string>
+> = mkState('ErrDesc', descriptions, getErrDesc, setErrDesc);
 
 function getErrDesc<T extends string>(name: T): ErrDesc<T> | undefined {
   const ret = descriptions.get(name);
@@ -31,5 +32,3 @@ function setErrDesc<T extends string>(desc: ErrDesc<T>): boolean {
   descriptions.set(desc.name, desc);
   return true;
 }
-
-const descriptions = reactive(new Map<string, ErrDesc>());

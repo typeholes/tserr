@@ -1,20 +1,22 @@
-import { ErrDescState } from './ErrDescState';
-import { ErrParserState } from './ErrParserState';
-import { ErrState } from './ErrState';
+import { states } from './states';
 
-ErrDescState.set({
-  name: 'foo',
-  keys: ['bar'],
-  template: `
+export function initDummyStates() {
+  states.ErrDesc.set({
+    name: 'foo',
+    keys: ['bar'],
+    template: `
 <div> bar: {{ err.values.bar }} </div>
 `,
-});
+  });
 
-ErrState.set({
-  name: 'foo',
-  values: { bar: '1' },
-});
+  states.Err.set({
+    name: 'foo',
+    values: { bar: '1' },
+  });
 
-ErrParserState.set({ name: 'foo', source: 'dummy', parse: (text) => [text] });
-
-export const dummy = 1;
+  states.ErrParser.set({
+    name: 'foo',
+    source: 'dummy',
+    parse: (text) => [text],
+  });
+}
