@@ -23,6 +23,7 @@ import { Server } from 'socket.io';
 
 import { serverStates, states } from '../src/app/state/states';
 import { initDummyStates } from 'src/app/state/dummyState';
+import { initTsErrorDescriptions } from 'src/app/tsErrs';
 
 /**
  * Create your webserver and return its instance.
@@ -72,6 +73,7 @@ export const listen = ssrListen(async ({ app, port, isReady }) => {
       console.log('got it');
     });
     serverStates(socket);
+    initTsErrorDescriptions();
   });
 
   const ret = server.listen(port, () => {

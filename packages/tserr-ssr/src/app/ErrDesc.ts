@@ -15,7 +15,7 @@ type _TupleOfString<T> = { [K in keyof T]: string };
 export type ErrParser<T extends ErrDesc> = {
   name: T['name'];
   source: string;
-  parse(text: string): _TupleOfString<T['keys']>;
+  parse(text: string): undefined | _TupleOfString<T['keys']>;
 };
 
 export const SyntaxErrorDesc = {
@@ -57,20 +57,3 @@ export function parseError<T extends ErrDesc>(
   return { name: desc.name, values: Object.fromEntries(entries) };
 }
 
-export const components: Record<
-  string,
-  {
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    current: { template: string; render?: Function };
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    prev: { template: string; render?: Function };
-  }
-> = reactive({
-  SyntaxError: {
-    current: {
-      template: SyntaxErrorDesc.template,
-      render: compile(SyntaxErrorDesc.template),
-    },
-    prev: { template: SyntaxErrorDesc.template, render: undefined },
-  },
-});

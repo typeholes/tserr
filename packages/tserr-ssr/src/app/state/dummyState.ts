@@ -1,3 +1,4 @@
+import { parseErrorMessage } from '../parse';
 import { states } from './states';
 
 export function initDummyStates() {
@@ -19,4 +20,9 @@ export function initDummyStates() {
     source: 'dummy',
     parse: (text) => [text],
   });
+
+  setTimeout(() => {
+    states.Err.set({ name: 'foo', values: { bar: '4' } });
+    parseErrorMessage("'dummy' expected.");
+  }, 5000);
 }

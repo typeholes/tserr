@@ -4,7 +4,6 @@ import { Socket as ServerSocket } from 'socket.io';
 import { ErrDescState } from './ErrDescState';
 import { ErrParserState } from './ErrParserState';
 import { ErrState } from './ErrState';
-import { Socket } from 'dgram';
 
 export const states = {
   ErrDesc: ErrDescState,
@@ -36,9 +35,6 @@ export function serverStates(server: ServerSocket) {
     }
   });
 
-  setTimeout(() => {
-    states.Err.set({ name: 'foo', values: { bar: '4' } });
-  }, 5000);
 }
 
 export let sendAllStates : undefined | (()=>void) = undefined;
