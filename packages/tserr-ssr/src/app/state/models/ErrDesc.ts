@@ -18,26 +18,6 @@ export type ErrParser<T extends ErrDesc> = {
   parse(text: string): undefined | _TupleOfString<T['keys']>;
 };
 
-export const SyntaxErrorDesc = {
-  name: 'SyntaxError',
-  keys: ['SyntaxError'],
-  template: `
-   <div> {{err.values.SyntaxError}} </div>
-    `,
-} as const;
-type SyntaxErrorDesc = typeof SyntaxErrorDesc;
-
-export const SyntaxErrorValue: Err<SyntaxErrorDesc> = {
-  name: 'SyntaxError',
-  values: { SyntaxError: 'Element is missing end tag' },
-};
-
-export const SyntaxErrorParser: ErrParser<SyntaxErrorDesc> = {
-  name: 'SyntaxError',
-  source: 'dummy',
-  parse: (text) => [text.replace(/^.*: */, '').replace(/\.$/, '')],
-};
-
 export function parseError<T extends ErrDesc>(
   desc: T,
   parser: ErrParser<T>,
@@ -57,3 +37,9 @@ export function parseError<T extends ErrDesc>(
   return { name: desc.name, values: Object.fromEntries(entries) };
 }
 
+export type Position = { line: number; char: number };
+export type Span = { start: Position; end: Position };
+export type ErrLocation = {
+  fileName: string;
+  span: Span;
+};

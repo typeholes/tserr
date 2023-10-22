@@ -1,23 +1,24 @@
 import { reactive } from 'vue';
-import { Err, ErrDesc } from '../ErrDesc';
+import { Err, ErrDesc } from './models/ErrDesc';
 import { shallowObjEq } from '../utilts';
 import { State, mkState } from './state';
 
-const errors = reactive(new Map<string, Err<ErrDesc<string>>>());
+const name = 'Err';
+const map = reactive(new Map<string, Err<ErrDesc<string>>>());
 
 export const ErrState: State<
   'Err',
   [string, ...string[]],
   Err<ErrDesc<string>>
-> = mkState('Err', errors, getErr, setErr);
+> = mkState({ name, map, toKey, get, set, remove });
 
-function getErr<T extends string>(
+function get<T extends string>(
   name: T,
   ...values: string[]
 ): Err<ErrDesc<T>> | undefined {
   const key = errKey(name, values);
 
-  const ret = errors.get(key);
+  const ret = map.get(key);
   if (ret === undefined) {
     return undefined;
   }
@@ -25,14 +26,19 @@ function getErr<T extends string>(
   return ret as never /*Err<ErrDesc<typeof ret.name>>*/;
 }
 
-function setErr<T extends string>(err: Err<ErrDesc<T>>): boolean {
+function set<T extends string>(err: Err<ErrDesc<T>>): boolean {
   const key = errKey(err.name, Object.values(err.values));
-  const existing = getErr(key);
+  const existing = get(key);
   if (existing) {
     return shallowObjEq(existing.values, err.values);
   }
-  errors.set(key, err);
+  map.set(key, err);
   return true;
+}
+
+function remove<T extends string>(err: Err<ErrDesc<T>>): boolean {
+  const key = toKey(err);
+  return map.delete(key);
 }
 
 const nameSep = String.fromCharCode(1);
@@ -44,4 +50,8 @@ function errKey(name: string, values: string[]) {
   return name + nameSep + values.join(valueSep);
 }
 
-export { errors as __private_errors };
+function toKey(u: Err<ErrDesc<string>>): string {
+  return errKey(u.name, Object.values(u.values));
+}
+
+export { map as __private_errors };

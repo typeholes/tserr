@@ -4,11 +4,15 @@ import { Socket as ServerSocket } from 'socket.io';
 import { ErrDescState } from './ErrDescState';
 import { ErrParserState } from './ErrParserState';
 import { ErrState } from './ErrState';
+import { ErrLocationState } from './ErrLocationState';
+
+// TODO: wrap remove methods like I do for set methods
 
 export const states = {
   ErrDesc: ErrDescState,
   ErrParser: ErrParserState,
   Err: ErrState,
+  ErrLocation: ErrLocationState,
 };
 
 export function serverStates(server: ServerSocket) {
@@ -34,10 +38,9 @@ export function serverStates(server: ServerSocket) {
       }
     }
   });
-
 }
 
-export let sendAllStates : undefined | (()=>void) = undefined;
+export let sendAllStates: undefined | (() => void) = undefined;
 
 export function clientStates(client: ClientSocket) {
   for (const state of Object.values(states)) {

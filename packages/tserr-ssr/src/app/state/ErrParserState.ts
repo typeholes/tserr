@@ -1,9 +1,10 @@
 import { reactive } from 'vue';
-import { ErrParser, ErrDesc } from '../ErrDesc';
+import { ErrParser, ErrDesc } from './models/ErrDesc';
 import { assertEq } from '../utilts';
-import { State, mkState } from './state';
+import { State, keySep, mkState } from './state';
 
-const parsers = reactive(
+const name = 'ErrParser';
+const map = reactive(
   new Map<string, Map<string, ErrParser<ErrDesc<string>>>>(),
 );
 
@@ -11,38 +12,49 @@ export const ErrParserState: State<
   'ErrParser',
   [string, string],
   ErrParser<ErrDesc<string>>
-> = mkState(
-  'ErrParser',
-  parsers as unknown as Map<string, ErrParser<ErrDesc<string>>>,
-  getErrParser,
-  setErrParser,
-);
+> = mkState({
+  name,
+  map: map as unknown as Map<string, ErrParser<ErrDesc<string>>>,
+  toKey: (u) => `${u.name}${keySep}${u.source}`,
+  get,
+  set,
+  remove,
+});
 
-function getErrParser<T extends string>(
-  name: T,
-  source: string,
+function get<T extends string>(
+  _name: T,
+  _source: string | undefined,
 ): ErrParser<ErrDesc<T>> | undefined {
-  const ret = parsers.get(name)?.get(source);
+  const [name, source] =
+    _source === undefined ? _name.split(keySep) : [_name, _source];
+  const ret = map.get(name)?.get(source);
   if (!ret) {
     return undefined;
   }
   assertEq(ret.name, name);
   assertEq(ret.source, source);
-  return ret as ErrParser<ErrDesc<typeof ret.name>>;
+  return ret as ErrParser<ErrDesc<typeof ret.name>> as never;
 }
 
-function setErrParser<T extends string>(
-  parser: ErrParser<ErrDesc<T>>,
-): boolean {
-  const existing = getErrParser(parser.name, parser.source);
+function set<T extends string>(parser: ErrParser<ErrDesc<T>>): boolean {
+  const existing = get(parser.name, parser.source);
   if (existing) {
     return false;
   }
 
-  if (!parsers.has(parser.name)) {
-    parsers.set(parser.name, new Map());
+  if (!map.has(parser.name)) {
+    map.set(parser.name, new Map());
   }
 
-  parsers.get(parser.name)!.set(parser.source, parser);
+  map.get(parser.name)!.set(parser.source, parser);
   return true;
+}
+
+function remove<T extends string>(parser: ErrParser<ErrDesc<T>>): boolean {
+  const existing = get(parser.name, parser.source);
+  if (!existing) {
+    return false;
+  }
+
+  return map.get(parser.name)?.delete(parser.source) ?? false;
 }

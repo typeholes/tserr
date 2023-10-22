@@ -1,18 +1,26 @@
 import { reactive } from 'vue';
-import { ErrDesc } from '../ErrDesc';
+import { ErrDesc } from './models/ErrDesc';
 import { arrayEq, assertEq } from '../utilts';
 import { State, mkState } from './state';
 
-const descriptions = reactive(new Map<string, ErrDesc>());
+const map = reactive(new Map<string, ErrDesc>());
+const name = 'ErrDesc';
 
 export const ErrDescState: State<
   'ErrDesc',
   [string],
   ErrDesc<string>
-> = mkState('ErrDesc', descriptions, getErrDesc, setErrDesc);
+> = mkState({
+  name,
+  map,
+  toKey: (u) => u.name,
+  get,
+  set,
+  remove,
+});
 
-function getErrDesc<T extends string>(name: T): ErrDesc<T> | undefined {
-  const ret = descriptions.get(name);
+function get<T extends string>(name: T): ErrDesc<T> | undefined {
+  const ret = map.get(name);
   if (ret === undefined) {
     return undefined;
   }
@@ -20,8 +28,8 @@ function getErrDesc<T extends string>(name: T): ErrDesc<T> | undefined {
   return ret as ErrDesc<typeof ret.name>;
 }
 
-function setErrDesc<T extends string>(desc: ErrDesc<T>): boolean {
-  const existing = getErrDesc(desc.name);
+function set<T extends string>(desc: ErrDesc<T>): boolean {
+  const existing = get(desc.name);
   if (existing) {
     if (arrayEq(existing.keys, desc.keys)) {
       existing.template = desc.template;
@@ -29,6 +37,10 @@ function setErrDesc<T extends string>(desc: ErrDesc<T>): boolean {
     }
     return false;
   }
-  descriptions.set(desc.name, desc);
+  map.set(desc.name, desc);
   return true;
+}
+
+function remove<T extends string>(desc: ErrDesc<T>): boolean {
+  return map.delete(desc.name);
 }
