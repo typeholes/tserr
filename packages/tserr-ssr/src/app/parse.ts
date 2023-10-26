@@ -4,21 +4,21 @@ import { states } from './state/states';
 // could optimize by putting the parsers in an object keyed by the message up to the first single quote
 
 export function parseErrorMessage(text: string) {
-  console.log('parsing', text);
-  for (const key of states.ErrParser.keys.value) {
-    const parser = states.ErrParser.get(key, 'tsc');
+  //console.log('parsing', text);
+  for (const parser of states.ErrParser.values('tsc')) {
     if (!parser) {
       continue;
     }
-    console.log(`trying ${parser.name}`);
+    console.log(parser);
+    //console.log(`trying ${parser.name}`);
     const parsed = parser.parse(text);
-    console.log('parsed', parsed);
+    //console.log('parsed', parsed);
     if (parsed !== undefined) {
-      const desc = states.ErrDesc.get(parser.name);
+      const desc = states.ErrDesc.getByKeys(parser.name);
       if (!desc) {
         continue;
       }
-      return states.Err.set({
+      return states.Err.add({
         name: parser.name,
         values: Object.fromEntries(desc.keys.map((k, i) => [k, parsed[i]])),
       });

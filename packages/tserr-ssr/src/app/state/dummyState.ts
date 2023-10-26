@@ -2,7 +2,7 @@ import { parseErrorMessage } from '../parse';
 import { states } from './states';
 
 export function initDummyStates() {
-  states.ErrDesc.set({
+  states.ErrDesc.add({
     name: 'foo',
     keys: ['bar'],
     template: `
@@ -10,19 +10,20 @@ export function initDummyStates() {
 `,
   });
 
-  states.Err.set({
+  states.Err.add({
     name: 'foo',
     values: { bar: '1' },
   });
 
-  states.ErrParser.set({
+  states.ErrParser.add({
     name: 'foo',
     source: 'dummy',
     parse: (text) => [text],
   });
 
-  setTimeout(() => {
-    states.Err.set({ name: 'foo', values: { bar: '4' } });
+  // setTimeout(() => {
+  setInterval(() => {
+    states.Err.add({ name: 'foo', values: { bar: '4' } });
     parseErrorMessage("'dummy' expected.");
   }, 5000);
 }

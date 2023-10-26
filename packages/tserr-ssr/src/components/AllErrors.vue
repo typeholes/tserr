@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { states } from 'src/app/state/states';
 import DynamicError from './DynamicError.vue';
+import { computed } from 'vue';
+
+const values = computed(() => states.Err.values());
 </script>
 
 <template>
   <div>
-    <div v-for="key in states.Err.keys.value" :key="key">
-      <DynamicError :err="states.Err.get(key)" />
+    <div v-for="(err, idx) in values" :key="idx">
+      <DynamicError :err="err" />
     </div>
   </div>
 </template>

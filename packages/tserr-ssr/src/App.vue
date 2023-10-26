@@ -5,11 +5,12 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import { useQuasar } from 'quasar';
-import { sendAllStates } from './app/state/states';
+import { getAllStates } from './boot/clientSocket';
 
 onMounted(() => {
   const $q = useQuasar();
   $q.onSSRHydrated!();
-  sendAllStates!();
+  console.log('hydrated');
+  getAllStates();
 });
 </script>

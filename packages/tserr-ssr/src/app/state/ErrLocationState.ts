@@ -1,8 +1,10 @@
-import { mkSimpleState, keySep } from './state';
+import { mkState } from './state';
 import { ErrLocation } from './models/ErrDesc';
 
-export const ErrLocationState = mkSimpleState(
-  'ErrLocation',
-  (u: ErrLocation) =>
-    `${u.fileName}${keySep}${u.span.start.line}${keySep}${u.span.start.char}${keySep}${u.span.end.line}${keySep}${u.span.end.line}`,
-);
+export const ErrLocationState = mkState('ErrLocation', (u: ErrLocation) => [
+    u.fileName,
+    u.span.start.line,
+    u.span.start.char,
+    u.span.end.line,
+    u.span.end.line,
+]);

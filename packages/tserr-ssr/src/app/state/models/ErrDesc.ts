@@ -1,4 +1,3 @@
-import { compile, reactive } from 'vue';
 
 export type ErrDesc<T extends string = string> = {
   name: T;

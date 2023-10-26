@@ -19,9 +19,9 @@ import {
   ssrServeStaticContent,
 } from 'quasar/wrappers';
 import http from 'http';
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 
-import { serverStates, states } from '../src/app/state/states';
+import { states } from '../src/app/state/states';
 import { initDummyStates } from 'src/app/state/dummyState';
 import { initTsErrorDescriptions } from 'src/app/tsErrs';
 
@@ -69,19 +69,24 @@ export const listen = ssrListen(async ({ app, port, isReady }) => {
       console.log('recieved', packet);
       next();
     });
-    socket.on('sendAllStates', () => {
-      console.log('got it');
-    });
     serverStates(socket);
-    initTsErrorDescriptions();
+    socket.on('sendAllStates', () => {
+      const allStates = Object.entries(states).map(([name, state]) => [
+        name,
+        state.values(),
+      ]);
+      socket.emit('allStates', Object.fromEntries(allStates));
+      console.log('allStates sent')
+    });
   });
 
   const ret = server.listen(port, () => {
-    if (process.env.PROD) {
-      console.log('Server listening at port ' + port);
-    }
+    // if (process.env.PROD) {
+    console.log('Server listening at port ' + port);
+    // }
   });
 
+  initTsErrorDescriptions();
   initDummyStates();
 
   return ret;
@@ -156,3 +161,24 @@ export const renderPreloadTag = ssrRenderPreloadTag((file) => {
 
   return '';
 });
+
+function serverStates(server: Socket) {
+  //console.log('in serverStates');
+  server.on('mutateState', (name: string, operation: string, arg: unknown) => {
+    if (!(name in states)) return;
+    const k = name as keyof typeof states;
+    states[k][operation as 'add'](arg as any);
+  });
+  for (const state of Object.values(states)) {
+    // eslint-disable-next-line @typescript-eslint/ban-types
+    state.onMutate.push((...args: unknown[]) => {
+      server.emit('mutateState', state.name, ...args);
+      //console.log('emit mutateState', state.name, ...args);
+    });
+  }
+
+  server.on('sendAllStates', () => {
+    //console.log('sending all states');
+    server.send('allStates', states);
+  });
+}
