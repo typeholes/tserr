@@ -76,7 +76,7 @@ export const listen = ssrListen(async ({ app, port, isReady }) => {
         state.values(),
       ]);
       socket.emit('allStates', Object.fromEntries(allStates));
-      console.log('allStates sent')
+      console.log('allStates sent');
     });
   });
 
@@ -172,7 +172,7 @@ function serverStates(server: Socket) {
   for (const state of Object.values(states)) {
     // eslint-disable-next-line @typescript-eslint/ban-types
     state.onMutate.push((...args: unknown[]) => {
-      server.emit('mutateState', state.name, ...args);
+      server.emit('mutateState', state.stateName, ...args);
       //console.log('emit mutateState', state.name, ...args);
     });
   }

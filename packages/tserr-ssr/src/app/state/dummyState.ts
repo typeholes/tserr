@@ -1,8 +1,9 @@
 import { parseErrorMessage } from '../parse';
-import { states } from './states';
+import { ErrLocation } from './models/ErrDesc';
+import { schema } from './states';
 
 export function initDummyStates() {
-  states.ErrDesc.add({
+  schema.ErrDesc.add({
     name: 'foo',
     keys: ['bar'],
     template: `
@@ -10,20 +11,30 @@ export function initDummyStates() {
 `,
   });
 
-  states.Err.add({
+  const err = {
     name: 'foo',
     values: { bar: '1' },
-  });
+  };
 
-  states.ErrParser.add({
+  schema.Err.add(err);
+
+  schema.ErrParser.add({
     name: 'foo',
     source: 'dummy',
     parse: (text) => [text],
   });
 
-  // setTimeout(() => {
-  setInterval(() => {
-    states.Err.add({ name: 'foo', values: { bar: '4' } });
-    parseErrorMessage("'dummy' expected.");
-  }, 5000);
+  const location : ErrLocation = { fileName: 'dummy.ts', span: { start: { line: 1, char :2}, end: { line: 3, char: 4}}};
+  schema.ErrLocation.add(location)
+
+   schema.ErrLocation.$.At.Err.add([location, err]);
+   const errorsAtLocation = schema.ErrLocation.$.At.Err(location); // Err<ErrDesc<string>>[]:
+   const _errorsInDummyFile = schema.ErrLocation.$.At.Err.values('dummy.ts'); // : [ErrLocation, Err<ErrDesc<string>>][]
+   const _errorsOnDummyFileLine1 = schema.ErrLocation.$.At.Err.values('dummy.ts', 1);
+
+    // setTimeout(() => {
+    setInterval(() => {
+      schema.Err.add({ name: 'foo', values: { bar: '4' } });
+      parseErrorMessage("'dummy' expected.");
+    }, 5000);
 }

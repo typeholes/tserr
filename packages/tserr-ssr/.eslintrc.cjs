@@ -10,6 +10,7 @@ module.exports = {
   parserOptions: {
     parser: require.resolve('@typescript-eslint/parser'),
     extraFileExtensions: ['.vue'],
+    warnOnUnsupportedTypeScriptVersion: true,
   },
 
   env: {

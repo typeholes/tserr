@@ -1,7 +1,29 @@
-export function mkState<N, T, K extends readonly PropertyKey[]>(
-  name: N,
-  toKeys: (t: T) => K,
-) {
+// type NoInfer<T> = [T][T extends T ? 0 : never];
+export type Evaluate<t> = t; // { [k in keyof t]: t[k] } & unknown;
+
+export type State<N extends string, T, K extends readonly PropertyKey[]> = {
+  stateName: N;
+  add: (t: T) => void;
+  get: (t: T) => T | undefined;
+  getByKeys: (...keys: K) => T | undefined;
+  remove: (t: T) => boolean;
+  values: (...keys: Partial<K>) => T[];
+  log: () => void;
+  merge: (a: T, b: T) => T;
+  toKeys: (t: T) => K;
+  onMutate: ((
+    action: string,
+    arg: T,
+    existing: T | undefined,
+    merged?: T,
+  ) => void)[];
+};
+
+export function mkState<
+  const N extends string,
+  T,
+  const K extends readonly PropertyKey[],
+>(stateName: N, toKeys: (t: T) => K): State<N, T, K> {
   const obj: Record<PropertyKey, any> = {};
   function getParent(t: T): [PropertyKey, Record<PropertyKey, [T]>] {
     const keys = toKeys(t);
@@ -12,12 +34,12 @@ export function mkState<N, T, K extends readonly PropertyKey[]>(
     }
     return [keys[keys.length - 1], at];
   }
-  const state = {
-    name,
+  const state: State<N, T, K> = {
+    stateName: stateName,
     add: (t: T) => {
       const [k, at] = getParent(t);
       //console.log(k, at);
-      const existing = (at[k]??[])[0];
+      const existing = (at[k] ?? [])[0];
       // if (existing) { console.log({ t, existing, atK: at[k] }); }
       at[k] = [existing ? state.merge(existing, t) : t];
       for (const on of state.onMutate) {
@@ -43,11 +65,13 @@ export function mkState<N, T, K extends readonly PropertyKey[]>(
       for (const on of state.onMutate) {
         on('remove', t, existing);
       }
+      return existing !== undefined;
     },
-    values: (...keys: PropertyKey[]) => {
+    values: (...keys: Partial<K>) => {
       const ret: T[] = [];
       let at: Record<PropertyKey, any> = obj;
       for (const k of keys) {
+        if (k === undefined) break;
         at = at[k];
       }
       getObjects(at, ret);
@@ -56,6 +80,7 @@ export function mkState<N, T, K extends readonly PropertyKey[]>(
     log: () => console.log(JSON.stringify(obj, null, 2)),
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     merge: (a: T, b: T) => a,
+    toKeys,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onMutate: [] as ((
       action: string,
