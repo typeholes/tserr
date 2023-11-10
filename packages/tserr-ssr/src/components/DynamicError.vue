@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { Err } from 'src/app/state/models/ErrDesc';
-import { ErrDescState } from 'src/app/state/ErrDescState';
+import { schema, Err } from '../../../tserr-common/src/index';
 import { compile, computed } from 'vue';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const props = defineProps<{ err: Err<any> | undefined }>();
 
-const desc = ErrDescState.getByKeys(props.err?.name);
+const desc = schema.ErrDesc.getByKeys(props.err?.name);
 
 const component = computed(() =>
   desc === undefined

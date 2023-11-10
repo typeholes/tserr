@@ -1,15 +1,21 @@
 <script setup lang="ts">
-import { states } from 'src/app/state/states';
+import { schema } from '../../../tserr-common/src/index';
 import DynamicError from './DynamicError.vue';
 import { computed } from 'vue';
 
-const values = computed(() => states.Err.values());
+const values = computed(() => schema.Err.values());
+
+const locations = computed(() => schema.ErrLocation.values());
 </script>
 
 <template>
   <div>
     <div v-for="(err, idx) in values" :key="idx">
       <DynamicError :err="err" />
+    </div>
+    <hr />
+    <div v-for="(location, idx) in locations" :key="idx">
+      Locations: {{ location }} err: {{ schema.ErrLocation.$.At.Err(location) }}
     </div>
   </div>
 </template>

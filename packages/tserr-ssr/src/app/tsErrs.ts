@@ -1,5 +1,5 @@
 import messages from './diagnosticMessages.json';
-import { states } from './state/states';
+import { schema } from '@typeholes/tserr-common';
 
 const source = 'tsc';
 
@@ -25,9 +25,9 @@ export function initTsErrorDescriptions() {
     }
     //console.log('keys', err.keys, err.keys.length);
     if (err.keys.length === 1) {
-      states.ErrDesc.add({ name: err.name, keys: [] });
+      schema.ErrDesc.add({ name: err.name, keys: [] });
       const key = err.keys[0];
-      states.ErrParser.add({
+      schema.ErrParser.add({
         name: err.name,
         source,
         parse: (text) => (text.replace(/\.$/, '') === key ? [] : undefined),
@@ -47,20 +47,20 @@ export function initTsErrorDescriptions() {
       keys.push(key);
       parseParts.push(key);
     }
-    states.ErrDesc.add({
+    schema.ErrDesc.add({
       name: err.name,
       keys,
       template: `<div> ${err.name}: {{ err.values }} </div> `,
     });
-    states.ErrParser.add({
+    schema.ErrParser.add({
       name: err.name,
       source,
       parse: mkParseFn(parseParts),
     });
   }
 
-  states.ErrParser.log();
-  console.log('puking', JSON.stringify(states.ErrParser.values(), null, 2));
+  schema.ErrParser.log();
+  // console.log('puking', JSON.stringify(states.ErrParser.values(), null, 2));
   // throw 'a fit';
 }
 

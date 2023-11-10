@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { states } from '../app/state/states';
+import { schema } from '../../../tserr-common/src/index';
 
 import { computed } from 'vue';
 
-const values = computed(() => states.ErrDesc.values(), {
+const values = computed(() => schema.ErrDesc.values(), {
   onTrack(event) {
     console.log('trigger', event);
   },

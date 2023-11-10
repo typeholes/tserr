@@ -21,9 +21,10 @@ import {
 import http from 'http';
 import { Server, Socket } from 'socket.io';
 
-import { states } from '../src/app/state/states';
+import { schema } from '@typeholes/tserr-common';
 import { initDummyStates } from 'src/app/state/dummyState';
 import { initTsErrorDescriptions } from 'src/app/tsErrs';
+import { State } from '../../tserr-common/src/lib/schema/state';
 
 /**
  * Create your webserver and return its instance.
@@ -71,12 +72,34 @@ export const listen = ssrListen(async ({ app, port, isReady }) => {
     });
     serverStates(socket);
     socket.on('sendAllStates', () => {
-      const allStates = Object.entries(states).map(([name, state]) => [
+      const allStates = Object.entries(schema).map(([name, state]) => [
         name,
         state.values(),
       ]);
       socket.emit('allStates', Object.fromEntries(allStates));
       console.log('allStates sent');
+
+      for (const state of Object.values(schema)) {
+        for (const _alias in state.$) {
+          const alias = _alias as keyof typeof state.$;
+          const relatedStates = Object.entries(state.$[alias])
+            .map(([name, state]) =>
+              typeof state === 'object' &&
+              state &&
+              'values' in state &&
+              typeof state.values === 'function'
+                ? [name, (state as any).values()]
+                : undefined,
+            )
+            .filter((x) => x !== undefined && x.length > 0);
+          socket.emit(
+            'AllRelatedStates',
+            state.stateName,
+            alias,
+            relatedStates,
+          );
+        }
+      }
     });
   });
 
@@ -165,20 +188,51 @@ export const renderPreloadTag = ssrRenderPreloadTag((file) => {
 function serverStates(server: Socket) {
   //console.log('in serverStates');
   server.on('mutateState', (name: string, operation: string, arg: unknown) => {
-    if (!(name in states)) return;
-    const k = name as keyof typeof states;
-    states[k][operation as 'add'](arg as any);
+    if (!(name in schema)) return;
+    const k = name as keyof typeof schema;
+    schema[k][operation as 'add'](arg as any);
   });
-  for (const state of Object.values(states)) {
+  for (const state of Object.values(schema)) {
     // eslint-disable-next-line @typescript-eslint/ban-types
     state.onMutate.push((...args: unknown[]) => {
       server.emit('mutateState', state.stateName, ...args);
       //console.log('emit mutateState', state.name, ...args);
     });
+    for (const _alias in state.$) {
+      const alias = _alias as keyof typeof state.$;
+      for (const _entry of Object.entries(state.$[alias])) {
+        const entry = _entry as [string, State<string, any, PropertyKey[]>];
+        const [relatedName, related] = entry;
+        console.log({ alias, related, onMutate: related.onMutate });
+        if (related.onMutate === undefined) {
+          console.log(
+            'skipping mutation listener',
+            alias,
+            relatedName,
+            related.onMutate,
+            { related },
+          );
+          continue;
+        }
+        console.log('adding mutation listiner to related');
+        related.onMutate.push((...args: unknown[]) => {
+          console.log({ alias, state, related });
+          server.emit(
+            'mutateRelatedState',
+            state.stateName,
+            alias,
+            relatedName,
+            ...args,
+          );
+        });
+      }
+    }
+    console.log(schema.ErrLocation.$.At.Err.onMutate.map(x => `${x}`));
   }
 
-  server.on('sendAllStates', () => {
-    //console.log('sending all states');
-    server.send('allStates', states);
-  });
+  // Why was this here?
+  // server.on('sendAllStates', () => {
+  //   //console.log('sending all states');
+  //   server.send('allStates', schema);
+  // });
 }

@@ -20,10 +20,10 @@ export type State<N extends string, T, K extends readonly PropertyKey[]> = {
 };
 
 export function mkState<
-  const N extends string,
+  /*const*/ N extends string,
   T,
-  const K extends readonly PropertyKey[],
->(stateName: N, toKeys: (t: T) => K): State<N, T, K> {
+  /*const*/ K extends readonly PropertyKey[],
+>(stateName: N, toKeys: (t: T) => K, clonable = true): State<N, T, K> {
   const obj: Record<PropertyKey, any> = {};
   function getParent(t: T): [PropertyKey, Record<PropertyKey, [T]>] {
     const keys = toKeys(t);
@@ -36,7 +36,8 @@ export function mkState<
   }
   const state: State<N, T, K> = {
     stateName: stateName,
-    add: (t: T) => {
+    add: (origT: T) => {
+      const t = clonable ? structuredClone(origT) : {...origT};
       const [k, at] = getParent(t);
       //console.log(k, at);
       const existing = (at[k] ?? [])[0];
@@ -49,12 +50,14 @@ export function mkState<
     },
     get: (t: T): T | undefined => {
       const [k, at] = getParent(t);
+      if (at === undefined || at[k] === undefined) return undefined;
       return at[k][0];
     },
     getByKeys: (...keys: K) => {
       let at: Record<PropertyKey, any> = obj;
       for (const k of keys) {
         at = at[k];
+        if (at === undefined) return undefined;
       }
       return at[0] as T | undefined;
     },
@@ -73,6 +76,8 @@ export function mkState<
       for (const k of keys) {
         if (k === undefined) break;
         at = at[k];
+        if (at == undefined) return [];
+
       }
       getObjects(at, ret);
       return ret;
