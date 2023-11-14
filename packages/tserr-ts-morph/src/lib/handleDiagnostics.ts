@@ -13,14 +13,28 @@ import {
 import { FunctionDeclaration, TypeAliasDeclaration } from 'ts-morph';
 import { MethodDeclaration } from 'ts-morph';
 import { ClassDeclaration } from 'ts-morph';
-import {
-  TserrPlugin,
-  TserrPluginApi,
-  semanticErrorIdentifiers,
-} from '@typeholes/tserr-server';
 import { group } from './util.js';
-import { Err, FlatErr, flattenErr, parseError } from '@typeholes/tserr-common';
-import { join as joinPath } from 'path';
+import {
+  ErrLocation,
+  ProjectDesc,
+  parseTsErrorMessage,
+  schema as origSchema,
+  Schema,
+} from '@typeholes/tserr-common';
+
+let schema = origSchema;
+
+export function setSchema(newSchema: Schema) {
+  schema = newSchema;
+
+  schema.Project.onMutate.push((_action, arg, existing, merged) => {
+    const project = merged ?? arg;
+    if (existing?.open === project.open) {
+      return;
+    }
+    (project.open ? openProject : closeProject)(project);
+  });
+}
 
 type Declaration =
   | VariableDeclaration
@@ -38,38 +52,14 @@ const declarationKinds = [
 
 const projects: Record<string, Project> = {};
 
-let tserrApi: TserrPluginApi | undefined = undefined;
-
-export const plugin: TserrPlugin = {
-  key: 'ts-morph',
-  displayName: 'ts-morph',
-  register(api) {
-    tserrApi = api;
-    api.on.openProject(openProject);
-    api.on.closeProject(closeProject);
-
-    api.addProjectEventHandlers(processFileEvents);
-  },
-};
-
-function closeProject(path: string) {
-  const tsConfigFilePath = path;
+function closeProject(projectDesc: ProjectDesc) {
+  const tsConfigFilePath = projectDesc.path + '/' + projectDesc.filename;
   if (tsConfigFilePath in projects) {
     delete projects[tsConfigFilePath];
   }
 }
-function openProject(path: string) {
-  if (!tserrApi) {
-    return;
-  }
-  const projectRoot = tserrApi.getProjectRoot();
-  const tsConfigFilePath = path.startsWith(projectRoot)
-    ? path
-    : joinPath(projectRoot, path);
-  if (tsConfigFilePath in projects) {
-    return;
-  }
-  console.log({ tsConfigFilePath });
+function openProject(projectDesc: ProjectDesc) {
+  const tsConfigFilePath = projectDesc.path + '/' + projectDesc.filename;
 
   projects[tsConfigFilePath] = new Project({
     compilerOptions: {
@@ -83,7 +73,9 @@ function openProject(path: string) {
   );
 }
 
-function processFileEvents(events: { type: string; filePath: string }[]) {
+export function processFileEvents(
+  events: { type: string; filePath: string }[],
+) {
   for (const tsConfigFilePath in projects) {
     const project = projects[tsConfigFilePath];
 
@@ -114,16 +106,9 @@ function processFileEvents(events: { type: string; filePath: string }[]) {
       }
 
       for (const fileName in diagnostics) {
-        const payload: FlatErr[] = [];
         for (const diagnostic of diagnostics[fileName]) {
-          const resolved = handleError(diagnostic, fileName, tsConfigFilePath);
-          if (resolved) {
-            // console.log(resolved);
-
-            payload.push(...resolved);
-          }
+          handleError(diagnostic, fileName, tsConfigFilePath);
         }
-        tserrApi?.send.resolvedErrors(fileName, payload);
       }
 
       // project.getSourceFiles().forEach((file) => {
@@ -135,66 +120,45 @@ function processFileEvents(events: { type: string; filePath: string }[]) {
 
 function handleError(
   diagnostic: Diagnostic,
-  fileName: string,
+  _fileName: string,
   tsConfigFilePath: string,
-): FlatErr[] {
-  function fakeParsed(e: (typeof err)[0]['parsed'][0]): FlatErr['parsed'][0] {
-    return { depth: 0, value: e };
-  }
-
+): void {
   const sourceFile = diagnostic.getSourceFile();
+
   if (sourceFile === undefined) {
-    const err = diagnosticToErr(diagnostic);
-
-    return [
-      {
-        sources: {
-          [tserrApi!.pluginName]: {
-            [tsConfigFilePath]: [
-              {
-                code: err[0].code.toString(),
-                raw: err.map((e) => e.lines).flat(),
-                span: {
-                  start: { line: 0, char: 0 },
-                  end: { line: 0, char: 0 },
-                },
-              },
-            ],
-          },
-        },
-        parsed: err.map((e) => e.parsed.map(fakeParsed)).flat(),
-      },
-    ];
+    const loc: ErrLocation = {
+      fileName: tsConfigFilePath,
+      span: { start: { line: 0, char: 0 }, end: { line: 0, char: 0 } },
+    };
+    const err = diagnosticToErr(diagnostic, loc);
+    return;
   }
 
-  const pos = diagnostic.getStart();
-  if (pos === undefined) {
-    return [];
+  const startPos = diagnostic.getStart();
+  if (startPos === undefined) {
+    return;
   }
+  const endPos = diagnostic.getLength() ?? 0 + startPos;
 
-  const fromNode = getDeepestNode(sourceFile, pos);
-  if (fromNode === undefined) {
-    return [];
-  }
+  const loc = mkLoc(sourceFile, startPos, endPos);
 
-  let lineNode = fromNode;
-  while (!lineNode.isFirstNodeOnLine() || lineNode.getChildCount() === 0) {
-    const parent = lineNode.getParent();
-    if (!parent) break;
-    lineNode = parent;
-  }
+  // const fromNode = getDeepestNode(sourceFile, startPos);
+  // if (fromNode === undefined) {
+  //   return ;
+  // }
 
-  const lineNodeSrc = lineNode.getText().trim();
+  // let lineNode = fromNode;
+  // while (!lineNode.isFirstNodeOnLine() || lineNode.getChildCount() === 0) {
+  //   const parent = lineNode.getParent();
+  //   if (!parent) break;
+  //   lineNode = parent;
+  // }
 
-  const fromType = unaliasType(fromNode.getType());
+  // const lineNodeSrc = lineNode.getText().trim();
 
-  const err = diagnosticToErr(diagnostic);
+  // const fromType = unaliasType(fromNode.getType());
 
-  err.forEach((e) => {
-    e.src = lineNodeSrc;
-  });
-
-  const resolved = resolveError(fromNode, err);
+  diagnosticToErr(diagnostic, loc);
 
   /*
   resolved.forEach((err) =>
@@ -209,8 +173,6 @@ function handleError(
     )
   );
   */
-
-  return resolved;
 
   // const childType = fromNode.getType();
 
@@ -229,140 +191,6 @@ function handleError(
   //       diagnostic.getMessageText()
   //    );
   // }
-}
-
-function resolveError(fromNode: Node, err: Err): FlatErr[] {
-  const flattened = flattenErr(tserrApi!.pluginName, err);
-  const refined = refineErrror(flattened, fromNode);
-  refined.forEach((flat) => {
-    flat.parsed.forEach((p) => {
-      createSupplement(p, fromNode);
-      createFixes(p, fromNode);
-    });
-  });
-  return refined;
-}
-
-let maxFixId = 0;
-function mkFix(
-  description: string,
-  fn: () => void,
-): [fixId: number, fixDescription: string, fixFn: () => void] {
-  return [maxFixId++, description, fn];
-}
-function createFixes(e: FlatErr['parsed'][number], fromNode: Node) {
-  /*
-  const fixes: [fixId: number, fixDescription: string, fixFn: () => void][] =
-    [];
-  const id = e[0];
-  const parsed = e[2];
-
-  const sourceFile = fromNode.getSourceFile();
-
-  if (parsed.type === 'excessProperty') {
-    if (fromNode.getText() === parsed.key) {
-      const parent = fromNode.getParentIfKind(SyntaxKind.PropertyAssignment);
-      if (parent) {
-        const fixNode = parent;
-        fixes.push([
-          maxFixId++,
-          `remove property ${parsed.key}`,
-          () => {
-            console.log('removing property assignment ${parsed.key}');
-            fixNode.remove();
-            sourceFile.saveSync();
-          },
-        ]);
-        const objectLiteral = parent.getParentIfKind(
-          SyntaxKind.ObjectLiteralExpression
-        );
-        if (objectLiteral) {
-          const fixNode = objectLiteral;
-          fixes.push([
-            maxFixId++,
-            'add cast',
-            () => {
-              fixNode.replaceWithText(
-                objectLiteral.getFullText() + ' as ' + parsed.to
-              );
-              sourceFile.save();
-            },
-          ]);
-        }
-      }
-    }
-  }
-  tserrApi?.send.fixes({ [id]: fixes });
-  */
-}
-
-function createSupplement(e: FlatErr['parsed'][number], fromNode: Node) {
-  /*
-  const id = e[0];
-  const parsed = e[2];
-  if (parsed.type === 'aliasSelfReference' || parsed.type === 'selfReference') {
-    const path = findSelfReferences(fromNode);
-    if (path) {
-      const pathText = path
-        .reverse()
-        .map(([x]) => nodeToLineText(x))
-        .join('\n');
-      // console.log('self ref: \n', pathText);
-      tserrApi?.send.supplement(id, pathText);
-      // debugger;
-    }
-  }
-  /*
-   const parsed = traverseErr((e) => {
-      return e.parsed.map((error, i) => {
-         console.log(e.lines[i]);
-         if (
-            errorTypes.selfReference.allows(error) ||
-            errorTypes.aliasSelfReference.allows(error)
-         ) {
-            const path = findSelfReferences(fromNode);
-            if (path) {
-               const pathText = path
-                  .reverse()
-                  .map(([x, _]) => nodeToLineText(x))
-                  .join('\n');
-               console.log('self ref: \n', pathText);
-               // debugger;
-            }
-            return { error, path: path?.map((x) => x.map((y) => y.getText())) };
-         }
-         if (errorTypes.notAssignable.allows(error)) {
-            const parent = fromNode.getFirstAncestorByKind(
-               SyntaxKind.VariableDeclaration
-            );
-            if (parent === undefined) {
-               return { error };
-            }
-
-            // const initializer = parent.getInitializer();
-            const expr = parent.getInitializer();
-
-            const exprType = unaliasType(expr?.getType()!);
-            const parentType = unaliasType(parent.getType());
-            if (exprType === undefined) {
-               return { error };
-            }
-            console.log(parentType.getText(), exprType.getText());
-            if (
-               parentType instanceof TypeNode &&
-               exprType instanceof TypeNode
-            ) {
-               // const d = diff(parentType.getStructure(), exprType);
-               // console.log(d);
-            }
-            // debugger;
-            return { error };
-         } else {
-            return { error };
-         }
-      });
-   })(err);
-   */
 }
 
 function getDeepestNode(file: SourceFile, pos: number): Node | undefined {
@@ -408,9 +236,29 @@ function unaliasType(type: Type): Type | TypeNode {
   return decl.getTypeNode() ?? type;
 }
 
-function diagnosticToErr(diagnostic: Diagnostic): Err {
+function mkLoc(
+  sourceFile: SourceFile,
+  startPos: number,
+  endPos: number,
+): ErrLocation {
+  const fileName = sourceFile.getFilePath().toString();
+  const start = sourceFile.getLineAndColumnAtPos(startPos);
+  const end = sourceFile.getLineAndColumnAtPos(endPos);
+
+  return {
+    fileName,
+    span: {
+      start: { line: start.line, char: start.column },
+      end: { line: end.line, char: end.column },
+    },
+  };
+}
+function diagnosticToErr(
+  diagnostic: Diagnostic,
+  defaultLoc: ErrLocation,
+): void {
   const fileName =
-    diagnostic.getSourceFile()?.getFilePath().toString() ?? 'unknown';
+    diagnostic.getSourceFile()?.getFilePath().toString() ?? defaultLoc.fileName;
   const code = diagnostic.getCode();
   let line = diagnostic.getLineNumber() ?? 0;
   let endLine = line;
@@ -419,207 +267,179 @@ function diagnosticToErr(diagnostic: Diagnostic): Err {
   const message = diagnostic.getMessageText();
 
   const sourceFile = diagnostic.getSourceFile();
-  if (sourceFile) {
-    const _start = sourceFile.getLineAndColumnAtPos(start);
-    const _end = sourceFile.getLineAndColumnAtPos(end);
-    line = _start.line;
-    start = _start.column;
-    endLine = _end.line;
-    end = _end.column;
-  }
+  const loc = sourceFile ? mkLoc(sourceFile, start, end) : defaultLoc;
+  schema.ErrLocation.add(loc);
 
   if (typeof message === 'string') {
     const lines = message.split('\n');
-    const parsed = lines.map(parseError);
-    return [
-      {
-        code: code.toString(),
-        fileName,
-        span: {
-          start: { line: line, char: start },
-          end: { line: endLine, char: end },
-        },
-        parsed,
-        lines,
-        children: [],
-      },
-    ];
-  }
-
-  return DiagnosticMessageChainToErr(
-    message,
-    line,
-    endLine,
-    start,
-    end,
-    fileName,
-  );
-}
-
-function DiagnosticMessageChainToErr(
-  chain: DiagnosticMessageChain | undefined,
-  line: number,
-  endLine: number,
-  start: number,
-  end: number,
-  fileName: string,
-): Err {
-  if (chain === undefined) {
-    return [];
-  }
-  const code = chain.getCode();
-  const lines = chain.getMessageText().split('\n');
-  const parsed = lines.map(parseError);
-  const next = chain.getNext() ?? [];
-  const children = next
-    .map((c) =>
-      DiagnosticMessageChainToErr(c, line, endLine, start, end, fileName),
-    )
-    .flat();
-  return [
-    {
-      code: code.toString(),
-      fileName,
-      span: {
-        start: { line: line, char: start },
-        end: { line: endLine, char: end },
-      },
-      parsed,
-      lines,
-      children,
-    },
-  ];
-}
-
-function getDeclarationAncestor(n: Node | undefined) {
-  if (n === undefined) {
-    return undefined;
-  }
-  const decl = n
-    .getAncestors()
-    .find((a) => declarationKinds.includes(a.getKind()));
-  if (decl === undefined) {
-    return undefined;
-  }
-  return decl as Declaration;
-}
-
-function IndirectReferencePath(
-  target: Node,
-  check: (readonly [Node, Declaration | undefined])[],
-): undefined | [Node, Declaration][] {
-  const top = check[check.length - 1];
-  const decl = top[1];
-  if (decl === undefined) {
-    return undefined;
-  }
-  const backRefs = decl.findReferencesAsNodes();
-  if (backRefs.length === 0) {
-    return undefined;
-  }
-  if (backRefs.some((b) => b.getAncestors().includes(target))) {
-    return check as [Node, Declaration][];
-  }
-  for (const ref of backRefs) {
-    const path: undefined | [Node, Declaration][] = IndirectReferencePath(
-      target,
-      [...check, [ref, getDeclarationAncestor(ref)]],
-    );
-    if (path !== undefined) {
-      return path;
-    }
-  }
-  return undefined;
-}
-
-function findSelfReferences(fromNode: Node) {
-  const parent = getDeclarationAncestor(fromNode);
-  if (parent === undefined) {
-    return undefined;
-  }
-  const refs = parent
-    .findReferencesAsNodes()
-    .map((r) => [r, getDeclarationAncestor(r)] as const);
-
-  // console.log(refs.map((x) => nodeToLineText(x[0])));
-
-  for (const ref of refs) {
-    const path = IndirectReferencePath(parent, [ref]);
-    if (path !== undefined) {
-      return path;
-    }
-  }
-  return undefined;
-}
-
-function nodeToLineText(n: Node) {
-  const line = n.getStartLineNumber();
-  return `${line}: ${n.getSourceFile().getFullText().split('\n')[line - 1]}`;
-}
-
-function checkEmptyObject(project: Project) {
-  const kinds = [
-    SyntaxKind.VariableDeclaration,
-    SyntaxKind.FunctionDeclaration,
-    SyntaxKind.TypeAliasDeclaration,
-  ];
-  project.getSourceFiles().forEach((file) => {
-    const typeEmptyObject = file.getDescendants().filter((node) => {
-      if (!kinds.includes(node.getKind())) {
-        return false;
-      }
-      const type = Node.isFunctionDeclaration(node)
-        ? node.getReturnType()
-        : node.getType();
-      return (
-        type.isObject() &&
-        type.getApparentProperties().length === 0 &&
-        node.getKind() !== SyntaxKind.MappedType
-      );
-    });
-    console.log(typeEmptyObject.map(nodeToLineText));
-  });
-}
-
-// potential workaround for not having code specific ts-expect-error
-// https://github.com/microsoft/TypeScript/issues/19139#issuecomment-689824823
-function checkIgnoreTSC(project: Project) {
-  project.getSourceFiles().forEach((file) => {
-    console.log(`checking ignore TSC for file ${file.getFilePath()}`);
-
-    file.getDescendantsOfKind(SyntaxKind.AsExpression).forEach((expr) => {
-      const castText = expr.getTypeNode()?.getText() ?? 'no type node';
-      const holdText = expr.getFullText();
-      const exprText = expr.getExpression().getFullText();
-      console.log(castText);
-      const exprLineNumber = expr.getEndLineNumber();
-      if (castText.match(/^ignore_TSC[0-9]+$/)) {
-        const code = castText.slice(10);
-        const replacedWith = expr.replaceWithText(
-          `${exprText} /*${castText}*/`,
+    for (const line of lines) {
+      const err = parseTsErrorMessage(schema, line);
+      if (!err) {
+        throw (
+          'todo: handle undefined ( return when no parser succeeds )\n' + line
         );
-
-        const err = file
-          .getPreEmitDiagnostics()
-          .find((diagnostic) => diagnostic.getLineNumber() === exprLineNumber);
-        if (err === undefined) {
-          console.log(`No error found at line: ${exprLineNumber} ${castText})`);
-        } else {
-          const errCode = err.getCode().toString();
-          if (errCode !== code) {
-            console.log(
-              `Incorrect error ${errCode} vs ${code} at line: ${exprLineNumber} ${castText})`,
-            );
-          }
-        }
-        replacedWith.replaceWithText(holdText);
       }
-    });
-  });
-}
+      schema.ErrLocation.$.At.Err.add([loc, err]);
+    }
+  } else {
+    DiagnosticMessageChainToErr(message, loc);
+  }
 
-function refineErrror(err: FlatErr, fromNode: Node): FlatErr[] {
-  return [err];
+  function DiagnosticMessageChainToErr(
+    chain: DiagnosticMessageChain | undefined,
+    loc: ErrLocation,
+  ): void {
+    if (chain === undefined) {
+      return;
+    }
+    const code = chain.getCode();
+    const lines = chain.getMessageText().split('\n');
+    for (const line of lines) {
+      const err = parseTsErrorMessage(schema, line);
+      if (!err) {
+        throw (
+          'todo: handle undefined ( return when no parser succeeds )\n' + line
+        );
+      }
+      schema.ErrLocation.$.At.Err.add([loc, err]);
+    }
+
+    chain.getNext()?.forEach((c) => DiagnosticMessageChainToErr(c, loc));
+  }
+
+  function getDeclarationAncestor(n: Node | undefined) {
+    if (n === undefined) {
+      return undefined;
+    }
+    const decl = n
+      .getAncestors()
+      .find((a) => declarationKinds.includes(a.getKind()));
+    if (decl === undefined) {
+      return undefined;
+    }
+    return decl as Declaration;
+  }
+
+  function IndirectReferencePath(
+    target: Node,
+    check: (readonly [Node, Declaration | undefined])[],
+  ): undefined | [Node, Declaration][] {
+    const top = check[check.length - 1];
+    const decl = top[1];
+    if (decl === undefined) {
+      return undefined;
+    }
+    const backRefs = decl.findReferencesAsNodes();
+    if (backRefs.length === 0) {
+      return undefined;
+    }
+    if (backRefs.some((b) => b.getAncestors().includes(target))) {
+      return check as [Node, Declaration][];
+    }
+    for (const ref of backRefs) {
+      const path: undefined | [Node, Declaration][] = IndirectReferencePath(
+        target,
+        [...check, [ref, getDeclarationAncestor(ref)]],
+      );
+      if (path !== undefined) {
+        return path;
+      }
+    }
+    return undefined;
+  }
+
+  function findSelfReferences(fromNode: Node) {
+    const parent = getDeclarationAncestor(fromNode);
+    if (parent === undefined) {
+      return undefined;
+    }
+    const refs = parent
+      .findReferencesAsNodes()
+      .map((r) => [r, getDeclarationAncestor(r)] as const);
+
+    // console.log(refs.map((x) => nodeToLineText(x[0])));
+
+    for (const ref of refs) {
+      const path = IndirectReferencePath(parent, [ref]);
+      if (path !== undefined) {
+        return path;
+      }
+    }
+    return undefined;
+  }
+
+  function nodeToLineText(n: Node) {
+    const line = n.getStartLineNumber();
+    return `${line}: ${n.getSourceFile().getFullText().split('\n')[line - 1]}`;
+  }
+
+  function checkEmptyObject(project: Project) {
+    const kinds = [
+      SyntaxKind.VariableDeclaration,
+      SyntaxKind.FunctionDeclaration,
+      SyntaxKind.TypeAliasDeclaration,
+    ];
+    project.getSourceFiles().forEach((file) => {
+      const typeEmptyObject = file.getDescendants().filter((node) => {
+        if (!kinds.includes(node.getKind())) {
+          return false;
+        }
+        const type = Node.isFunctionDeclaration(node)
+          ? node.getReturnType()
+          : node.getType();
+        return (
+          type.isObject() &&
+          type.getApparentProperties().length === 0 &&
+          node.getKind() !== SyntaxKind.MappedType
+        );
+      });
+      console.log(typeEmptyObject.map(nodeToLineText));
+    });
+  }
+
+  // potential workaround for not having code specific ts-expect-error
+  // https://github.com/microsoft/TypeScript/issues/19139#issuecomment-689824823
+  function checkIgnoreTSC(project: Project) {
+    project.getSourceFiles().forEach((file) => {
+      console.log(`checking ignore TSC for file ${file.getFilePath()}`);
+
+      file.getDescendantsOfKind(SyntaxKind.AsExpression).forEach((expr) => {
+        const castText = expr.getTypeNode()?.getText() ?? 'no type node';
+        const holdText = expr.getFullText();
+        const exprText = expr.getExpression().getFullText();
+        console.log(castText);
+        const exprLineNumber = expr.getEndLineNumber();
+        if (castText.match(/^ignore_TSC[0-9]+$/)) {
+          const code = castText.slice(10);
+          const replacedWith = expr.replaceWithText(
+            `${exprText} /*${castText}*/`,
+          );
+
+          const err = file
+            .getPreEmitDiagnostics()
+            .find(
+              (diagnostic) => diagnostic.getLineNumber() === exprLineNumber,
+            );
+          if (err === undefined) {
+            console.log(
+              `No error found at line: ${exprLineNumber} ${castText})`,
+            );
+          } else {
+            const errCode = err.getCode().toString();
+            if (errCode !== code) {
+              console.log(
+                `Incorrect error ${errCode} vs ${code} at line: ${exprLineNumber} ${castText})`,
+              );
+            }
+          }
+          replacedWith.replaceWithText(holdText);
+        }
+      });
+    });
+  }
+
+  // function refineErrror(err: FlatErr, fromNode: Node): FlatErr[] {
+  // return [err];
   /*
   const ret: FlatErr[] = [{ ...err }];
   let supplement: string | undefined = undefined;

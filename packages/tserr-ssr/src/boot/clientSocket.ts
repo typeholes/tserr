@@ -1,9 +1,13 @@
 import { boot } from 'quasar/wrappers';
 
 import { Socket, io } from 'socket.io-client';
-import { schema } from '../../../tserr-common/src/index'; // path doesn't work for client boot files:w
+import { onEvent, schema, type State } from '../../../tserr-common/src/index'; // path doesn't work for client boot files
 
 import { ref } from 'vue';
+
+onEvent('*DEBUG*', 'fileChanges', (payload) =>
+  console.log({ fileChanges: payload }),
+);
 
 let _socket: Socket | undefined = undefined;
 
@@ -28,19 +32,24 @@ export default boot(async (/* { app, router, ... } */) => {
 
 export const stateNum = ref(0);
 
+let pause = false;
+
 function clientStates(socket: Socket) {
   _socket = socket;
   console.log(schema);
   //console.log('in clientStates');
   socket.onAny(console.log);
   socket.on('mutateState', (name: string, operation: string, arg: unknown) => {
+    pause = true;
     if (!(name in schema)) return;
     const k = name as keyof typeof schema;
     schema[k][operation as 'add'](arg as any);
     stateNum.value = (stateNum.value + 1) % 1e6;
+    pause = false;
   });
 
   socket.on('allStates', (newStates: any) => {
+    pause = true;
     for (const name in newStates) {
       for (const value of newStates[name]) {
         // @ts-expect-error correspondence issue
@@ -48,6 +57,7 @@ function clientStates(socket: Socket) {
       }
     }
     stateNum.value = (stateNum.value + 1) % 1e6;
+    pause = false;
   });
 
   socket.on('AllRelatedStates', (...args) => {
@@ -56,6 +66,45 @@ function clientStates(socket: Socket) {
   socket.on('mutateRelatedState', (...args) => {
     console.log('mutateRelatedState', args);
   });
+
+  for (const state of Object.values(schema)) {
+    // eslint-disable-next-line @typescript-eslint/ban-types
+    state.onMutate.push((...args: unknown[]) => {
+      if (pause) return;
+      socket.emit('mutateState', state.stateName, ...args);
+      //console.log('emit mutateState', state.name, ...args);
+    });
+    for (const _alias in state.$) {
+      const alias = _alias as keyof typeof state.$;
+      for (const _entry of Object.entries(state.$[alias])) {
+        const entry = _entry as [string, State<string, any, PropertyKey[]>];
+        const [relatedName, related] = entry;
+        console.log({ alias, related, onMutate: related.onMutate });
+        if (related.onMutate === undefined) {
+          console.log(
+            'skipping mutation listener',
+            alias,
+            relatedName,
+            related.onMutate,
+            { related },
+          );
+          continue;
+        }
+        console.log('adding mutation listiner to related');
+        related.onMutate.push((...args: unknown[]) => {
+          if (pause) return;
+          console.log({ alias, state, related });
+          socket.emit(
+            'mutateRelatedState',
+            state.stateName,
+            alias,
+            relatedName,
+            ...args,
+          );
+        });
+      }
+    }
+  }
 }
 
 export function getAllStates() {

@@ -10,7 +10,7 @@ const desc = schema.ErrDesc.getByKeys(props.err?.name);
 const component = computed(() =>
   desc === undefined
     ? undefined
-    : compile(desc.template ?? `<div> ${desc.name} </div>`),
+    : compile(desc.template ?? `<div> ${desc} </div>`),
 );
 </script>
 

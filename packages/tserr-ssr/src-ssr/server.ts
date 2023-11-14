@@ -21,9 +21,8 @@ import {
 import http from 'http';
 import { Server, Socket } from 'socket.io';
 
-import { schema } from '@typeholes/tserr-common';
+import { initTsErrorDescriptions, schema } from '@typeholes/tserr-common';
 import { initDummyStates } from 'src/app/state/dummyState';
-import { initTsErrorDescriptions } from 'src/app/tsErrs';
 import { State } from '../../tserr-common/src/lib/schema/state';
 
 /**
@@ -45,6 +44,11 @@ export const create = ssrCreate((/* { ... } */) => {
   if (process.env.PROD) {
     app.use(compression());
   }
+
+  // initTsErrorDescriptions();
+  initDummyStates();
+
+  loadTsErrPlugins();
 
   return app;
 });
@@ -108,9 +112,6 @@ export const listen = ssrListen(async ({ app, port, isReady }) => {
     console.log('Server listening at port ' + port);
     // }
   });
-
-  initTsErrorDescriptions();
-  initDummyStates();
 
   return ret;
 });
@@ -227,7 +228,7 @@ function serverStates(server: Socket) {
         });
       }
     }
-    console.log(schema.ErrLocation.$.At.Err.onMutate.map(x => `${x}`));
+    console.log(schema.ErrLocation.$.At.Err.onMutate.map((x) => `${x}`));
   }
 
   // Why was this here?
@@ -235,4 +236,27 @@ function serverStates(server: Socket) {
   //   //console.log('sending all states');
   //   server.send('allStates', schema);
   // });
+}
+
+function loadTsErrPlugins() {
+  const args = process.argv.slice(2);
+  console.log(args)
+
+  for (const path of args) {
+    import(path)
+      .then((module) => {
+        if (
+          typeof module === 'object' &&
+          'activate' in module &&
+          typeof module.activate === 'function'
+        ) {
+          module.activate(schema);
+        } else {
+          throw new Error(`invalid plugin ${path}`);
+        }
+      })
+      .catch((e) => {
+        throw new Error(`import failed for ${path}: ${e}`);
+      });
+  }
 }

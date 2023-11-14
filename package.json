@@ -8,6 +8,7 @@
     "@quasar/extras": "^1.16.4",
     "arktype": "^1.0.14-alpha",
     "axios": "^1.0.0",
+    "electron": "^27.1.0",
     "express": "~4.18.1",
     "marked": "^4.3.0",
     "quasar": "^2.12.0",
@@ -21,6 +22,7 @@
   "devDependencies": {
     "@commitlint/cli": "^17.0.0",
     "@commitlint/config-conventional": "^17.0.0",
+    "@electron/remote": "^2.1.0",
     "@jscutlery/semver": "^3.0.0",
     "@mdi/font": "^7.2.96",
     "@quasar/vite-plugin": "^1.4.0",

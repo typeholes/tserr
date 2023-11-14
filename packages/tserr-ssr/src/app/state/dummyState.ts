@@ -1,4 +1,4 @@
-import { parseErrorMessage } from '../parse';
+// import { parseTsErrorMessage } from '../../../../tserr-common/src/lib/parser';
 import { ErrLocation } from '../../../../tserr-common/src/lib/schema/models/ErrDesc';
 import { schema } from '../../../../tserr-common/src/lib/schema/schema';
 
@@ -36,10 +36,10 @@ export function initDummyStates() {
   //  const _errorsOnDummyFileLine1 = schema.ErrLocation.$.At.Err.values('dummy.ts', 1);
 
   // setTimeout(() => {
-  setInterval(() => {
-    schema.Err.add({ name: 'foo', values: { bar: '4' } });
-    schema.ErrLocation.$.At.Err.add([location, err]);
-    console.log('Errs at loc', schema.ErrLocation.$.At.Err.values());
-    // parseErrorMessage("'dummy' expected.");
-  }, 5000);
+  // setInterval(() => {
+  //   schema.Err.add({ name: 'foo', values: { bar: '4' } });
+  //   schema.ErrLocation.$.At.Err.add([location, err]);
+  //   console.log('Errs at loc', schema.ErrLocation.$.At.Err.values());
+  //   // parseErrorMessage("'dummy' expected.");
+  // }, 5000);
 }

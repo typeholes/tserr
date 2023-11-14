@@ -23,7 +23,7 @@ export function mkState<
   /*const*/ N extends string,
   T,
   /*const*/ K extends readonly PropertyKey[],
->(stateName: N, toKeys: (t: T) => K, clonable = true): State<N, T, K> {
+>(stateName: N, toKeys: (t: T) => K, clonable = false): State<N, T, K> {
   const obj: Record<PropertyKey, any> = {};
   function getParent(t: T): [PropertyKey, Record<PropertyKey, [T]>] {
     const keys = toKeys(t);

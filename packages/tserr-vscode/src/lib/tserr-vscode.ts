@@ -244,7 +244,7 @@ function getHoverMarkDown(uri: vscode.Uri, range: vscode.Range) {
   return hoverInfoToMarkdown(info);
 }
 
-let disposeDiagnosticsChangeHandler: vscode.Disposable | undefined = {a: 1};
+let disposeDiagnosticsChangeHandler: vscode.Disposable | undefined = undefined;
 
 function registerDiagnosticChangeHandler(plugin: TserrPluginApi) {
   disposeDiagnosticsChangeHandler?.dispose();

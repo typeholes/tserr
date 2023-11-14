@@ -1,14 +1,18 @@
 import { reactive } from 'vue';
 import { State, mkState } from './state';
-import { Err, ErrDesc, ErrLocation, ErrParser } from './models/ErrDesc';
 
+import { Err, ErrDesc, ErrLocation, ErrParser } from './models/ErrDesc';
 export * from './models/ErrDesc';
+
+import { ProjectDesc } from './models/ProjectDesc';
+import { PluginDesc } from '@typeholes/tserr-common';
+export * from './models/ProjectDesc';
 
 type Evaluate<t> = { [k in keyof t]: t[k] } & unknown;
 
 // exported only for testing
 export function _mkSchema() {
-  const states = reactive({
+  const states = /*reactive*/({
     ErrLocation: mkState('ErrLocation', (u: ErrLocation) => [
       u.fileName,
       u.span.start.line,
@@ -29,6 +33,8 @@ export function _mkSchema() {
       'Err',
       (x: Err<ErrDesc<string>>) => [x.name, ...Object.keys(x.values)] as const,
     ),
+    Project: mkState('Project', (x: ProjectDesc) => [x.path, x.filename]),
+    Plugin: mkState('Plugin', (x: PluginDesc) => [x.name])
   });
 
   type States = typeof states;
@@ -60,6 +66,7 @@ export function _mkSchema() {
       ...relate('ErrParser', 'ErrDesc', (t) =>
         single(states.ErrDesc.getByKeys(t.name)),
       ),
+      ...manualFK('Project', 'Project'),
     },
     At: {
       ...manualFK('ErrLocation', 'Err'),

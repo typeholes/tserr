@@ -1,9 +1,14 @@
-import messages from './diagnosticMessages.json';
-import { schema } from '@typeholes/tserr-common';
+import messages from '../../../tserr-ssr/src/app/diagnosticMessages.json';
+import { Schema } from './schema/schema';
 
 const source = 'tsc';
 
-export function initTsErrorDescriptions() {
+let wasInit = false;
+
+export function initTsErrorDescriptions(schema: Schema) {
+  if (wasInit) return;
+  wasInit = true;
+
   const strings = Object.keys(messages);
 
   const split = strings.map((s) => [
@@ -16,10 +21,8 @@ export function initTsErrorDescriptions() {
     keys: parts as string[],
   }));
 
-  let cnt = 0;
-  for (const err of errs.slice(0, 1)) {
+  for (const err of errs) {
     // for (const err of errs) {
-    if (cnt++ > 5) break;
     while (err.keys[0] === '') {
       err.keys.shift();
     }

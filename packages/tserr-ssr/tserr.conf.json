@@ -1,0 +1,5 @@
+{ 
+	plugins: [
+		"/home/hw/projects/nx/typeholes/packages/tserr-server/out/index.js"
+	]
+}

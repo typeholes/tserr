@@ -51,7 +51,6 @@ function processArgs(): { projectPath: string } {
   }
 }
 
-import { plugin as tsmorphPlugin } from '@typeholes/tserr-ts-morph';
 
 const server = startServer(
   __dirname + '../../../tserr-vue/dist/',
@@ -67,7 +66,6 @@ const tserr = server.mkPluginInterface({
   },
 });
 
-const tsmorph = server.mkPluginInterface(tsmorphPlugin);
 
 const configs = tserr.getConfigs();
 

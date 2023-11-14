@@ -27,7 +27,10 @@ module.exports = configure(function (/* ctx */) {
     // app boot file (/src/boot)
     // --> boot files are part of "main.js"
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
-    boot: [{ path: 'clientSocket.ts', server: false }],
+    boot: [
+      'loadPlugins.ts',
+      //{ path: 'clientSocket.ts', server: false }
+    ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#css
     css: ['app.scss'],
@@ -49,8 +52,8 @@ module.exports = configure(function (/* ctx */) {
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#build
     build: {
       target: {
-        browser: ['es2020'],
-        node: 'node16',
+        browser: ['esnext'],
+        node: 'node18',
       },
 
       vueRouterMode: 'hash', // available values: 'hash', 'history'
@@ -92,7 +95,7 @@ module.exports = configure(function (/* ctx */) {
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#framework
     framework: {
       config: {
-        dark: 'auto',
+        dark: true,
       },
 
       // iconSet: 'material-icons', // Quasar icon set
