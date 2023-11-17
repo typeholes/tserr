@@ -30,6 +30,7 @@ export const socketHandlers = {
 export const resolvedErrors = errMap([], mergeSources);
 
 export const appState = reactive({
+  
   connected: false,
   currentMsgType: '',
   currentMsg: '',

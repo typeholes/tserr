@@ -53,7 +53,15 @@ export function initTsErrorDescriptions(schema: Schema) {
     schema.ErrDesc.add({
       name: err.name,
       keys,
-      template: `<div> ${err.name}: {{ err.values }} </div> `,
+      template: `
+<div class="row q-ma-sm">
+   <div class="row q-ma-sm" style="border: 1px solid purple" >${keys
+     .map(
+       (key) =>
+         `<div style="border: 1px solid blue" class="column q-pa-sm q-ma-sm"> <div style="border-bottom: 1px dashed blue">${key}</div><code-block :code="err.values['${key}']"/> </div>`,
+     )
+     .join(' ')}</div>
+</div> `,
     });
     schema.ErrParser.add({
       name: err.name,
@@ -62,7 +70,7 @@ export function initTsErrorDescriptions(schema: Schema) {
     });
   }
 
-  schema.ErrParser.log();
+  // schema.ErrParser.log();
   // console.log('puking', JSON.stringify(states.ErrParser.values(), null, 2));
   // throw 'a fit';
 }
@@ -74,7 +82,7 @@ function mkParseFn(parts: (string | undefined)[]) {
     for (const part of parts) {
       if (part === undefined) {
         //console.log('looking for value');
-        const match = text.match(/^'([^']*)'/);
+        const match = tmp.match(/^'([^']*)'/);
         if (!match) {
           //console.log('no value');
           return undefined;

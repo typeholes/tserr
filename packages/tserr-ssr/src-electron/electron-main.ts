@@ -4,6 +4,7 @@ import os from 'os';
 
 import { initialize, enable } from '@electron/remote/main'; // <-- add this
 
+
 const pluginIndex = process.argv.indexOf('--tserrPlugins');
 const tserrPlugins = pluginIndex < 0 ? [] : process.argv.slice(pluginIndex);
 

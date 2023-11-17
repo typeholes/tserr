@@ -3,6 +3,7 @@ import { schema } from '../../../tserr-common/src/index';
 import DynamicError from './DynamicError.vue';
 import { computed } from 'vue';
 import { stateNum } from 'src/boot/clientSocket';
+import { appState } from 'src/app/appState';
 
 const values = computed(() => schema.Err.values());
 
@@ -11,11 +12,12 @@ const locations = computed(() => schema.ErrLocation.values());
 
 <template>
   <div :key="stateNum">
+    <q-input label="theme" v-model="appState.shikiTheme"/>
     <q-btn label="refresh view" @click="stateNum++"/>
     --------
     <div v-for="(err, idx) in values" :key="idx">
       <DynamicError :err="err" />
-    </div> 
+    </div>
     <hr />
     <div v-for="(location, idx) in locations" :key="idx">
       {{ location.fileName }}

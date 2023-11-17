@@ -28,9 +28,29 @@
  * }
  */
 
-import { contextBridge } from 'electron';
-// import { dialog, } from 'electron';
-import { dialog, BrowserWindow, getCurrentWindow } from '@electron/remote';
+// import { contextBridge } from 'electron';
+// // import { dialog, } from 'electron';
+// import { dialog, BrowserWindow, getCurrentWindow } from '@electron/remote';
+
+import * as shiki from 'shiki';
+
+shiki
+  .getHighlighter({
+    theme: 'dracula',
+    themes: shiki.BUNDLED_THEMES,
+  })
+  .then((highlighter) => {
+    const html = highlighter.codeToHtml('type foo<T> = T', {
+      lang: 'ts',
+      theme: 'dracula',
+    });
+    console.log({ html });
+    (window as any).codeToHtml = (code: string, theme?: string) => highlighter.codeToHtml(code, {
+      lang: 'ts',
+      theme: theme??'dracula',
+    });
+  });
+
 
 const pluginIndex = process.argv.indexOf('--tserrPlugins');
 const tserrPlugins = pluginIndex < 0 ? [] : process.argv.slice(pluginIndex);

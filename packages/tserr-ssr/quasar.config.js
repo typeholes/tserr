@@ -29,6 +29,8 @@ module.exports = configure(function (/* ctx */) {
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
     boot: [
       'loadPlugins.ts',
+      'highlighter.ts',
+      'globalComponents.ts',
       //{ path: 'clientSocket.ts', server: false }
     ],
 

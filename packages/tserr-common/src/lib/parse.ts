@@ -17,7 +17,7 @@ export function parseTsErrorMessage(schema: Schema, text: string) {
       continue;
     }
     // console.log(parser);
-    console.log(`trying ${parser.name}`);
+    // console.log(`trying ${parser.name}`);
     const parsed = parser.parse(text);
     //console.log('parsed', parsed);
     if (parsed !== undefined) {
