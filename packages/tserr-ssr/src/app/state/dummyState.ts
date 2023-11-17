@@ -1,7 +1,7 @@
 // import { parseTsErrorMessage } from '../../../../tserr-common/src/lib/parser';
 import { ErrLocation } from '../../../../tserr-common/src/lib/schema/models/ErrDesc';
-import { schema } from '../../../../tserr-common/src/lib/schema/schema';
 
+const schema = window.tserrSchema.schema;
 export function initDummyStates() {
   schema.ErrDesc.add({
     name: 'foo',
@@ -21,7 +21,7 @@ export function initDummyStates() {
   schema.ErrParser.add({
     name: 'foo',
     source: 'dummy',
-    parse: (text) => [text],
+    parse: (text: string) => [text],
   });
 
   const location: ErrLocation = {

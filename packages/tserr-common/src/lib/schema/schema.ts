@@ -1,4 +1,3 @@
-import { reactive } from 'vue';
 import { State, mkState } from './state';
 
 import { Err, ErrDesc, ErrLocation, ErrParser } from './models/ErrDesc';
@@ -10,9 +9,9 @@ export * from './models/ProjectDesc';
 
 type Evaluate<t> = { [k in keyof t]: t[k] } & unknown;
 
-// exported only for testing
+// only use once, and only in the front end
 export function _mkSchema() {
-  const states = /*reactive*/({
+  const states = ({
     ErrLocation: mkState('ErrLocation', (u: ErrLocation) => [
       u.fileName,
       u.span.start.line,
@@ -150,6 +149,4 @@ export function _mkSchema() {
   return schema;
 }
 
-export const schema = _mkSchema();
-
-export type Schema = typeof schema;
+export type Schema = ReturnType<typeof _mkSchema>;

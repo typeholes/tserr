@@ -32,7 +32,23 @@
 // // import { dialog, } from 'electron';
 // import { dialog, BrowserWindow, getCurrentWindow } from '@electron/remote';
 
+import { readFileSync, writeFileSync } from 'fs';
 import * as shiki from 'shiki';
+import { Schema } from '@typeholes/tserr-common'
+
+declare global {
+  interface Window {
+    codeToHtml: (code: string, theme?: string, lang?: string) => string;
+    tserrPlugins: string[];
+    tserrConfigPath: string | undefined;
+    tserrFileApi: { readFile: typeof readFileSync, writeFile: typeof writeFileSync};
+    tserrSchema: {schema: Schema};
+  }
+}
+
+
+window.tserrFileApi = { readFile: readFileSync, writeFile: writeFileSync }
+
 
 shiki
   .getHighlighter({
@@ -45,19 +61,18 @@ shiki
       theme: 'dracula',
     });
     console.log({ html });
-    (window as any).codeToHtml = (code: string, theme?: string) => highlighter.codeToHtml(code, {
-      lang: 'ts',
-      theme: theme??'dracula',
-    });
+    window.codeToHtml = (code: string, theme?: string, lang?: string) =>
+      highlighter.codeToHtml(code, {
+        lang: lang ?? 'ts',
+        theme: theme ?? 'dracula',
+      });
   });
-
+const configIndex = process.argv.indexOf('--tserrConfig');
+window.tserrConfigPath =
+  configIndex < 0 ? undefined : process.argv[configIndex + 1];
 
 const pluginIndex = process.argv.indexOf('--tserrPlugins');
-const tserrPlugins = pluginIndex < 0 ? [] : process.argv.slice(pluginIndex);
-console.log({tserrPlugins})
-
-const anyWindow = (window as any);
-anyWindow.tserrPlugins = tserrPlugins
+window.tserrPlugins = pluginIndex < 0 ? [] : process.argv.slice(pluginIndex);
 
 /*
 contextBridge.exposeInMainWorld('tserrPlugins', tserrPlugins);

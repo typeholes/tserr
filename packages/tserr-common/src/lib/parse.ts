@@ -1,4 +1,4 @@
-import { Schema, schema } from './schema/schema';
+import { Schema } from './schema/schema';
 import { Err, ErrDesc } from './schema/models/ErrDesc';
 
 // note: this is likely to be slow due to linear seach
@@ -7,7 +7,7 @@ import { Err, ErrDesc } from './schema/models/ErrDesc';
 const unknownError: ErrDesc = {
   name: 'UnknownError',
   keys: ['message'],
-  template: `<div>{{err.name}} {{err.keys}} </div>`,
+  template: `<div>{{err}}  </div>`,
 };
 
 export function parseTsErrorMessage(schema: Schema, text: string) {
@@ -27,7 +27,7 @@ export function parseTsErrorMessage(schema: Schema, text: string) {
       }
       const err: Err<ErrDesc<string>> = {
         name: parser.name,
-        values: Object.fromEntries(desc.keys.map((k, i) => [k, parsed[i]])),
+        values: Object.fromEntries(desc.keys.map((k : string, i : number) => [k, parsed[i]])),
       };
       schema.Err.add(err);
       return err;

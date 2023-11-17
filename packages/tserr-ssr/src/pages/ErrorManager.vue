@@ -1,11 +1,12 @@
 <template>
   <q-page class="col items-center justify-evenly">
-    <AllErrors/>
+    <ErrorDescriptions  />
   </q-page>
 </template>
 
 <script setup lang="ts">
-import AllErrors from '../components/AllErrors.vue';
+import ErrorDescriptions from 'src/components/ErrorDescriptions.vue';
+
 </script>
 
 <style>

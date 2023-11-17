@@ -1,9 +1,8 @@
-
 // import * as vscode from 'vscode';
 
-import { EventBus, PluginDesc, Schema } from "@typeholes/tserr-common";
-import { type } from "arktype";
-import { processFileEvents, setSchema } from "./lib/handleDiagnostics";
+import { EventBus, PluginDesc, Schema } from '@typeholes/tserr-common';
+import { type } from 'arktype';
+import { processFileEvents, setSchema } from './lib/handleDiagnostics';
 
 export const pluginDesc = {
   name: 'tserr-tsmorph',
@@ -22,13 +21,18 @@ export const pluginDesc = {
   },
 } satisfies PluginDesc;
 
-export function activate(schema: Schema, eventbus: EventBus) {
-  // vscode.window.showInformationMessage('activate ts-morph');
+export function activate() {
+  return {
+    desc: pluginDesc,
+    activate: (schema: Schema, eventbus: EventBus) => {
+      // vscode.window.showInformationMessage('activate ts-morph');
 
-  setSchema(schema);
+      setSchema(schema);
 
-  schema.Plugin.add(pluginDesc)
-  eventbus.onEvent(pluginDesc.name, 'fileChanges', (x: any) => processFileEvents(x));
-
-  return { };
+      schema.Plugin.add(pluginDesc);
+      eventbus.onEvent(schema, pluginDesc.name, 'fileChanges', (x: any) =>
+        processFileEvents(x),
+      );
+    },
+  };
 }

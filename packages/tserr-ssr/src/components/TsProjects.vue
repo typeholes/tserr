@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { ProjectDesc, schema } from '../../../tserr-common/src';
+import { ProjectDesc, } from '../../../tserr-common/src';
+
+const schema = window.tserrSchema.schema;
 
 const { dialog } = require('@electron/remote')
 
@@ -8,6 +10,7 @@ const forceList = ref(0);
 
 
 function splitName(name: string) {
+/// BUG: windows paths need to spit by \
   const parts = name.split(/(\/[^\/]*$)/);
   console.log({ name, parts });
   if (parts.length === 1) {

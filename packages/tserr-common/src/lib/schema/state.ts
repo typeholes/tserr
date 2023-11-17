@@ -1,3 +1,5 @@
+import { reactive } from 'vue';
+
 // type NoInfer<T> = [T][T extends T ? 0 : never];
 export type Evaluate<t> = t; // { [k in keyof t]: t[k] } & unknown;
 
@@ -24,7 +26,9 @@ export function mkState<
   T,
   /*const*/ K extends readonly PropertyKey[],
 >(stateName: N, toKeys: (t: T) => K, clonable = false): State<N, T, K> {
-  const obj: Record<PropertyKey, any> = {};
+  (global as any).stateInternals ??= {};
+  const obj: Record<PropertyKey, any> = reactive({});
+  (global as any).stateInternals[stateName] = obj;
   function getParent(t: T): [PropertyKey, Record<PropertyKey, [T]>] {
     const keys = toKeys(t);
     let at = obj;
@@ -37,7 +41,7 @@ export function mkState<
   const state: State<N, T, K> = {
     stateName: stateName,
     add: (origT: T) => {
-      const t = clonable ? structuredClone(origT) : {...origT};
+      const t = clonable ? structuredClone(origT) : { ...origT };
       const [k, at] = getParent(t);
       //console.log(k, at);
       const existing = (at[k] ?? [])[0];
@@ -77,7 +81,6 @@ export function mkState<
         if (k === undefined) break;
         at = at[k];
         if (at == undefined) return [];
-
       }
       getObjects(at, ret);
       return ret;

@@ -1,4 +1,4 @@
-import { Schema, schema } from './schema/schema';
+import { Schema, } from './schema/schema';
 
 
 const handlers: Record<string, Record<string, (payload: unknown) => void>> = {};
@@ -7,7 +7,7 @@ export const eventbus = { sendEvent, onEvent }
 export type EventBus = typeof eventbus;
 
 
-export function sendEvent(pluginName: string, name: string, payload: unknown) {
+export function sendEvent(schema: Schema, pluginName: string, name: string, payload: unknown) {
   const pluginDesc = schema.Plugin.getByKeys(pluginName);
   if (!pluginDesc?.events[name]?.sends) {
     throw new Error(
@@ -21,6 +21,7 @@ export function sendEvent(pluginName: string, name: string, payload: unknown) {
 }
 
 export function onEvent(
+  schema: Schema,
   pluginName: string,
   name: string,
   handler: (payload: unknown) => void,

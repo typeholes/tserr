@@ -21,7 +21,6 @@ import {
 import http from 'http';
 import { Server, Socket } from 'socket.io';
 
-import { initTsErrorDescriptions, schema } from '@typeholes/tserr-common';
 import { initDummyStates } from 'src/app/state/dummyState';
 import { State } from '../../tserr-common/src/lib/schema/state';
 

@@ -5,11 +5,12 @@ import { CodeType,  prettyCode } from '../app/prettyCode'
 const props = defineProps<{
   code: string | undefined;
   codeType?: CodeType;
-  pretty?: boolean
+  pretty?: boolean;
+  lang?: 'ts'|'html';
 }>();
 
 const highlighted = computed(() =>
-  prettyCode(props.code ?? '', props.codeType, props.pretty ?? true),
+  prettyCode(props.code ?? '', props.codeType, props.pretty ?? true, props.lang ?? 'ts'),
 );
 
 </script>

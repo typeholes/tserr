@@ -57,8 +57,14 @@ export function initTsErrorDescriptions(schema: Schema) {
 <div class="row q-ma-sm">
    <div class="row q-ma-sm" style="border: 1px solid purple" >${keys
      .map(
-       (key) =>
-         `<div style="border: 1px solid blue" class="column q-pa-sm q-ma-sm"> <div style="border-bottom: 1px dashed blue">${key}</div><code-block :code="err.values['${key}']"/> </div>`,
+       (key) => {
+          const cleanKey = key.replaceAll('`',"'");
+         return `
+  <div style="border: 1px solid blue" class="column q-pa-sm q-ma-sm">
+     <div style="border-bottom: 1px dashed blue">${key}</div>
+     <code-block :code="err?.values[\`${cleanKey}\`]"/>
+  </div>`;
+       }
      )
      .join(' ')}</div>
 </div> `,

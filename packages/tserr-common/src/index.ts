@@ -8,8 +8,10 @@ export * from './lib/config';
 
 export * from './lib/ValueMap';
 
-export * from './lib/schema/schema';
 export { type State } from './lib/schema/state';
+export { type Schema } from './lib/schema/schema';
+export * from './lib/schema/models/ErrDesc'
+export * from './lib/schema/models/ProjectDesc'
 
 export { parseTsErrorMessage } from './lib/parse';
 

@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { schema, Err } from '../../../tserr-common/src/index';
+import {  Err } from '../../../tserr-common/src/index';
 import { compile, computed } from 'vue';
+
+const schema = window.tserrSchema.schema;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const props = defineProps<{ err: Err<any> | undefined }>();

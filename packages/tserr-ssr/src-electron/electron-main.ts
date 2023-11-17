@@ -8,6 +8,11 @@ import { initialize, enable } from '@electron/remote/main'; // <-- add this
 const pluginIndex = process.argv.indexOf('--tserrPlugins');
 const tserrPlugins = pluginIndex < 0 ? [] : process.argv.slice(pluginIndex);
 
+const configIndex = process.argv.indexOf('--tserrConfig');
+const configPath =
+  configIndex < 0 ? [] : process.argv.slice(configIndex, configIndex+2);
+
+
 initialize(); // <-- add this
 
 // needed in case process is undefined under Linux
@@ -36,7 +41,7 @@ function createWindow() {
       contextIsolation: false,
       // More info: https://v2.quasar.dev/quasar-cli-vite/developing-electron-apps/electron-preload-script
       preload: path.resolve(__dirname, process.env.QUASAR_ELECTRON_PRELOAD),
-      additionalArguments: tserrPlugins,
+      additionalArguments: [...configPath, ...tserrPlugins],
       sandbox: false,
     },
   });
@@ -48,6 +53,7 @@ function createWindow() {
     // if on DEV or Production with debug enabled
     mainWindow.webContents.openDevTools();
   } else {
+    mainWindow.webContents.openDevTools();
     // we're on production; no access to devtools pls
     // mainWindow.webContents.on('devtools-opened', () => {
     // mainWindow?.webContents.closeDevTools();

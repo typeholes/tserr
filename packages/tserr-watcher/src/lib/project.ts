@@ -40,7 +40,11 @@ export type ProjectEvent = { type: ProjectEventType; filePath: string };
 
 export type Project = ReturnType<typeof mkProject>;
 
-export function mkProject(eventbus: EventBus, tsConfigPath: string) {
+export function mkProject(
+  schema: Schema,
+  eventbus: EventBus,
+  tsConfigPath: string,
+) {
   let waiting = true;
   let events: ProjectEvent[] = [];
 
@@ -58,7 +62,7 @@ export function mkProject(eventbus: EventBus, tsConfigPath: string) {
     }
 
     if (events.length > 0) {
-      eventbus.sendEvent(pluginDesc.name, 'fileChanges', events);
+      eventbus.sendEvent(schema, pluginDesc.name, 'fileChanges', events);
 
       events = [];
     }
@@ -214,28 +218,31 @@ function mergeConfig(
 
 const projects: Record<string, Project> = {};
 
-export function activate(schema: Schema, eventbus: EventBus) {
-  schema.Project.onMutate.push((action, arg, existing) => {
-    console.log({ action, arg, existing });
+export function activate() {
+  return {
+    desc: pluginDesc,
+    activate: (schema: Schema, eventbus: EventBus) => {
+      schema.Project.onMutate.push((action, arg, existing) => {
+        console.log({ action, arg, existing });
 
-    if (!existing?.open && arg.open) {
-      const tsConfigPath = arg.path + '/' + arg.filename;
-      if (!projects[tsConfigPath]) {
-        projects[tsConfigPath] = mkProject(eventbus, tsConfigPath);
-      }
-      projects[tsConfigPath].open();
-      return;
-    }
+        if (!existing?.open && arg.open) {
+          const tsConfigPath = arg.path + '/' + arg.filename;
+          if (!projects[tsConfigPath]) {
+            projects[tsConfigPath] = mkProject(schema, eventbus, tsConfigPath);
+          }
+          projects[tsConfigPath].open();
+          return;
+        }
 
-    if (existing?.open && !arg.open) {
-      const tsConfigPath = arg.path + '/' + arg.filename;
-      if (!projects[tsConfigPath]) {
-        return;
-      }
-      projects[tsConfigPath].close();
-      return;
-    }
-  });
-
-  schema.Plugin.add(pluginDesc);
+        if (existing?.open && !arg.open) {
+          const tsConfigPath = arg.path + '/' + arg.filename;
+          if (!projects[tsConfigPath]) {
+            return;
+          }
+          projects[tsConfigPath].close();
+          return;
+        }
+      });
+    },
+  };
 }

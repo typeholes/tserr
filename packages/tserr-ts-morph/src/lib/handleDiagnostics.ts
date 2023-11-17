@@ -17,12 +17,11 @@ import { group } from './util.js';
 import {
   ErrLocation,
   ProjectDesc,
-  parseTsErrorMessage,
-  schema as origSchema,
   Schema,
+  parseTsErrorMessage,
 } from '@typeholes/tserr-common';
 
-let schema = origSchema;
+let schema : Schema;
 
 export function setSchema(newSchema: Schema) {
   schema = newSchema;

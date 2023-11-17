@@ -1,10 +1,12 @@
 {
-  "name": "tserr-ssr",
+  "name": "tserr",
   "version": "0.0.1",
-  "description": "TsErr SSR",
-  "productName": "TsErr SSR",
+  "description": "TsErr",
+  "productName": "TsErr",
   "author": "typeholes <typeholes@protonmail.net>",
   "private": true,
+  "repo": "https://github.com/typeholes/tserr.git",
+  "repository": "https://github.com/typeholes/tserr.git",
   "scripts": {
     "lint": "eslint --ext .js,.ts,.vue ./",
     "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore",
@@ -17,6 +19,8 @@
     "@quasar/extras": "^1.16.4",
     "pinia": "^2.0.11",
     "quasar": "^2.6.0",
+    "shiki": "^0.14.1",
+    "shiki-themes": "^0.2.7",
     "socket.io": "^4.7.2",
     "vue": "^3.0.0",
     "vue-router": "^4.0.0"
@@ -29,6 +33,7 @@
     "@vue/compiler-sfc": "file: node_modules/@vue/compiler-sfc",
     "autoprefixer": "^10.4.2",
     "electron": "^v27.1.0",
+    "electron-builder": "^24.6.4",
     "electron-packager": "^17.1.2",
     "eslint": "^8.10.0",
     "eslint-config-prettier": "^8.1.0",
