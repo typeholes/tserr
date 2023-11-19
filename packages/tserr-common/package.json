@@ -2,6 +2,9 @@
   "name": "@typeholes/tserr-common",
   "version": "0.0.1",
   "type": "commonjs",
-  "exports": "./out/index.js",
-  "types": "./out/index.d.ts"
+  "exports": "./out/packages/tserr-common/src/index.js",
+  "types": "./out/packages/tserr-common/src/index.d.ts",
+  "files": [
+    "./out/"
+  ]
 }

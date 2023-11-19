@@ -1,7 +1,7 @@
 import { type, narrow, Problems, Type } from 'arktype';
 import { loadPlugin } from 'src/boot/loadPlugins';
 import { reactive, ref, watch, nextTick } from 'vue';
-import { _mkSchema } from '@typeholes/tserr-common';
+import { _mkSchema, } from '@typeholes/tserr-common';
 
   if (!window.tserrSchema?.schema) {
     window.tserrSchema = { schema: _mkSchema() };

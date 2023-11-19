@@ -1,11 +1,11 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "../../dist/out-tsc",
+    "outDir": "./out",
     "declaration": true,
     "types": ["node"],
-    "esModuleInterop": true,
+    "esModuleInterop": true
   },
-  "include": ["src/**/*.ts", "../tserr-ssr/src/app/state/dummyState.ts"],
+  "include": ["src/**/*.ts"],
   "exclude": ["jest.config.ts", "src/**/*.spec.ts", "src/**/*.test.ts"]
 }

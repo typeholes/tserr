@@ -3,9 +3,6 @@
   "compilerOptions": {
     "baseUrl": ".",
     "noErrorTruncation": true,
-    "paths": {
-      "@typeholes/tserr-common": ["../../packages/tserr-common/src/index"]
-    }
   },
 
 }
