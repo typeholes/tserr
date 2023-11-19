@@ -26,9 +26,7 @@ export function mkState<
   T,
   /*const*/ K extends readonly PropertyKey[],
 >(stateName: N, toKeys: (t: T) => K, clonable = false): State<N, T, K> {
-  (global as any).stateInternals ??= {};
   const obj: Record<PropertyKey, any> = reactive({});
-  (global as any).stateInternals[stateName] = obj;
   function getParent(t: T): [PropertyKey, Record<PropertyKey, [T]>] {
     const keys = toKeys(t);
     let at = obj;

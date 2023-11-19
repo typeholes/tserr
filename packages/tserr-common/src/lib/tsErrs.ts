@@ -1,4 +1,4 @@
-import messages from '../../../tserr-ssr/src/app/diagnosticMessages.json';
+import messages from './diagnosticMessages.json';
 import { Schema } from './schema/schema';
 
 const source = 'tsc';

@@ -1,5 +1,7 @@
 {
   "name": "@typeholes/tserr-common",
   "version": "0.0.1",
-  "type": "commonjs"
+  "type": "commonjs",
+  "exports": "./out/index.js",
+  "types": "./out/index.d.ts"
 }

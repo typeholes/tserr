@@ -221,6 +221,7 @@ const projects: Record<string, Project> = {};
 export function activate() {
   return {
     desc: pluginDesc,
+    debugFN: () => {},
     activate: (schema: Schema, eventbus: EventBus) => {
       schema.Project.onMutate.push((action, arg, existing) => {
         console.log({ action, arg, existing });
