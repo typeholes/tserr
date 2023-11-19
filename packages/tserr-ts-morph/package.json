@@ -25,5 +25,8 @@
   },
   "extensionDependencies": [
     "typeholes.tserr-vscode"
-  ]
+  ],
+  "dependencies": {
+    "@typeholes/tserr-common": "file:../tserr-common/typeholes-tserr-common-0.0.1.tgz"
+  }
 }

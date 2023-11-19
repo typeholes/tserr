@@ -4,7 +4,7 @@ import { Err, ErrDesc, ErrLocation, ErrParser } from './models/ErrDesc';
 export * from './models/ErrDesc';
 
 import { ProjectDesc } from './models/ProjectDesc';
-import { PluginDesc } from '@typeholes/tserr-common';
+import { PluginDesc } from './models/plugin';
 export * from './models/ProjectDesc';
 
 type Evaluate<t> = { [k in keyof t]: t[k] } & unknown;

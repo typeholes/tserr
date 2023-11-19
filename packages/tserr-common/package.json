@@ -6,5 +6,8 @@
   "types": "./out/packages/tserr-common/src/index.d.ts",
   "files": [
     "./out/"
-  ]
+  ],
+  "dependencies": {
+    "@typeholes/tserr-common": "file:typeholes-tserr-common-0.0.1.tgz"
+  }
 }

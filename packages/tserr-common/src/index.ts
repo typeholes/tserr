@@ -17,6 +17,6 @@ export { parseTsErrorMessage } from './lib/parse';
 
 export { initTsErrorDescriptions } from './lib/tsErrs';
 
-export { type PluginDesc } from './lib/plugin';
+export { type PluginDesc } from './lib/schema/models/plugin';
 
 export * from './lib/eventBus';

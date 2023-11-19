@@ -1,1 +1,1 @@
-npx esbuild --bundle src/index.ts --outdir=out --sourcemap --platform=node
+tsc -p ./tsconfig.lib.json &&  npm pack
