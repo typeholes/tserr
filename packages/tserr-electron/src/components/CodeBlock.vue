@@ -10,7 +10,7 @@ const props = defineProps<{
 }>();
 
 const highlighted = computed(() =>
-  prettyCode(props.code ?? '', props.codeType, props.pretty ?? true, props.lang ?? 'ts'),
+  prettyCode(props.code ?? '', props.codeType, (true|| props.pretty) ?? true, props.lang ?? 'ts'),
 );
 
 </script>

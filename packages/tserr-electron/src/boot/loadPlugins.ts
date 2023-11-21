@@ -1,3 +1,5 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore editor vs build conflict
 import { boot } from 'quasar/wrappers';
 import { type, } from 'arktype';
 import {

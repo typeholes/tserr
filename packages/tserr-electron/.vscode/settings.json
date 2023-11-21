@@ -3,14 +3,68 @@
   "editor.guides.bracketPairs": true,
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "editor.codeActionsOnSave": [
-    "source.fixAll.eslint"
-  ],
-  "eslint.validate": [
-    "javascript",
-    "javascriptreact",
-    "typescript",
-    "vue"
-  ],
-  "typescript.tsdk": "node_modules/typescript/lib"
+  "editor.codeActionsOnSave": ["source.fixAll.eslint"],
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "vue"],
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "TypeBench..default.extractor": "ArkType",
+  "TypeBench.extractor.ArkType": {
+    "target": "clipboard",
+    "language": "typescript",
+    "commentOldTypes": false,
+    "autoUndo": false
+  },
+  "TypeBench.extractor.IoTs": {
+    "target": "clipboard",
+    "language": "typescript",
+    "commentOldTypes": false,
+    "autoUndo": false
+  },
+  "TypeBench.extractor.TypeScript": {
+    "target": "clipboard",
+    "language": "typescript",
+    "commentOldTypes": false,
+    "autoUndo": false
+  },
+  "TypeBench.extractor.Valibot": {
+    "target": "clipboard",
+    "language": "typescript",
+    "commentOldTypes": false,
+    "autoUndo": false
+  },
+  "TypeBench.extractor.Javascript": {
+    "target": "clipboard",
+    "language": "typescript",
+    "commentOldTypes": false,
+    "autoUndo": false
+  },
+  "TypeBench.extractor.JsonSchema": {
+    "target": "clipboard",
+    "language": "typescript",
+    "commentOldTypes": false,
+    "autoUndo": false
+  },
+  "TypeBench.extractor.TypeBox": {
+    "target": "clipboard",
+    "language": "typescript",
+    "commentOldTypes": false,
+    "autoUndo": false
+  },
+  "TypeBench.extractor.SampleValue": {
+    "target": "clipboard",
+    "language": "typescript",
+    "commentOldTypes": false,
+    "autoUndo": false
+  },
+  "TypeBench.extractor.Zod": {
+    "target": "clipboard",
+    "language": "typescript",
+    "commentOldTypes": false,
+    "autoUndo": false
+  },
+  "TypeBench.extractor.Identity": {
+    "target": "clipboard",
+    "language": "typescript",
+    "commentOldTypes": false,
+    "autoUndo": false
+  }
 }

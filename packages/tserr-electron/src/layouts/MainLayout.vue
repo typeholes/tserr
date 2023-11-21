@@ -6,6 +6,8 @@ import TsProjects from 'src/components/TsProjects.vue';
 
 import { writeConfig, configDirty } from 'src/app/config'
 
+import PrettierOptions from 'src/components/PrettierOptions.vue';
+
 const configPath = window.tserrConfigPath;
 
 const { BrowserWindow, getCurrentWindow } = window.require ? window.require(
@@ -83,7 +85,7 @@ function closeApp() {
 
 <template>
   <div class="q-pa-md">
-    <q-layout view="hHh Lpr fFf">
+    <q-layout view="hHh LpR fFf">
       <q-header elevated>
         <q-toolbar class="q-electron-drag">
           <q-btn
@@ -125,12 +127,13 @@ function closeApp() {
       </q-drawer>
       <q-drawer v-model="rightDrawerOpen" show-if-above bordered side="right">
         <TsProjects />
+        <PrettierOptions/>
       </q-drawer>
       <q-page-container>
 <router-view v-slot="{ Component }">
-  <!-- <keep-alive> -->
+  <keep-alive>
     <component :is="Component" />
-  <!-- </keep-alive> -->
+  </keep-alive>
 </router-view>
       </q-page-container>
     </q-layout>

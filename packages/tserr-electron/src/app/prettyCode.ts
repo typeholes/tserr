@@ -1,9 +1,13 @@
-import { appState } from './appState'
+import { appState } from './appState';
 import { format } from 'prettier';
 import parserTS from 'prettier/parser-typescript';
 
 // const highlighter = (window as any).highlighter as Highlighter;
-const codeToHtml = (window as any).codeToHtml as (code: string, theme: string, lang: string) => string;
+const codeToHtml = (window as any).codeToHtml as (
+  code: string,
+  theme: string,
+  lang: string,
+) => string;
 
 const codeTypes = {
   type: {
@@ -21,8 +25,8 @@ const codeTypes = {
   },
   raw: {
     stub: '',
-    cleanup: (s: string | undefined) => s??'No code provided'
-  }
+    cleanup: (s: string | undefined) => s ?? 'No code provided',
+  },
 } as const;
 
 export type CodeType = keyof typeof codeTypes;
@@ -31,7 +35,7 @@ export function prettyCode(
   code: string,
   codeType: CodeType = 'type',
   pretty: boolean = true,
-  lang: 'ts'|'html' = 'ts',
+  lang: 'ts' | 'html' = 'ts',
 ) {
   const { stub, cleanup } = codeTypes[codeType ?? 'type'];
   if (pretty) {
@@ -41,14 +45,15 @@ export function prettyCode(
   }
 }
 
-export function highlight(code: string | undefined,
-  lang: 'ts'|'html' = 'ts',
-  ) {
+export function highlight(
+  code: string | undefined,
+  lang: 'ts' | 'html' = 'ts',
+) {
   if (code === undefined) {
     return undefined;
   }
   if (codeToHtml) {
-    return codeToHtml(code, appState.shikiTheme, lang)
+    return codeToHtml(code, appState.shikiTheme, lang);
     // , {
     //   lang: 'ts',
     //   theme: appState.shikiTheme,
@@ -63,6 +68,7 @@ export function formatCode(code: string | undefined) {
   }
   try {
     return format(code, {
+      ...appState.prettierOptions,
       parser: 'typescript',
       plugins: [parserTS],
     });
@@ -71,6 +77,7 @@ export function formatCode(code: string | undefined) {
       const fixed = code.replaceAll('...', 'ⵈ');
 
       return format(fixed, {
+        ...appState.prettierOptions,
         parser: 'typescript',
         plugins: [parserTS],
       });

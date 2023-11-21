@@ -14,6 +14,7 @@ const locations = computed(() => {
   <div>
     <div v-for="(location, idx) in locations" :key="idx">
       {{ location.fileName }}
+      {{ location.span.start.line }}
       <!-- err: {{ schema.ErrLocation.$.At.Err(location) }} -->
       <template
         v-for="(err, errIdx) of schema.ErrLocation.$.At.Err(location)"
