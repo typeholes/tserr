@@ -3,7 +3,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "noErrorTruncation": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+     "moduleResolution": "Bundler"
   },
     "exclude": ["./node_modules/**", "tmp"]
 

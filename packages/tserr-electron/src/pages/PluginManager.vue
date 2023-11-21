@@ -29,11 +29,33 @@ function openPlugin() {
   }
   forceList.value++;
 }
+
+const typeProblems= computed( () => {
+  const problems : string[] = [] ;
+  const plugins = schema.Plugin.values();
+  for (const plugin of plugins) {
+    for (const other of plugins) {
+      if (plugin.name === other.name) { continue; }
+        for( const eventName in plugin.events) {
+          if ( eventName in other.events) {
+            const type = plugin.events[eventName].type;
+            const otherType = other.events[eventName].type;
+            if (! type.extends(otherType)) {
+              problems.push(`${eventName} incompatible between ${plugin.name} and ${other.name}`);
+            }
+          }
+        }
+    }
+  }
+    return problems;
+})
+
 </script>
 
 <template>
   <q-page padding>
     <q-btn label="Load Plugin" @click="openPlugin" />
+    {{  typeProblems }}
     <q-list>
       <q-expansion-item
         :label="plugin.name"

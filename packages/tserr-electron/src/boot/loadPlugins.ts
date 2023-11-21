@@ -1,5 +1,5 @@
 import { boot } from 'quasar/wrappers';
-import { type } from 'arktype';
+import { type, } from 'arktype';
 import {
   PluginDesc,
   Schema,
@@ -8,7 +8,23 @@ import {
   onEvent,
 } from '../../../tserr-common/src';
 import { loadConfig } from 'src/app/config';
-import { plugins } from 'postcss.config.cjs';
+
+declare global {
+  interface Window {
+    codeToHtml: (code: string, theme?: string, lang?: string) => string;
+    tserrPlugins: string[];
+    tserrConfigPath: string | undefined;
+    tserrFileApi: {
+      readFile: (path: string | number, options?: {
+    encoding?: null | undefined;
+    flag?: string | undefined;
+} | null) => Buffer;
+      writeFile: (path: string | number, data: any, options?: any) => void;
+    };
+    tserrSchema: { schema: Schema };
+  }
+}
+
 
 // "async" is optional;
 // more info on params: https://v2.quasar.dev/quasar-cli/boot-files
@@ -26,16 +42,20 @@ export default boot(async (/* { app, router, ... } */) => {
       fileChanges: {
         sends: false,
         handles: true,
-        type: type([
+        type: type(
+          // [
           {
             floperation: "'add'|'change'|'unlink'",
             filePath: 'string',
           },
-          [],
-        ]),
+          // [],
+        // ]
+        ),
       },
     },
   };
+
+  pluginDesc.events.fileChanges.type
 
   schema.Plugin.add(pluginDesc);
 

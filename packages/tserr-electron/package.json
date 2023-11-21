@@ -18,6 +18,7 @@
     "@electron/remote": "^2.1.0",
     "@quasar/extras": "^1.16.4",
     "@typeholes/tserr-common": "file:../tserr-common/typeholes-tserr-common-0.0.1.tgz",
+    "arktype": "^1.1.0-dev-2",
     "quasar": "^2.6.0",
     "shiki": "^0.14.1",
     "shiki-themes": "^0.2.7",

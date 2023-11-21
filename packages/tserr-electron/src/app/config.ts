@@ -1,4 +1,4 @@
-import { type, narrow, Problems, Type } from 'arktype';
+import { type,  } from 'arktype';
 import { loadPlugin } from 'src/boot/loadPlugins';
 import { reactive, ref, watch, nextTick } from 'vue';
 import { _mkSchema, } from '@typeholes/tserr-common';
@@ -13,9 +13,10 @@ const writeFile = window.tserrFileApi?.writeFile;
 
 const configType = type({
   plugins: 'string[]',
-  'templates?': PartialRecord(type('string'), type('string[]')),
+  'templates?': type('any'), //Record<string,string[]>'),
 });
 export type ConfigType = typeof configType.infer;
+
 
 export const config = reactive({
   plugins: [] as string[],
@@ -64,31 +65,4 @@ export function loadConfig(configPath: string) {
   } catch (e) {
     throw e;
   }
-}
-
-export function PartialRecord<K extends string | number, V>(
-  keyType: Type<K>,
-  valueType: Type<V>,
-): Type<Record<K, V>> {
-  return narrow(type('object'), (data, ctx): data is Record<K, V> => {
-    const problems = ctx as any as Problems;
-    if ((keyType as any as Type<never>).includesMorph) {
-      problems.mustBe('without morph', { path: ['__keyType__'] });
-      return false;
-    }
-    return Object.entries(data).every(([k, v]) => {
-      const keyCheck = keyType(k);
-      if (keyCheck.problems) {
-        problems.addProblem(keyCheck.problems[0] as any);
-        return false;
-      }
-      const valueCheck = valueType(v);
-      if (valueCheck.problems) {
-        problems.addProblem(valueCheck.problems[0] as any);
-        return false;
-      }
-      if (valueCheck.data !== v) (data as any)[k] = valueCheck.data;
-      return true;
-    });
-  }) as any;
 }

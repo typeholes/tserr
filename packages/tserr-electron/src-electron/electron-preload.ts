@@ -41,6 +41,8 @@ declare global {
     codeToHtml: (code: string, theme?: string, lang?: string) => string;
     tserrPlugins: string[];
     tserrConfigPath: string | undefined;
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore  editor vs build conflict
     tserrFileApi: { readFile: typeof readFileSync, writeFile: typeof writeFileSync};
     tserrSchema: {schema: Schema};
   }

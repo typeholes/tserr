@@ -5,7 +5,7 @@ export type PluginDesc = {
   // schema: '', //todo
   events: Record<
     string,
-    { sends: boolean; handles: boolean; type: Type<unknown> }
+    { sends: boolean; handles: boolean; type: Type<any> }
   >;
 };
 
