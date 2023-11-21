@@ -30,32 +30,45 @@ function openPlugin() {
   forceList.value++;
 }
 
-const typeProblems= computed( () => {
-  const problems : string[] = [] ;
+const typeProblems = computed(() => {
+  const problems: string[] = [];
   const plugins = schema.Plugin.values();
   for (const plugin of plugins) {
     for (const other of plugins) {
-      if (plugin.name === other.name) { continue; }
-        for( const eventName in plugin.events) {
-          if ( eventName in other.events) {
-            const type = plugin.events[eventName].type;
-            const otherType = other.events[eventName].type;
-            if (! type.extends(otherType)) {
-              problems.push(`${eventName} incompatible between ${plugin.name} and ${other.name}`);
+      if (plugin.name >= other.name) {
+        continue;
+      }
+      for (const eventName in plugin.events) {
+        if (eventName in other.events) {
+          const type = plugin.events[eventName].type;
+          const otherType = other.events[eventName].type;
+          try {
+            if (!type.extends(otherType)) {
+              problems.push(
+                `${eventName} incompatible between ${plugin.name} and ${other.name}`,
+              );
             }
+          } catch (_e) {
+            problems.push(
+              `${eventName} incompatible between ${plugin.name} and ${other.name}`,
+            );
           }
         }
+      }
     }
   }
-    return problems;
-})
-
+  return problems;
+});
 </script>
 
 <template>
   <q-page padding>
     <q-btn label="Load Plugin" @click="openPlugin" />
-    {{  typeProblems }}
+    <q-card :bordered="true" v-if="typeProblems.length>0">
+      <div class="q-ma-sm error" v-for="problem of typeProblems" :key="problem">
+    {{ problem }}
+      </div>
+    </q-card>
     <q-list>
       <q-expansion-item
         :label="plugin.name"
@@ -104,3 +117,9 @@ const typeProblems= computed( () => {
     </q-list>
   </q-page>
 </template>
+
+<style scope>
+.error {
+  background-color: #300000;
+}
+</style>
