@@ -7,7 +7,8 @@ export type State<N extends string, T, K extends readonly PropertyKey[]> = {
   stateName: N;
   add: (t: T) => void;
   get: (t: T) => T | undefined;
-  getByKeys: (...keys: K) => T | undefined;
+  getByKeys: (...keys: Partial<K>) => T | undefined;
+  truncate: (...keys: Partial<K>) => void;
   remove: (t: T) => boolean;
   values: (...keys: Partial<K>) => T[];
   log: () => void;
@@ -55,13 +56,31 @@ export function mkState<
       if (at === undefined || at[k] === undefined) return undefined;
       return at[k][0];
     },
-    getByKeys: (...keys: K) => {
+    getByKeys: (...keys: Partial<K>) => {
       let at: Record<PropertyKey, any> = obj;
       for (const k of keys) {
+        if (k === undefined) break;
         at = at[k];
         if (at === undefined) return undefined;
       }
       return at[0] as T | undefined;
+    },
+    truncate: (...keys: Partial<K>) => {
+      let at: Record<PropertyKey, any> = obj;
+      if (keys.length === 0) {
+        Object.keys(obj).forEach((key) => delete obj[key]);
+      }
+      for (let i = 0, priorKey = undefined; i < keys.length; i++) {
+        const key = keys[i];
+        if (key === undefined) {
+          throw new Error('undefined key in truncate');
+        }
+        if ((i = keys.length - 1)) {
+          delete at[key];
+        }
+        at = at[key];
+        priorKey = key;
+      }
     },
     remove: (t: T) => {
       const [k, at] = getParent(t);

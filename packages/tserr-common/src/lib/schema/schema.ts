@@ -18,7 +18,7 @@ export function _mkSchema() {
       u.span.start.char,
       u.span.end.line,
       u.span.end.line,
-    ]),
+    ] as const),
     ErrDesc: mkState<'ErrDesc', ErrDesc<string>, [string]>(
       'ErrDesc',
       (x: ErrDesc<string>) => [x.name],
@@ -32,8 +32,8 @@ export function _mkSchema() {
       'Err',
       (x: Err<ErrDesc<string>>) => [x.name, ...Object.keys(x.values)] as const,
     ),
-    Project: mkState('Project', (x: ProjectDesc) => [x.path, x.filename]),
-    Plugin: mkState('Plugin', (x: PluginDesc) => [x.name])
+    Project: mkState('Project', (x: ProjectDesc) => [x.path, x.filename] as const),
+    Plugin: mkState('Plugin', (x: PluginDesc) => [x.name] as const)
   });
 
   type States = typeof states;

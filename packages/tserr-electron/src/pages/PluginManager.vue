@@ -65,7 +65,7 @@ const typeProblems = computed(() => {
   <q-page padding>
     <q-btn label="Load Plugin" @click="openPlugin" />
     <q-card :bordered="true" v-if="typeProblems.length>0">
-      <div class="q-ma-sm error" v-for="problem of typeProblems" :key="problem">
+      <div class="q-ma-sm q-pa-sm error shadow-4 text-h4 " v-for="problem of typeProblems" :key="problem">
     {{ problem }}
       </div>
     </q-card>

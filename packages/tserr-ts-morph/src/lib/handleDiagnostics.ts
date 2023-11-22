@@ -21,7 +21,7 @@ import {
   parseTsErrorMessage,
 } from '@typeholes/tserr-common';
 
-let schema : Schema;
+let schema: Schema;
 
 export function setSchema(newSchema: Schema) {
   schema = newSchema;
@@ -93,6 +93,9 @@ export function processFileEvents(
       if (!project) {
         return;
       }
+
+      schema.ErrLocation.$.At.Err.truncate();
+      schema.ErrLocation.truncate();
       const diagnostics = group(
         project.getPreEmitDiagnostics(),
         (diagnostic) =>
