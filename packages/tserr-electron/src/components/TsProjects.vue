@@ -1,17 +1,21 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { ProjectDesc, } from '@typeholes/tserr-common'
+import { ProjectDesc } from '@typeholes/tserr-common';
 
 const schema = window.tserrSchema.schema;
 
-const { dialog } = typeof require === 'undefined' ? {dialog: undefined} : require('@electron/remote') ;
+const { dialog } =
+  typeof require === 'undefined'
+    ? { dialog: undefined }
+    : require('@electron/remote');
 
 const forceList = ref(0);
 
-
 function splitName(name: string) {
-/// BUG: windows paths need to spit by \
-  const parts = name.split(/(\/[^\/]*$)/);
+  /// BUG: windows paths need to spit by \
+  const parts = name.match(/^.:/)
+    ? name.split(/(\\[^\\]*$)/)
+    : name.split(/(\/[^\/]*$)/);
   console.log({ name, parts });
   if (parts.length === 1) {
     parts.unshift('.');
@@ -19,9 +23,9 @@ function splitName(name: string) {
   return parts;
 }
 
-  function openFileDialog() {
-    return dialog?.showOpenDialogSync({ properties: ['openFile'] });
-  }
+function openFileDialog() {
+  return dialog?.showOpenDialogSync({ properties: ['openFile'] });
+}
 
 function openProject() {
   // const picked = dialog.showOpenDialogSync({properties: ['openFile']})
@@ -30,7 +34,7 @@ function openProject() {
     const [path, filename] = splitName(fullPath);
     const desc: ProjectDesc = {
       path,
-      filename: filename.replace(/^\//,''),
+      filename: filename.replace(/^\//, ''),
       open: true,
     };
     schema.Project.add(desc);

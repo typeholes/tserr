@@ -199,6 +199,7 @@ module.exports = configure(function (/* ctx */) {
         // https://www.electron.build/configuration/configuration
 
         appId: 'TsErr',
+        win: { target: 'portable' },
       },
     },
 

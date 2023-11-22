@@ -34,7 +34,7 @@
 
 import { readFileSync, writeFileSync } from 'fs';
 import * as shiki from 'shiki';
-import { Schema } from '@typeholes/tserr-common'
+import { Schema } from '@typeholes/tserr-common';
 
 declare global {
   interface Window {
@@ -43,19 +43,40 @@ declare global {
     tserrConfigPath: string | undefined;
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore  editor vs build conflict
-    tserrFileApi: { readFile: typeof readFileSync, writeFile: typeof writeFileSync};
-    tserrSchema: {schema: Schema};
+    tserrFileApi: {
+      readFile: typeof readFileSync;
+      writeFile: typeof writeFileSync;
+    };
+    tserrSchema: { schema: Schema };
   }
 }
 
+window.tserrFileApi = { readFile: readFileSync, writeFile: writeFileSync };
 
-window.tserrFileApi = { readFile: readFileSync, writeFile: writeFileSync }
+let languages = 'languages/';
+let themes = 'themes/';
+let wasm = 'dist/';
 
+const wasmIndex = process.argv.indexOf('--tserrwasm');
+
+if (wasmIndex > 0) {
+  const wasmPath = process.argv[wasmIndex + 1];
+  console.log({ wasmPath });
+
+  languages = wasmPath + '/' + languages;
+  themes = wasmPath + '/' + themes;
+  wasm = wasmPath + '/' + wasm;
+}
 
 shiki
   .getHighlighter({
     theme: 'dracula',
     themes: shiki.BUNDLED_THEMES,
+    paths: {
+      languages,
+      themes,
+      wasm,
+    },
   })
   .then((highlighter) => {
     const html = highlighter.codeToHtml('type foo<T> = T', {
@@ -69,6 +90,9 @@ shiki
         theme: theme ?? 'dracula',
       });
   });
+//   });
+// });
+
 const configIndex = process.argv.indexOf('--tserrConfig');
 window.tserrConfigPath =
   configIndex < 0 ? undefined : process.argv[configIndex + 1];

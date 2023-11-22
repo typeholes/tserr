@@ -2,12 +2,6 @@ import { appState } from './appState';
 import { format } from 'prettier';
 import parserTS from 'prettier/parser-typescript';
 
-// const highlighter = (window as any).highlighter as Highlighter;
-const codeToHtml = (window as any).codeToHtml as (
-  code: string,
-  theme: string,
-  lang: string,
-) => string;
 
 const codeTypes = {
   type: {
@@ -52,12 +46,9 @@ export function highlight(
   if (code === undefined) {
     return undefined;
   }
-  if (codeToHtml) {
-    return codeToHtml(code, appState.shikiTheme, lang);
-    // , {
-    //   lang: 'ts',
-    //   theme: appState.shikiTheme,
-    // });
+
+  if (window.codeToHtml) {
+    return window.codeToHtml(code, appState.shikiTheme, lang);
   }
   return code;
 }

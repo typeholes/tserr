@@ -4,14 +4,16 @@ import os from 'os';
 
 import { initialize, enable } from '@electron/remote/main'; // <-- add this
 
-
 const pluginIndex = process.argv.indexOf('--tserrPlugins');
 const tserrPlugins = pluginIndex < 0 ? [] : process.argv.slice(pluginIndex);
 
 const configIndex = process.argv.indexOf('--tserrConfig');
 const configPath =
-  configIndex < 0 ? [] : process.argv.slice(configIndex, configIndex+2);
+  configIndex < 0 ? [] : process.argv.slice(configIndex, configIndex + 2);
 
+const wasmIndex = process.argv.indexOf('--tserrwasm');
+const wasmPath =
+  wasmIndex < 0 ? [] : process.argv.slice(wasmIndex, wasmIndex + 2);
 
 initialize(); // <-- add this
 
@@ -41,7 +43,7 @@ function createWindow() {
       contextIsolation: false,
       // More info: https://v2.quasar.dev/quasar-cli-vite/developing-electron-apps/electron-preload-script
       preload: path.resolve(__dirname, process.env.QUASAR_ELECTRON_PRELOAD),
-      additionalArguments: [...configPath, ...tserrPlugins],
+      additionalArguments: [...configPath, ...wasmPath, ...tserrPlugins],
       sandbox: false,
     },
   });
