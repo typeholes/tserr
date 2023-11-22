@@ -13,10 +13,9 @@ const forceList = ref(0);
 
 function splitName(name: string) {
   /// BUG: windows paths need to spit by \
-  const parts = name.match(/^.:/)
-    ? name.split(/(\\[^\\]*$)/)
-    : name.split(/(\/[^\/]*$)/);
-  console.log({ name, parts });
+  const linuxName = name.match(/^.:/) ? name.replaceAll('\\', '/') : name;
+  const parts = linuxName.split(/(\/[^\/]*$)/);
+  console.log({ name, linuxName, parts });
   if (parts.length === 1) {
     parts.unshift('.');
   }

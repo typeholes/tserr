@@ -85,7 +85,7 @@ function closeApp() {
 
 <template>
   <div class="q-pa-md">
-    <q-layout view="hHh LpR fFf">
+    <q-layout view="HHH LpR fFf">
       <q-header elevated>
         <q-toolbar class="q-electron-drag">
           <q-btn
