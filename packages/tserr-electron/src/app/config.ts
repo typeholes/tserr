@@ -1,11 +1,11 @@
-import { type,  } from 'arktype';
+import { type } from 'arktype';
 import { loadPlugin } from 'src/boot/loadPlugins';
 import { reactive, ref, watch, nextTick } from 'vue';
-import { _mkSchema, } from '@typeholes/tserr-common';
+import { _mkSchema } from '@typeholes/tserr-common';
 
-  if (!window.tserrSchema?.schema) {
-    window.tserrSchema = { schema: _mkSchema() };
-  }
+if (!window.tserrSchema?.schema) {
+  window.tserrSchema = { schema: _mkSchema() };
+}
 const schema = window.tserrSchema.schema;
 
 const readFile = window.tserrFileApi?.readFile;
@@ -16,7 +16,6 @@ const configType = type({
   'templates?': type('any'), //Record<string,string[]>'),
 });
 export type ConfigType = typeof configType.infer;
-
 
 export const config = reactive({
   plugins: [] as string[],
@@ -41,7 +40,7 @@ export function loadConfig(configPath: string) {
       throw new Error(problems.summary);
     }
 
-    const basePath = configPath.replace(/\/+$/, '');
+    const basePath = configPath.replace(/\/[^\/]+$/, '');
     const paths = data.plugins.map((path) =>
       path.replace(/^\.\//, basePath + '/'),
     );
