@@ -1,4 +1,3 @@
-
 export type ErrDesc<T extends string = string> = {
   name: T;
   keys: readonly string[];
@@ -41,4 +40,5 @@ export type Span = { start: Position; end: Position };
 export type ErrLocation = {
   fileName: string;
   span: Span;
+  lineSrc?: string;
 };

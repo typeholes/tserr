@@ -132,7 +132,7 @@ function handleError(
       fileName: tsConfigFilePath,
       span: { start: { line: 0, char: 0 }, end: { line: 0, char: 0 } },
     };
-    const err = diagnosticToErr(diagnostic, loc);
+    const err = diagnosticToErr(diagnostic, loc, '');
     return;
   }
 
@@ -142,25 +142,25 @@ function handleError(
   }
   const endPos = diagnostic.getLength() ?? 0 + startPos;
 
-  const loc = mkLoc(sourceFile, startPos, endPos);
 
-  // const fromNode = getDeepestNode(sourceFile, startPos);
-  // if (fromNode === undefined) {
-  //   return ;
-  // }
+  const fromNode = getDeepestNode(sourceFile, startPos);
+  if (fromNode === undefined) {
+    return ;
+  }
 
-  // let lineNode = fromNode;
-  // while (!lineNode.isFirstNodeOnLine() || lineNode.getChildCount() === 0) {
-  //   const parent = lineNode.getParent();
-  //   if (!parent) break;
-  //   lineNode = parent;
-  // }
+  let lineNode = fromNode;
+  while (!lineNode.isFirstNodeOnLine() || lineNode.getChildCount() === 0) {
+    const parent = lineNode.getParent();
+    if (!parent) break;
+    lineNode = parent;
+  }
 
-  // const lineNodeSrc = lineNode.getText().trim();
+  const lineNodeSrc = lineNode.getText().trim();
 
   // const fromType = unaliasType(fromNode.getType());
+  const loc = mkLoc(sourceFile, startPos, endPos, lineNodeSrc);
 
-  diagnosticToErr(diagnostic, loc);
+  diagnosticToErr(diagnostic, loc, lineNodeSrc);
 
   /*
   resolved.forEach((err) =>
@@ -242,6 +242,7 @@ function mkLoc(
   sourceFile: SourceFile,
   startPos: number,
   endPos: number,
+  lineSrc: string
 ): ErrLocation {
   const fileName = sourceFile.getFilePath().toString();
   const start = sourceFile.getLineAndColumnAtPos(startPos);
@@ -253,11 +254,13 @@ function mkLoc(
       start: { line: start.line, char: start.column },
       end: { line: end.line, char: end.column },
     },
+    lineSrc
   };
 }
 function diagnosticToErr(
   diagnostic: Diagnostic,
   defaultLoc: ErrLocation,
+  lineNodeSrc: string,
 ): void {
   const fileName =
     diagnostic.getSourceFile()?.getFilePath().toString() ?? defaultLoc.fileName;
@@ -269,7 +272,7 @@ function diagnosticToErr(
   const message = diagnostic.getMessageText();
 
   const sourceFile = diagnostic.getSourceFile();
-  const loc = sourceFile ? mkLoc(sourceFile, start, end) : defaultLoc;
+  const loc = sourceFile ? mkLoc(sourceFile, start, end, lineNodeSrc) : defaultLoc;
   schema.ErrLocation.add(loc);
 
   if (typeof message === 'string') {
