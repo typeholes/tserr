@@ -10,6 +10,7 @@ import {
   onEvent,
 } from '../../../tserr-common/src';
 import { loadConfig } from 'src/app/config';
+import ts from 'typescript';
 
 declare global {
   interface Window {
@@ -25,6 +26,7 @@ declare global {
         } | null,
       ) => Buffer;
       writeFile: (path: string | number, data: any, options?: any) => void;
+      ts: typeof ts,
     };
     tserrSchema: { schema: Schema };
   }

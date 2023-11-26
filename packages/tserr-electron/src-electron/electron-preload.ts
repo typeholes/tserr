@@ -28,6 +28,8 @@
  * }
  */
 
+import * as ts from 'typescript';
+
 // import { contextBridge } from 'electron';
 // // import { dialog, } from 'electron';
 // import { dialog, BrowserWindow, getCurrentWindow } from '@electron/remote';
@@ -46,12 +48,13 @@ declare global {
     tserrFileApi: {
       readFile: typeof readFileSync;
       writeFile: typeof writeFileSync;
+    ts: typeof ts;
     };
     tserrSchema: { schema: Schema };
   }
 }
 
-window.tserrFileApi = { readFile: readFileSync, writeFile: writeFileSync };
+window.tserrFileApi = { readFile: readFileSync, writeFile: writeFileSync, ts };
 
 let languages = 'languages/';
 let themes = 'themes/';

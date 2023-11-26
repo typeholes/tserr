@@ -1,0 +1,8 @@
+{
+  "name": "@typeholes/tserr-tslib",
+  "version": "0.0.1",
+  "dependencies": {
+    "@typeholes/tserr-common": "file:../tserr-common/typeholes-tserr-common-0.0.1.tgz",
+    "typescript": "file:../../../../TypeScript"
+  }
+}

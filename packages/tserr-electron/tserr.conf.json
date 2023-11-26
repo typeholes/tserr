@@ -4,15 +4,5 @@
       "../tserr-ts-morph/out/index.js"
    ],
    "templates": {
-      "Type alias '{0}' circularly references itself.": [
-         "<div class=\"row q-ma-sm\"> ",
-         "  <div class=\"row q-ma-sm\" style=\"border: 1px solid purple\"> ",
-         "    <div style=\"border: 1px solid blue\" class=\"column q-pa-sm q-ma-sm\">        ",
-         "      <div style=\"border-bottom: 1px dashed blue\">Inception!!!</div> ",
-         "      <code-block :code=\"err?.values[`Type alias `]\" />  ",
-         "    </div>  ",
-         "  </div>",
-         "</div> "
-      ]
    }
 }

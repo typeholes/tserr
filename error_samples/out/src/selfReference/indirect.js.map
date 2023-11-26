@@ -1,0 +1,1 @@
+{"version":3,"file":"indirect.js","sourceRoot":"","sources":["../../../src/selfReference/indirect.ts"],"names":[],"mappings":";;;AAAa,QAAA,MAAM,GAAG,CAAC,CAAC,CAAC,CAAC,CAAC;AAE3B,SAAS,CAAC,CAAC,CAAS;IACjB,OAAO,cAAM,GAAG,CAAC,CAAC;AACrB,CAAC;AAED,OAAO,CAAC,GAAG,CAAC,EAAE,MAAM,EAAN,cAAM,EAAE,CAAC,CAAC"}
