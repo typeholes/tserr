@@ -1,7 +1,7 @@
 const t: { a: 1 } = { a: 1, b: 2 };
 
 // not an excess property check so the fix should not show
-const n: number = 's';
+const n: number[] = 's';
 
 // const nzz: number = 's';
 
@@ -19,7 +19,7 @@ type Deep = {
   a: {
     b: {
       c: {
-        d: 1;
+        d: 1|3;
       };
     };
   };

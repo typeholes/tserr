@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type {  Err } from '@typeholes/tserr-common';
-import { compile, computed, reactive, } from 'vue';
+import type { Err } from '@typeholes/tserr-common';
+import { compile, computed, reactive } from 'vue';
 import CodeBlock from './CodeBlock.vue';
 
 import { matClose } from '@quasar/extras/material-icons';
@@ -8,6 +8,7 @@ import { matClose } from '@quasar/extras/material-icons';
 const schema = window.tserrSchema.schema;
 
 import type { Symbol, Node, Type, ObjectType } from 'typescript';
+import { expando } from 'src/app/expando';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const props = defineProps<{ err: Err<any> | undefined }>();
 
@@ -25,15 +26,16 @@ function unknownCodeString() {
 
 const ts = window.tserrFileApi.ts;
 const printer = ts.createPrinter();
-const printNode = (n: Node) => printer.printNode(ts.EmitHint.Unspecified, n, n.getSourceFile())
+const printNode = (n: Node) =>
+  printer.printNode(ts.EmitHint.Unspecified, n, n.getSourceFile());
 
 const selected = reactive({
   menuOpen: false,
   clicked: undefined as undefined | RealDiagnosticArgument,
   arg: undefined as undefined | RealDiagnosticArgument,
   stickySource: undefined as undefined | string,
-  stickyType: 'raw' as 'raw'|'type'|'signature',
-  expandedType: undefined as undefined|string,
+  stickyType: 'raw' as 'raw' | 'type' | 'signature',
+  expandedType: undefined as undefined | string,
 });
 
 function clearSticky() {
@@ -111,8 +113,8 @@ function getValueDefinition(arg: RealDiagnosticArgument) {
       // eslint-disable-next-line @typescript-eslint/ban-types
       const sym = argValue as Symbol;
       if (sym.valueDeclaration) {
-        srcText = printNode( sym.valueDeclaration);
-        selected.stickyType='raw';
+        srcText = printNode(sym.valueDeclaration);
+        selected.stickyType = 'raw';
         selected.stickySource = srcText;
         return;
       }
@@ -139,23 +141,13 @@ function onShow() {
 }
 
 function expandType(arg: RealDiagnosticArgument) {
-  selected.stickySource=undefined;
+  selected.stickySource = undefined;
   if (arg.cacheId == undefined) return;
-  const type = window.tserrFileApi.ts.getDiagnosticArgValue(arg.cacheId) as Type;
-  selected.expandedType='';
-  if ( type.flags & ts.TypeFlags.Object) {
-    selected.expandedType += '{'
-    const obj = type as ObjectType;
-    for (const symbol of obj.getApparentProperties()) {
-      if (symbol.valueDeclaration) {
-        selected.expandedType += printNode(symbol.valueDeclaration);
-      }
-    }
-    selected.expandedType += '}'
-  }
-  console.log(selected.expandedType);
-        selected.stickyType='type';
-  selected.stickySource = selected.expandedType;
+  const type = window.tserrFileApi.ts.getDiagnosticArgValue(
+    arg.cacheId,
+  ) as Type;
+  selected.stickyType = 'type';
+  selected.stickySource = expando(type);
 }
 </script>
 

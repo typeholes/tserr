@@ -5,3 +5,4 @@ type Nested = {
 }
 
 const nested : Nested = {z: 1};
+const nestedArr : Nested[] = {z: 1};
